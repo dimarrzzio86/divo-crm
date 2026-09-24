@@ -1,0 +1,153 @@
+/* ==========================================
+   DIVO CRM v2 — СТИЛИ ФОРМЫ АВТОРИЗАЦИИ
+   ========================================== */
+
+/* Оверлей формы входа */
+.divo-auth-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: #0a0a0a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
+.divo-auth-overlay.hidden {
+  display: none;
+}
+
+/* Карточка формы */
+.divo-auth-box {
+  background: #18181b;
+  border: 2px solid #22c55e;
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 380px;
+  width: 100%;
+  box-shadow: 0 0 40px rgba(34, 197, 94, 0.2);
+}
+
+.divo-auth-logo {
+  font-size: 40px;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.divo-auth-title {
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  color: #fafafa;
+  margin-bottom: 4px;
+}
+
+.divo-auth-subtitle {
+  text-align: center;
+  font-size: 13px;
+  color: #71717a;
+  margin-bottom: 24px;
+}
+
+.divo-auth-field {
+  margin-bottom: 16px;
+}
+
+.divo-auth-label {
+  display: block;
+  font-size: 13px;
+  color: #a1a1aa;
+  margin-bottom: 6px;
+}
+
+.divo-auth-input {
+  width: 100%;
+  padding: 12px 14px;
+  background: #0a0a0a;
+  border: 1.5px solid #3f3f46;
+  border-radius: 10px;
+  color: #fafafa;
+  font-size: 15px;
+  outline: none;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.divo-auth-input:focus {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+}
+
+.divo-auth-btn {
+  width: 100%;
+  padding: 14px;
+  background: #22c55e;
+  color: #0a0a0a;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+  font-family: inherit;
+}
+
+.divo-auth-btn:hover {
+  background: #16a34a;
+  transform: translateY(-1px);
+}
+
+.divo-auth-btn:active {
+  transform: scale(0.98);
+}
+
+.divo-auth-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.divo-auth-status {
+  text-align: center;
+  color: #f87171;
+  font-size: 13px;
+  margin-top: 12px;
+  min-height: 18px;
+}
+
+.divo-auth-pending {
+  display: none;
+  text-align: center;
+  color: #71717a;
+  font-size: 14px;
+  padding: 40px;
+}
+
+.divo-auth-pending.show {
+  display: block;
+}
+
+/* Кнопка выхода */
+.divo-logout-btn {
+  padding: 10px 16px;
+  background: #7f1d1d;
+  color: #fca5a5;
+  border: 1.5px solid #991b1b;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.divo-logout-btn:hover {
+  background: #991b1b;
+  color: #fff;
+  border-color: #dc2626;
+}

@@ -1,0 +1,575 @@
+<!-- Раздел: Склад (просмотр) -->
+<!-- Уровень: 3 (менеджер+) -->
+
+<div class="cs-page-header">
+  <h1 class="cnt-page-title">📦 Склад</h1>
+  <div class="cs-summary" id="whSummary">
+    <div class="cs-summary-item">
+      <div class="cs-summary-label">Всего позиций</div>
+      <div class="cs-summary-value blue" id="whTotalItems">—</div>
+    </div>
+    <div class="cs-summary-item">
+      <div class="cs-summary-label">Заканчивается</div>
+      <div class="cs-summary-value" style="color:#f59e0b" id="whMidItems">—</div>
+    </div>
+    <div class="cs-summary-item">
+      <div class="cs-summary-label">Критично</div>
+      <div class="cs-summary-value red" id="whLowItems">—</div>
+    </div>
+  </div>
+</div>
+
+<!-- Кнопки сверки -->
+<div class="wh-audit-buttons" id="whAuditButtons">
+  <button class="wh-audit-btn weekly" id="whBtnWeekly" onclick="window.whOpenAudit('weekly')">
+    <span class="wh-audit-btn-icon">📊</span>
+    <span class="wh-audit-btn-text">
+      <span class="wh-audit-btn-title">Недельная сверка</span>
+      <span class="wh-audit-btn-desc">Только отмеченные товары</span>
+    </span>
+  </button>
+  <button class="wh-audit-btn full" id="whBtnFull" onclick="window.whOpenAudit('full')">
+    <span class="wh-audit-btn-icon">📋</span>
+    <span class="wh-audit-btn-text">
+      <span class="wh-audit-btn-title">Полная сверка</span>
+      <span class="wh-audit-btn-desc">Все товары склада</span>
+    </span>
+  </button>
+</div>
+
+<div class="cs-search-wrap">
+  <span class="cs-search-icon">🔍</span>
+  <input type="text" id="whSearch" class="cs-search-input" placeholder="Поиск по названию...">
+</div>
+
+<div class="cs-status" id="whStatus"></div>
+
+<div class="cs-table-wrap">
+  <table class="cs-table">
+    <thead>
+      <tr>
+        <th style="width:50px">№</th>
+        <th>Наименование</th>
+        <th style="text-align:right">Количество</th>
+        <th style="text-align:right">Сред. мин.</th>
+        <th style="text-align:right">Минимум</th>
+      </tr>
+    </thead>
+    <tbody id="whTableBody">
+      <tr><td colspan="5" class="cs-loading">Загрузка...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Модалка сверки -->
+<div class="wh-audit-overlay" id="whAuditModal" style="display:none;">
+  <div class="wh-audit-modal-box">
+    <div class="wh-audit-modal-header">
+      <div class="wh-audit-modal-title" id="whAuditTitle">📊 Сверка</div>
+      <button class="wh-audit-close" onclick="window.whCloseAudit()">✕</button>
+    </div>
+    <div class="wh-audit-modal-desc" id="whAuditDesc">Проверьте количество товаров</div>
+    <div class="wh-audit-summary" id="whAuditSummary"></div>
+    <div class="wh-audit-list" id="whAuditList">
+      <div class="wh-audit-loading">Загрузка...</div>
+    </div>
+    <div class="wh-audit-modal-footer">
+      <span class="wh-audit-changes" id="whAuditChanges">Изменений: 0</span>
+      <div class="wh-audit-footer-btns">
+        <button class="wh-audit-btn-cancel" onclick="window.whCloseAudit()">Отмена</button>
+        <button class="wh-audit-btn-save" id="whAuditSave" onclick="window.whSaveAudit()">💾 Сохранить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.wh-row-low { background: #7f1d1d; }
+.wh-row-low:hover { background: #4c0505 !important; }
+.wh-row-mid { background: #78350f; }
+.wh-row-mid:hover { background: #422006 !important; }
+.wh-qty { font-weight: 700; }
+.wh-qty-low { color: #fca5a5; }
+.wh-qty-mid { color: #fcd34d; }
+.wh-qty-ok { color: #4ade80; }
+
+/* Кнопки сверки */
+.wh-audit-buttons {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.wh-audit-btn {
+  flex: 1;
+  min-width: 220px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  border-radius: 14px;
+  border: 1.5px solid #3f3f46;
+  background: #18181b;
+  color: #fafafa;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  text-align: left;
+}
+.wh-audit-btn:hover {
+  border-color: #22c55e;
+  background: #1f1f23;
+  box-shadow: 0 0 16px rgba(34,197,94,0.15);
+}
+.wh-audit-btn:active { transform: scale(0.98); }
+.wh-audit-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.wh-audit-btn.disabled:hover {
+  border-color: #3f3f46;
+  background: #18181b;
+  box-shadow: none;
+}
+.wh-audit-btn-icon { font-size: 28px; line-height: 1; }
+.wh-audit-btn-text { display: flex; flex-direction: column; gap: 2px; }
+.wh-audit-btn-title { font-size: 15px; font-weight: 700; }
+.wh-audit-btn-desc { font-size: 12px; color: #71717a; }
+
+/* Модалка сверки */
+.wh-audit-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  padding: 16px;
+}
+.wh-audit-modal-box {
+  background: #18181b;
+  border: 2px solid #22c55e;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 40px rgba(34,197,94,0.2);
+  animation: whSlide 0.2s ease-out;
+}
+@keyframes whSlide {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.wh-audit-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.wh-audit-modal-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fafafa;
+}
+.wh-audit-close {
+  background: #27272a;
+  border: 1.5px solid #3f3f46;
+  color: #a1a1aa;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.15s;
+}
+.wh-audit-close:hover {
+  background: #7f1d1d;
+  color: #fff;
+  border-color: #dc2626;
+}
+.wh-audit-modal-desc {
+  font-size: 14px;
+  color: #a1a1aa;
+  margin-bottom: 16px;
+}
+.wh-audit-summary {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.wh-audit-summary-item {
+  background: #0a0a0a;
+  border: 1px solid #3f3f46;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #a1a1aa;
+}
+.wh-audit-summary-item b { color: #fafafa; font-weight: 700; }
+
+.wh-audit-list {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid #27272a;
+  border-radius: 10px;
+  background: #0a0a0a;
+  margin-bottom: 16px;
+  min-height: 100px;
+}
+.wh-audit-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #27272a;
+}
+.wh-audit-item:last-child { border-bottom: none; }
+.wh-audit-item-name {
+  flex: 1;
+  font-size: 14px;
+  color: #fafafa;
+  font-weight: 500;
+}
+.wh-audit-item-current {
+  font-size: 12px;
+  color: #71717a;
+  white-space: nowrap;
+}
+.wh-audit-item-current b { color: #818cf8; font-weight: 700; }
+.wh-audit-item-input {
+  width: 80px;
+  padding: 8px 10px;
+  background: #18181b;
+  border: 1.5px solid #3f3f46;
+  border-radius: 8px;
+  color: #fafafa;
+  font-size: 14px;
+  font-family: inherit;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.wh-audit-item-input:focus {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34,197,94,0.1);
+}
+.wh-audit-item-input.changed {
+  border-color: #f59e0b;
+  background: #1a1205;
+}
+.wh-audit-loading {
+  text-align: center;
+  padding: 40px;
+  color: #71717a;
+}
+.wh-audit-empty {
+  text-align: center;
+  padding: 30px;
+  color: #71717a;
+}
+
+.wh-audit-modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.wh-audit-changes {
+  font-size: 13px;
+  color: #71717a;
+}
+.wh-audit-changes b { color: #f59e0b; font-weight: 700; }
+.wh-audit-footer-btns { display: flex; gap: 8px; }
+.wh-audit-btn-cancel {
+  padding: 10px 20px;
+  background: #27272a;
+  color: #a1a1aa;
+  border: 1.5px solid #3f3f46;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.wh-audit-btn-cancel:hover { background: #3f3f46; color: #fafafa; }
+.wh-audit-btn-save {
+  padding: 10px 20px;
+  background: #22c55e;
+  color: #0a0a0a;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.wh-audit-btn-save:hover { background: #16a34a; box-shadow: 0 0 12px rgba(34,197,94,0.3); }
+.wh-audit-btn-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  .wh-audit-buttons { flex-direction: column; }
+  .wh-audit-btn { min-width: 0; }
+  .wh-audit-item { flex-wrap: wrap; }
+  .wh-audit-item-name { width: 100%; }
+}
+</style>
+
+<script>
+(function() {
+  var items = [];
+  var filtered = [];
+  var auditItems = [];
+  var auditType = '';
+  var auditChanges = {};
+
+  function $(id) { return document.getElementById(id); }
+  function showStatus(msg, type) { var s = $('whStatus'); s.textContent = msg; s.className = 'cs-status show ' + type; }
+  function hideStatus() { $('whStatus').className = 'cs-status'; }
+  function escapeHtml(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; }
+  function formatQty(n) { n = Number(n||0); if (n % 1 === 0) return String(n); return n.toFixed(2).replace(/\.?0+$/, ''); }
+  function getHeaders(extra) { var h = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }; for (var k in extra) h[k] = extra[k]; return h; }
+
+  function getStockLevel(item) {
+    var qty = Number(item.quantity || 0);
+    var min = Number(item.minimum || 0);
+    var mid = Number(item.middle_minimum || 0);
+    if (min > 0 && qty <= min) return 'low';
+    if (mid > 0 && qty <= mid) return 'mid';
+    return 'ok';
+  }
+
+  function getUserLevel() {
+    try { return Number(divoGetLevel() || 0); } catch(e) { return 0; }
+  }
+
+  function getWeeklyLevel() {
+    try { return Number(divoGetReconciliationLevel('weekly') || 4); } catch(e) { return 4; }
+  }
+
+  function getFullLevel() {
+    try { return Number(divoGetReconciliationLevel('full') || 5); } catch(e) { return 5; }
+  }
+
+  function setupAuditButtons() {
+    var level = getUserLevel();
+    var weeklyLvl = getWeeklyLevel();
+    var fullLvl = getFullLevel();
+    if (level < weeklyLvl) {
+      var btnW = $('whBtnWeekly');
+      btnW.classList.add('disabled');
+      btnW.title = 'Недостаточно прав (нужен уровень ' + weeklyLvl + ')';
+    }
+    if (level < fullLvl) {
+      var btnF = $('whBtnFull');
+      btnF.classList.add('disabled');
+      btnF.title = 'Недостаточно прав (нужен уровень ' + fullLvl + ')';
+    }
+  }
+
+  function loadData() {
+    showStatus('Загрузка склада...', 'loading');
+    fetch(SUPABASE_URL + '/rest/v1/warehouse?select=*&order=name.asc', { method: 'GET', headers: getHeaders() })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function(data) { items = data || []; filtered = items.slice(); hideStatus(); updateSummary(); render(); setupAuditButtons(); })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); });
+  }
+
+  function updateSummary() {
+    var mid = 0, low = 0;
+    for (var i = 0; i < filtered.length; i++) {
+      var lvl = getStockLevel(filtered[i]);
+      if (lvl === 'low') low++;
+      else if (lvl === 'mid') mid++;
+    }
+    $('whTotalItems').textContent = filtered.length;
+    $('whMidItems').textContent = mid;
+    $('whLowItems').textContent = low;
+  }
+
+  function filterData(query) {
+    query = (query || '').toLowerCase().trim();
+    if (!query) { filtered = items.slice(); }
+    else { filtered = items.filter(function(e) { return (e.name||'').toLowerCase().indexOf(query) !== -1; }); }
+    updateSummary(); render();
+  }
+
+  function render() {
+    var tbody = $('whTableBody');
+    if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="5" class="cs-empty">' + (items.length ? 'Ничего не найдено' : 'Склад пуст') + '</td></tr>'; return; }
+    var html = '';
+    for (var i = 0; i < filtered.length; i++) {
+      var item = filtered[i];
+      var level = getStockLevel(item);
+      var rowClass = level === 'low' ? 'wh-row-low' : (level === 'mid' ? 'wh-row-mid' : '');
+      var qtyClass = 'wh-qty wh-qty-' + level;
+      html += '<tr class="' + rowClass + '">';
+      html += '<td style="color:#52525b;text-align:center">' + (i+1) + '</td>';
+      html += '<td>' + escapeHtml(item.name) + '</td>';
+      html += '<td class="' + qtyClass + '" style="text-align:right;font-weight:700;white-space:nowrap">' + escapeHtml(formatQty(item.quantity)) + '</td>';
+      html += '<td style="text-align:right;color:#a1a1aa;font-weight:600;white-space:nowrap">' + escapeHtml(formatQty(item.middle_minimum)) + '</td>';
+      html += '<td style="text-align:right;color:#a1a1aa;font-weight:600;white-space:nowrap">' + escapeHtml(formatQty(item.minimum)) + '</td>';
+      html += '</tr>';
+    }
+    tbody.innerHTML = html;
+  }
+
+  // === СВЕРКА ===
+  function openAudit(type) {
+    var level = getUserLevel();
+    var weeklyLvl = getWeeklyLevel();
+    var fullLvl = getFullLevel();
+    if (type === 'weekly' && level < weeklyLvl) { alert('Недостаточно прав! Нужен уровень ' + weeklyLvl + '.'); return; }
+    if (type === 'full' && level < fullLvl) { alert('Недостаточно прав! Нужен уровень ' + fullLvl + '.'); return; }
+
+    auditType = type;
+    auditChanges = {};
+
+    if (type === 'weekly') {
+      $('whAuditTitle').textContent = '📊 Недельная сверка';
+      $('whAuditDesc').textContent = 'Проверьте количество отмеченных товаров';
+    } else {
+      $('whAuditTitle').textContent = '📋 Полная сверка';
+      $('whAuditDesc').textContent = 'Проверьте количество всех товаров склада';
+    }
+
+    $('whAuditModal').style.display = 'flex';
+    $('whAuditList').innerHTML = '<div class="wh-audit-loading">Загрузка...</div>';
+    $('whAuditSummary').innerHTML = '';
+    $('whAuditChanges').innerHTML = 'Изменений: 0';
+    $('whAuditSave').disabled = true;
+
+    // Загружаем товары
+    var url = SUPABASE_URL + '/rest/v1/warehouse?select=*&order=name.asc';
+    if (type === 'weekly') {
+      url = SUPABASE_URL + '/rest/v1/warehouse?select=*&show_in_audit=eq.true&order=name.asc';
+    }
+    fetch(url, { method: 'GET', headers: getHeaders() })
+      .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function(data) {
+        auditItems = data || [];
+        renderAuditList();
+      })
+      .catch(function(e) {
+        // Если колонки show_in_audit нет — покажем все товары
+        if (type === 'weekly' && e.message.indexOf('400') !== -1 || e.message.indexOf('42703') !== -1 || e.message.indexOf('does not exist') !== -1) {
+          var url2 = SUPABASE_URL + '/rest/v1/warehouse?select=*&order=name.asc';
+          fetch(url2, { method: 'GET', headers: getHeaders() })
+            .then(function(r) { return r.json(); })
+            .then(function(data) { auditItems = data || []; renderAuditList(); })
+            .catch(function(e2) { $('whAuditList').innerHTML = '<div class="wh-audit-empty">Ошибка: ' + escapeHtml(e2.message) + '</div>'; });
+        } else {
+          $('whAuditList').innerHTML = '<div class="wh-audit-empty">Ошибка: ' + escapeHtml(e.message) + '</div>';
+        }
+      });
+  }
+
+  function renderAuditList() {
+    if (!auditItems.length) {
+      $('whAuditList').innerHTML = '<div class="wh-audit-empty">' + (auditType === 'weekly' ? 'Нет товаров для недельной сверки. Отметьте товары в админке склада.' : 'Склад пуст') + '</div>';
+      $('whAuditSummary').innerHTML = '';
+      return;
+    }
+
+    var html = '';
+    for (var i = 0; i < auditItems.length; i++) {
+      var item = auditItems[i];
+      html += '<div class="wh-audit-item">';
+      html += '<div class="wh-audit-item-name">' + escapeHtml(item.name) + '</div>';
+      html += '<div class="wh-audit-item-current">сейчас: <b>' + escapeHtml(formatQty(item.quantity)) + '</b></div>';
+      html += '<input type="number" class="wh-audit-item-input" data-id="' + item.id + '" data-original="' + item.quantity + '" value="' + item.quantity + '" step="0.01" onchange="window.whOnAuditChange(' + item.id + ', this)">';
+      html += '</div>';
+    }
+    $('whAuditList').innerHTML = html;
+
+    // Сводка
+    var totalCurrent = 0;
+    for (var j = 0; j < auditItems.length; j++) totalCurrent += Number(auditItems[j].quantity || 0);
+    $('whAuditSummary').innerHTML = '<div class="wh-audit-summary-item">Товаров: <b>' + auditItems.length + '</b></div><div class="wh-audit-summary-item">Сумма: <b>' + formatQty(totalCurrent) + '</b></div>';
+  }
+
+  function onAuditChange(id, input) {
+    var original = parseFloat(input.getAttribute('data-original'));
+    var current = parseFloat(input.value);
+    if (isNaN(current)) { input.value = original; current = original; }
+
+    if (current === original) {
+      delete auditChanges[id];
+      input.classList.remove('changed');
+    } else {
+      auditChanges[id] = current;
+      input.classList.add('changed');
+    }
+    var count = Object.keys(auditChanges).length;
+    $('whAuditChanges').innerHTML = 'Изменений: <b>' + count + '</b>';
+    $('whAuditSave').disabled = (count === 0);
+  }
+
+  function saveAudit() {
+    var ids = Object.keys(auditChanges);
+    if (!ids.length) return;
+
+    var btn = $('whAuditSave');
+    btn.disabled = true;
+    btn.textContent = '⏳ Сохраняем...';
+
+    var promises = [];
+    for (var i = 0; i < ids.length; i++) {
+      var id = ids[i];
+      var newQty = auditChanges[id];
+      promises.push(
+        fetch(SUPABASE_URL + '/rest/v1/warehouse?id=eq.' + id, {
+          method: 'PATCH',
+          headers: getHeaders({'Content-Type':'application/json','Prefer':'return=minimal'}),
+          body: JSON.stringify({quantity: newQty})
+        })
+      );
+    }
+
+    Promise.all(promises)
+      .then(function() {
+        closeAudit();
+        loadData();
+        showStatus('✅ Сверка сохранена (' + ids.length + ' изм.)', 'success');
+        setTimeout(hideStatus, 3000);
+      })
+      .catch(function(e) {
+        btn.disabled = false;
+        btn.textContent = '💾 Сохранить';
+        alert('Ошибка: ' + e.message);
+      });
+  }
+
+  function closeAudit() {
+    $('whAuditModal').style.display = 'none';
+    auditItems = [];
+    auditChanges = {};
+    auditType = '';
+  }
+
+  // Экспорт
+  window.whOpenAudit = openAudit;
+  window.whCloseAudit = closeAudit;
+  window.whSaveAudit = saveAudit;
+  window.whOnAuditChange = onAuditChange;
+
+  // События
+  $('whSearch').addEventListener('input', function() { var t; clearTimeout(t); t = setTimeout(function() { filterData($('whSearch').value); }, 300); });
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && $('whAuditModal').style.display === 'flex') closeAudit(); });
+
+  loadData();
+})();
+</script>

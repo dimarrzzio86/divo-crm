@@ -1,0 +1,347 @@
+<!-- Раздел: Задачи на сегодня -->
+<!-- Уровень: 4 (админ+) -->
+
+<div class="dt-page">
+  <div class="dt-header">
+    <div>
+      <h1 class="dt-title">📝 Задачи на сегодня</h1>
+      <div class="dt-subtitle" id="dtSubtitle">Планируйте задачи по дням</div>
+    </div>
+    <div class="dt-stats">
+      <div class="dt-stat">
+        <div class="dt-stat-label">Всего</div>
+        <div class="dt-stat-value blue" id="dtTotal">0</div>
+      </div>
+      <div class="dt-stat">
+        <div class="dt-stat-label">Выполнено</div>
+        <div class="dt-stat-value green" id="dtDone">0</div>
+      </div>
+      <div class="dt-stat">
+        <div class="dt-stat-label">Осталось</div>
+        <div class="dt-stat-value orange" id="dtLeft">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Выбор даты -->
+  <div class="dt-date-bar">
+    <button class="dt-date-nav" id="dtPrevDay" title="Предыдущий день">←</button>
+    <input type="date" id="dtDate" class="dt-date-input">
+    <button class="dt-date-nav" id="dtNextDay" title="Следующий день">→</button>
+    <button class="dt-today-btn" id="dtTodayBtn">Сегодня</button>
+  </div>
+
+  <div class="dt-status" id="dtStatus"></div>
+
+  <!-- Форма добавления -->
+  <div class="dt-add-form">
+    <div class="dt-add-title">➕ Новая задача</div>
+    <div class="dt-add-row">
+      <input type="text" id="dtInput" class="dt-add-input" placeholder="Введите текст задачи и нажмите Enter или ➕..." autocomplete="off">
+      <input type="time" id="dtTime" class="dt-add-time" title="Время (опционально)">
+      <button class="dt-add-btn" id="dtAddBtn" title="Добавить задачу">➕</button>
+    </div>
+    <div class="dt-add-hint">Enter — добавить · Esc — очистить</div>
+  </div>
+
+  <!-- Список задач -->
+  <div class="dt-list" id="dtList">
+    <div class="dt-loading">Загрузка задач...</div>
+  </div>
+</div>
+
+<style>
+.dt-page { font-family: inherit; }
+.dt-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 16px; }
+.dt-title { font-size: 28px; font-weight: 800; color: #fafafa; margin: 0; }
+.dt-subtitle { font-size: 14px; color: #71717a; margin-top: 4px; }
+.dt-stats { display: flex; gap: 10px; }
+.dt-stat { background: #18181b; border: 1.5px solid #27272a; border-radius: 12px; padding: 10px 16px; text-align: center; min-width: 80px; }
+.dt-stat-label { font-size: 10px; color: #71717a; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; font-weight: 600; }
+.dt-stat-value { font-size: 22px; font-weight: 800; }
+.dt-stat-value.blue { color: #818cf8; }
+.dt-stat-value.green { color: #4ade80; }
+.dt-stat-value.orange { color: #fb923c; }
+
+.dt-date-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+.dt-date-nav {
+  width: 38px; height: 38px; border-radius: 10px; background: #18181b; border: 1.5px solid #27272a;
+  color: #fafafa; cursor: pointer; font-size: 16px; font-family: inherit; transition: all 0.15s; flex-shrink: 0;
+}
+.dt-date-nav:hover { background: #27272a; border-color: #3f3f46; }
+.dt-date-input {
+  flex: 1; max-width: 250px; padding: 10px 14px; background: #18181b; border: 1.5px solid #27272a;
+  border-radius: 10px; color: #fafafa; font-size: 15px; font-family: inherit; outline: none;
+}
+.dt-date-input:focus { border-color: #3b82f6; }
+.dt-today-btn {
+  padding: 10px 16px; background: #1e3a8a; border: 1.5px solid #3b82f6; color: #93c5fd;
+  border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s;
+}
+.dt-today-btn:hover { background: #3b82f6; color: #0a0a0a; }
+
+.dt-status { display: none; padding: 12px 16px; border-radius: 10px; margin-bottom: 12px; font-size: 14px; }
+.dt-status.show { display: block; }
+.dt-status.loading { background: #1e293b; color: #93c5fd; }
+.dt-status.error { background: #7f1d1d; color: #fca5a5; }
+.dt-status.success { background: #14241a; color: #4ade80; }
+
+.dt-add-form { background: #18181b; border: 1.5px solid #27272a; border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+.dt-add-title { font-size: 13px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+.dt-add-row { display: flex; gap: 8px; align-items: stretch; flex-wrap: wrap; }
+.dt-add-input {
+  flex: 1; min-width: 200px; padding: 12px 14px; background: #0a0a0a; border: 1.5px solid #3f3f46; border-radius: 10px;
+  color: #fafafa; font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.2s;
+}
+.dt-add-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+.dt-add-input::placeholder { color: #52525b; }
+.dt-add-time {
+  padding: 12px 14px; background: #0a0a0a; border: 1.5px solid #3f3f46; border-radius: 10px;
+  color: #fafafa; font-size: 15px; font-family: inherit; outline: none; width: 110px;
+}
+.dt-add-time:focus { border-color: #3b82f6; }
+.dt-add-btn {
+  width: 48px; background: #3b82f6; color: #0a0a0a; border: none; border-radius: 10px;
+  font-size: 20px; cursor: pointer; font-family: inherit; transition: all 0.2s; flex-shrink: 0;
+}
+.dt-add-btn:hover { background: #2563eb; box-shadow: 0 0 12px rgba(59,130,246,0.3); }
+.dt-add-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.dt-add-hint { font-size: 11px; color: #52525b; margin-top: 8px; }
+
+.dt-list { display: flex; flex-direction: column; gap: 6px; }
+.dt-loading { text-align: center; padding: 30px; color: #71717a; }
+.dt-empty { text-align: center; padding: 40px 20px; color: #52525b; }
+.dt-empty-icon { font-size: 40px; margin-bottom: 8px; opacity: 0.5; }
+
+.dt-item {
+  display: flex; align-items: center; gap: 12px; background: #18181b; border: 1.5px solid #27272a;
+  border-radius: 12px; padding: 14px 16px; transition: all 0.15s;
+}
+.dt-item:hover { border-color: #3f3f46; }
+.dt-item.done { opacity: 0.55; }
+.dt-item.done .dt-item-text { text-decoration: line-through; color: #71717a; }
+
+.dt-check {
+  width: 24px; height: 24px; border-radius: 8px; border: 2px solid #3f3f46; background: #0a0a0a;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; flex-shrink: 0;
+}
+.dt-check:hover { border-color: #22c55e; }
+.dt-item.done .dt-check { background: #22c55e; border-color: #22c55e; }
+.dt-check-mark { color: #0a0a0a; font-size: 14px; font-weight: 900; display: none; }
+.dt-item.done .dt-check-mark { display: block; }
+
+.dt-item-body { flex: 1; min-width: 0; }
+.dt-item-text { font-size: 15px; color: #fafafa; font-weight: 500; word-wrap: break-word; }
+.dt-item-time {
+  display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: #3b82f6;
+  background: #1e3a8a; padding: 3px 8px; border-radius: 6px; margin-top: 4px; width: fit-content;
+}
+.dt-item-time.hidden { display: none; }
+
+.dt-item-delete {
+  background: transparent; border: 1px solid #27272a; color: #71717a; cursor: pointer;
+  font-size: 16px; padding: 6px 10px; border-radius: 8px; transition: all 0.15s; flex-shrink: 0;
+}
+.dt-item-delete:hover { background: #7f1d1d; border-color: #dc2626; color: #fca5a5; }
+
+@media (max-width: 600px) {
+  .dt-stats { width: 100%; }
+  .dt-stat { flex: 1; }
+  .dt-date-input { max-width: none; }
+}
+</style>
+
+<script>
+(function() {
+  var tasks = [];
+  var currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+  function $(id) { return document.getElementById(id); }
+  function showStatus(msg, type) { var s = $('dtStatus'); s.textContent = msg; s.className = 'dt-status show ' + type; }
+  function hideStatus() { $('dtStatus').className = 'dt-status'; }
+  function escapeHtml(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; }
+  function getHeaders(extra) { var h = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }; for (var k in extra) h[k] = extra[k]; return h; }
+
+  function formatDateRu(dateStr) {
+    var d = new Date(dateStr + 'T00:00:00');
+    var months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+    return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+  }
+
+  function isToday(dateStr) {
+    return dateStr === new Date().toISOString().split('T')[0];
+  }
+
+  function updateSubtitle() {
+    var sub = $('dtSubtitle');
+    if (isToday(currentDate)) {
+      sub.textContent = 'Сегодня · ' + formatDateRu(currentDate);
+    } else {
+      sub.textContent = formatDateRu(currentDate);
+    }
+  }
+
+  function loadTasks() {
+    showStatus('Загрузка задач...', 'loading');
+    var url = SUPABASE_URL + '/rest/v1/daily_tasks?task_date=eq.' + currentDate + '&select=*&order=sort_order.asc,created_at.asc';
+    fetch(url, { headers: getHeaders() })
+      .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function(data) {
+        tasks = data || [];
+        hideStatus();
+        updateStats();
+        renderList();
+      })
+      .catch(function(e) {
+        showStatus('Ошибка: ' + e.message, 'error');
+        $('dtList').innerHTML = '<div class="dt-empty"><div class="dt-empty-icon">⚠️</div>Не удалось загрузить задачи</div>';
+      });
+  }
+
+  function updateStats() {
+    var total = tasks.length;
+    var done = 0;
+    for (var i = 0; i < tasks.length; i++) { if (tasks[i].is_done) done++; }
+    $('dtTotal').textContent = total;
+    $('dtDone').textContent = done;
+    $('dtLeft').textContent = total - done;
+  }
+
+  function renderList() {
+    var list = $('dtList');
+    if (!tasks.length) {
+      list.innerHTML = '<div class="dt-empty"><div class="dt-empty-icon">📝</div>Задач на этот день нет.<br>Добавьте первую через форму выше!</div>';
+      return;
+    }
+
+    var html = '';
+    for (var i = 0; i < tasks.length; i++) {
+      var t = tasks[i];
+      var doneClass = t.is_done ? ' done' : '';
+      var time = t.task_time || '';
+      var timeClass = time ? '' : ' hidden';
+
+      html += '<div class="dt-item' + doneClass + '" data-id="' + t.id + '">';
+      html += '  <div class="dt-check" onclick="window.dtToggle(' + t.id + ')"><span class="dt-check-mark">✓</span></div>';
+      html += '  <div class="dt-item-body">';
+      html += '    <div class="dt-item-text">' + escapeHtml(t.task_text) + '</div>';
+      html += '    <div class="dt-item-time' + timeClass + '">🕐 ' + escapeHtml(time) + '</div>';
+      html += '  </div>';
+      html += '  <button class="dt-item-delete" onclick="window.dtDelete(' + t.id + ')" title="Удалить">🗑️</button>';
+      html += '</div>';
+    }
+    list.innerHTML = html;
+  }
+
+  function addTask() {
+    var text = $('dtInput').value.trim();
+    if (!text) { $('dtInput').focus(); return; }
+    var time = $('dtTime').value || null;
+
+    showStatus('Добавляем...', 'loading');
+    fetch(SUPABASE_URL + '/rest/v1/daily_tasks', {
+      method: 'POST',
+      headers: getHeaders({'Content-Type':'application/json','Prefer':'return=minimal'}),
+      body: JSON.stringify({
+        task_date: currentDate,
+        task_text: text,
+        task_time: time,
+        is_done: false,
+        sort_order: tasks.length
+      })
+    })
+      .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        $('dtInput').value = '';
+        $('dtTime').value = '';
+        loadTasks();
+        showStatus('✅ Задача добавлена', 'success');
+        setTimeout(hideStatus, 1500);
+        $('dtInput').focus();
+      })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); });
+  }
+
+  function toggleTask(id) {
+    var task = null;
+    for (var i = 0; i < tasks.length; i++) { if (tasks[i].id === id) { task = tasks[i]; break; } }
+    if (!task) return;
+    var newDone = !task.is_done;
+
+    fetch(SUPABASE_URL + '/rest/v1/daily_tasks?id=eq.' + id, {
+      method: 'PATCH',
+      headers: getHeaders({'Content-Type':'application/json','Prefer':'return=minimal'}),
+      body: JSON.stringify({ is_done: newDone })
+    })
+      .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        task.is_done = newDone;
+        // Обновить визуал без полной перезагрузки
+        var item = document.querySelector('.dt-item[data-id="' + id + '"]');
+        if (item) {
+          if (newDone) item.classList.add('done');
+          else item.classList.remove('done');
+        }
+        updateStats();
+      })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); });
+  }
+
+  function deleteTask(id) {
+    if (!confirm('Удалить задачу?')) return;
+    showStatus('Удаляем...', 'loading');
+    fetch(SUPABASE_URL + '/rest/v1/daily_tasks?id=eq.' + id, { method: 'DELETE', headers: getHeaders() })
+      .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        loadTasks();
+        showStatus('✅ Удалено', 'success');
+        setTimeout(hideStatus, 1500);
+      })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); loadTasks(); });
+  }
+
+  function changeDate(delta) {
+    var d = new Date(currentDate + 'T00:00:00');
+    d.setDate(d.getDate() + delta);
+    currentDate = d.toISOString().split('T')[0];
+    $('dtDate').value = currentDate;
+    updateSubtitle();
+    loadTasks();
+  }
+
+  function goToday() {
+    currentDate = new Date().toISOString().split('T')[0];
+    $('dtDate').value = currentDate;
+    updateSubtitle();
+    loadTasks();
+  }
+
+  // Глобальные функции
+  window.dtToggle = toggleTask;
+  window.dtDelete = deleteTask;
+
+  // Инициализация
+  $('dtDate').value = currentDate;
+  updateSubtitle();
+
+  // События
+  $('dtAddBtn').addEventListener('click', addTask);
+  $('dtInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); addTask(); }
+    if (e.key === 'Escape') { $('dtInput').value = ''; $('dtTime').value = ''; }
+  });
+  $('dtPrevDay').addEventListener('click', function() { changeDate(-1); });
+  $('dtNextDay').addEventListener('click', function() { changeDate(1); });
+  $('dtTodayBtn').addEventListener('click', goToday);
+  $('dtDate').addEventListener('change', function() {
+    currentDate = $('dtDate').value || new Date().toISOString().split('T')[0];
+    updateSubtitle();
+    loadTasks();
+  });
+
+  loadTasks();
+})();
+</script>

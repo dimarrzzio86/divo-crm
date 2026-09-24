@@ -1,0 +1,492 @@
+<!-- Раздел: Склад (админка) -->
+<!-- Уровень: 4 (админ+) -->
+
+<div class="awh-page">
+  <div class="awh-header">
+    <div>
+      <h1 class="awh-title">📦 Склад</h1>
+      <div class="awh-subtitle">Управление остатками • 🔍 = в недельной сверке</div>
+    </div>
+    <div class="awh-stats" id="awhStats">
+      <div class="awh-stat">
+        <div class="awh-stat-label">Всего</div>
+        <div class="awh-stat-value blue" id="awhTotal">—</div>
+      </div>
+      <div class="awh-stat">
+        <div class="awh-stat-label">Заканчив.</div>
+        <div class="awh-stat-value" style="color:#f59e0b" id="awhMid">—</div>
+      </div>
+      <div class="awh-stat">
+        <div class="awh-stat-label">Критично</div>
+        <div class="awh-stat-value red" id="awhLow">—</div>
+      </div>
+      <div class="awh-stat">
+        <div class="awh-stat-label">В сверке</div>
+        <div class="awh-stat-value" style="color:#818cf8" id="awhAudit">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Форма добавления -->
+  <div class="awh-add-form">
+    <div class="awh-form-title">➕ Добавить товар</div>
+    <div class="awh-form-row">
+      <div class="awh-field awh-field-name">
+        <label>Наименование</label>
+        <input type="text" id="whInpName" placeholder="Название товара..." autocomplete="off">
+      </div>
+      <div class="awh-field">
+        <label>Количество</label>
+        <input type="number" id="whInpQty" placeholder="0" step="0.01">
+      </div>
+      <div class="awh-field">
+        <label>Сред. мин.</label>
+        <input type="number" id="whInpMid" placeholder="0" step="0.01">
+      </div>
+      <div class="awh-field">
+        <label>Минимум</label>
+        <input type="number" id="whInpMin" placeholder="0" step="0.01">
+      </div>
+      <button class="awh-add-btn" id="whAddBtn">+ Добавить</button>
+    </div>
+  </div>
+
+  <div class="awh-status" id="whStatus"></div>
+
+  <div class="awh-search-wrap">
+    <span class="awh-search-icon">🔍</span>
+    <input type="text" id="whSearch" class="awh-search-input" placeholder="Поиск по названию...">
+  </div>
+
+  <div class="awh-table-wrap">
+    <table class="awh-table">
+      <thead>
+        <tr>
+          <th style="width:50px">№</th>
+          <th>Наименование</th>
+          <th style="text-align:right;width:120px">Кол-во</th>
+          <th style="text-align:right;width:100px">Сред. мин.</th>
+          <th style="text-align:right;width:100px">Минимум</th>
+          <th style="text-align:center;width:80px">Сверка</th>
+          <th style="text-align:center;width:110px">Действия</th>
+        </tr>
+      </thead>
+      <tbody id="whTableBody">
+        <tr><td colspan="7" class="awh-empty">Загрузка...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Модалка редактирования -->
+<div class="awh-modal-overlay" id="whEditModal" style="display:none;">
+  <div class="awh-modal-box">
+    <div class="awh-modal-title">✏️ Редактирование товара</div>
+    <div class="awh-modal-field">
+      <label class="awh-modal-label">Наименование</label>
+      <input type="text" id="whEditName" class="awh-modal-input">
+    </div>
+    <div class="awh-modal-grid">
+      <div class="awh-modal-field">
+        <label class="awh-modal-label">Количество</label>
+        <input type="number" id="whEditQty" class="awh-modal-input" step="0.01">
+      </div>
+      <div class="awh-modal-field">
+        <label class="awh-modal-label">Средний минимум</label>
+        <input type="number" id="whEditMid" class="awh-modal-input" step="0.01">
+      </div>
+    </div>
+    <div class="awh-modal-field">
+      <label class="awh-modal-label">Минимум (критический)</label>
+      <input type="number" id="whEditMin" class="awh-modal-input" step="0.01">
+    </div>
+    <div class="awh-modal-field">
+      <label class="awh-modal-label">
+        <input type="checkbox" id="whEditAudit" style="margin-right:8px;vertical-align:middle">
+        Показывать в недельной сверке
+      </label>
+    </div>
+    <div class="awh-modal-buttons">
+      <button class="awh-modal-btn cancel" id="whEditCancel">Отмена</button>
+      <button class="awh-modal-btn save" id="whEditSave">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.awh-page { font-family: inherit; }
+.awh-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.awh-title { font-size: 28px; font-weight: 800; color: #fafafa; margin: 0; line-height: 1.2; }
+.awh-subtitle { font-size: 14px; color: #71717a; margin-top: 4px; }
+.awh-stats { display: flex; gap: 10px; flex-wrap: wrap; }
+.awh-stat {
+  background: #18181b;
+  border: 1.5px solid #27272a;
+  border-radius: 12px;
+  padding: 12px 18px;
+  text-align: center;
+  min-width: 90px;
+}
+.awh-stat-label { font-size: 11px; color: #71717a; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: 600; }
+.awh-stat-value { font-size: 22px; font-weight: 800; color: #fafafa; }
+.awh-stat-value.blue { color: #818cf8; }
+.awh-stat-value.red { color: #ef4444; }
+
+.awh-add-form { background: #18181b; border: 1.5px solid #27272a; border-radius: 14px; padding: 20px; margin-bottom: 16px; }
+.awh-form-title { font-size: 14px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
+.awh-form-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 12px; align-items: end; }
+.awh-field { display: flex; flex-direction: column; gap: 6px; }
+.awh-field label { font-size: 11px; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+.awh-field input {
+  padding: 11px 14px;
+  background: #0a0a0a;
+  border: 1.5px solid #3f3f46;
+  border-radius: 10px;
+  color: #fafafa;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+.awh-field input:focus { border-color: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,0.1); }
+.awh-field input::placeholder { color: #52525b; }
+.awh-add-btn {
+  padding: 11px 24px;
+  background: #22c55e;
+  color: #0a0a0a;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+.awh-add-btn:hover { background: #16a34a; box-shadow: 0 0 12px rgba(34,197,94,0.3); }
+.awh-add-btn:active { transform: scale(0.97); }
+
+.awh-status { display: none; padding: 12px 16px; border-radius: 10px; margin-bottom: 12px; font-size: 14px; font-weight: 500; }
+.awh-status.show { display: block; }
+.awh-status.loading { background: #1e293b; color: #93c5fd; border: 1px solid #312e81; }
+.awh-status.error { background: #7f1d1d; color: #fca5a5; border: 1px solid #991b1b; }
+.awh-status.success { background: #14241a; color: #4ade80; border: 1px solid #22c55e; }
+
+.awh-search-wrap { position: relative; margin-bottom: 16px; }
+.awh-search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; pointer-events: none; }
+.awh-search-input {
+  width: 100%;
+  padding: 12px 14px 12px 42px;
+  background: #0a0a0a;
+  border: 1.5px solid #3f3f46;
+  border-radius: 10px;
+  color: #fafafa;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+.awh-search-input:focus { border-color: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,0.1); }
+.awh-search-input::placeholder { color: #52525b; }
+
+.awh-table-wrap { overflow-x: auto; border-radius: 14px; border: 1.5px solid #27272a; background: #18181b; }
+.awh-table { width: 100%; border-collapse: collapse; min-width: 800px; }
+.awh-table thead { background: #0a0a0a; }
+.awh-table th { text-align: left; padding: 14px 16px; font-size: 11px; color: #71717a; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; border-bottom: 1.5px solid #27272a; }
+.awh-table td { padding: 14px 16px; font-size: 14px; color: #e4e4e7; border-bottom: 1px solid #27272a; vertical-align: middle; }
+.awh-table tr:last-child td { border-bottom: none; }
+.awh-table tbody tr:hover { background: #1f1f23; }
+
+.awh-row-low { background: #7f1d1d; }
+.awh-row-low:hover { background: #4c0505 !important; }
+.awh-row-mid { background: #78350f; }
+.awh-row-mid:hover { background: #422006 !important; }
+.awh-qty { font-weight: 700; }
+.awh-qty-low { color: #fca5a5; }
+.awh-qty-mid { color: #fcd34d; }
+.awh-qty-ok { color: #4ade80; }
+
+.awh-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+.awh-badge-low { background: #450a0a; color: #fecaca; }
+.awh-badge-mid { background: #451a03; color: #fde68a; }
+.awh-badge-ok { background: #14532d; color: #4ade80; }
+
+.awh-actions { display: flex; gap: 6px; align-items: center; justify-content: center; }
+.awh-action-btn { background: #27272a; border: 1.5px solid #3f3f46; cursor: pointer; font-size: 16px; padding: 6px 10px; border-radius: 8px; transition: all 0.15s; line-height: 1; font-family: inherit; }
+.awh-action-btn.edit { color: #818cf8; }
+.awh-action-btn.edit:hover { background: #1e1b4b; border-color: #6366f1; }
+.awh-action-btn.danger { color: #ef4444; }
+.awh-action-btn.danger:hover { background: #7f1d1d; border-color: #dc2626; }
+
+/* Чекбокс сверки */
+.awh-audit-toggle {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  cursor: pointer;
+  vertical-align: middle;
+}
+.awh-audit-toggle input { opacity: 0; width: 0; height: 0; }
+.awh-audit-slider {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: #3f3f46;
+  border-radius: 24px;
+  transition: 0.2s;
+}
+.awh-audit-slider:before {
+  content: "";
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background: #fafafa;
+  border-radius: 50%;
+  transition: 0.2s;
+}
+.awh-audit-toggle input:checked + .awh-audit-slider { background: #22c55e; }
+.awh-audit-toggle input:checked + .awh-audit-slider:before { transform: translateX(20px); }
+.awh-audit-toggle:hover .awh-audit-slider { box-shadow: 0 0 0 3px rgba(34,197,94,0.15); }
+
+.awh-empty { text-align: center; padding: 40px 20px; color: #71717a; font-size: 15px; }
+
+.awh-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 999; padding: 16px; }
+.awh-modal-box { background: #18181b; border: 2px solid #22c55e; border-radius: 16px; padding: 28px; max-width: 480px; width: 100%; box-shadow: 0 0 40px rgba(34,197,94,0.2); max-height: 90vh; overflow-y: auto; animation: awhSlide 0.2s ease-out; }
+@keyframes awhSlide { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.awh-modal-title { font-size: 20px; font-weight: 700; color: #fafafa; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+.awh-modal-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.awh-modal-label { font-size: 11px; color: #71717a; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; cursor: pointer; }
+.awh-modal-input { width: 100%; padding: 12px 14px; border: 1.5px solid #3f3f46; border-radius: 10px; font-size: 15px; box-sizing: border-box; background: #0a0a0a; color: #fafafa; font-family: inherit; outline: none; transition: border-color 0.2s; }
+.awh-modal-input:focus { border-color: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,0.1); }
+.awh-modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.awh-modal-buttons { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.awh-modal-btn { padding: 12px 24px; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; font-family: inherit; }
+.awh-modal-btn.cancel { background: #27272a; color: #a1a1aa; }
+.awh-modal-btn.cancel:hover { background: #3f3f46; color: #fafafa; }
+.awh-modal-btn.save { background: #22c55e; color: #0a0a0a; }
+.awh-modal-btn.save:hover { background: #16a34a; }
+
+@media (max-width: 800px) {
+  .awh-form-row { grid-template-columns: 1fr 1fr; }
+  .awh-field-name { grid-column: 1 / -1; }
+  .awh-add-btn { grid-column: 1 / -1; padding: 12px; }
+  .awh-modal-grid { grid-template-columns: 1fr; }
+  .awh-stats { width: 100%; }
+  .awh-stat { flex: 1; min-width: 0; }
+  .awh-header { flex-direction: column; align-items: flex-start; }
+}
+</style>
+
+<script>
+(function() {
+  var items = [];
+  var filtered = [];
+  var pendingEditId = null;
+  var hasAuditColumn = true;
+
+  function $(id) { return document.getElementById(id); }
+  function showStatus(msg, type) { var s = $('whStatus'); s.textContent = msg; s.className = 'awh-status show ' + type; }
+  function hideStatus() { $('whStatus').className = 'awh-status'; }
+  function escapeHtml(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; }
+  function formatQty(n) { n = Number(n||0); if (n % 1 === 0) return String(n); return n.toFixed(2).replace(/\.?0+$/, ''); }
+  function getHeaders(extra) { var h = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }; for (var k in extra) h[k] = extra[k]; return h; }
+
+  function getStockLevel(item) {
+    var qty = Number(item.quantity || 0);
+    var min = Number(item.minimum || 0);
+    var mid = Number(item.middle_minimum || 0);
+    if (min > 0 && qty <= min) return 'low';
+    if (mid > 0 && qty <= mid) return 'mid';
+    return 'ok';
+  }
+
+  function getLevelText(level) {
+    if (level === 'low') return '🔴 Критично';
+    if (level === 'mid') return '🟠 Заканчив.';
+    return '🟢 Норма';
+  }
+
+  function loadData() {
+    showStatus('Загрузка склада...', 'loading');
+    // Запрашиваем с show_in_audit, если колонка есть
+    var selectCols = hasAuditColumn ? '*' : 'id,name,quantity,minimum,middle_minimum,created_at';
+    fetch(SUPABASE_URL + '/rest/v1/warehouse?select=' + selectCols + '&order=name.asc', { method: 'GET', headers: getHeaders() })
+      .then(function(r) {
+        if (!r.ok) {
+          // Возможно колонки show_in_audit нет — попробуем без неё
+          if (hasAuditColumn && r.status === 400) {
+            hasAuditColumn = false;
+            return fetch(SUPABASE_URL + '/rest/v1/warehouse?select=id,name,quantity,minimum,middle_minimum,created_at&order=name.asc', { method: 'GET', headers: getHeaders() })
+              .then(function(r2) { if (!r2.ok) throw new Error('HTTP ' + r2.status); return r2.json(); });
+          }
+          throw new Error('HTTP ' + r.status);
+        }
+        return r.json();
+      })
+      .then(function(data) { items = data || []; filtered = items.slice(); hideStatus(); updateStats(); render(); })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); });
+  }
+
+  function updateStats() {
+    var mid = 0, low = 0, audit = 0;
+    for (var i = 0; i < filtered.length; i++) {
+      var lvl = getStockLevel(filtered[i]);
+      if (lvl === 'low') low++;
+      else if (lvl === 'mid') mid++;
+      if (filtered[i].show_in_audit) audit++;
+    }
+    $('awhTotal').textContent = filtered.length;
+    $('awhMid').textContent = mid;
+    $('awhLow').textContent = low;
+    $('awhAudit').textContent = audit;
+  }
+
+  function filterData(query) {
+    query = (query || '').toLowerCase().trim();
+    if (!query) { filtered = items.slice(); }
+    else { filtered = items.filter(function(e) { return (e.name||'').toLowerCase().indexOf(query) !== -1; }); }
+    updateStats(); render();
+  }
+
+  function render() {
+    var tbody = $('whTableBody');
+    if (!filtered.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="awh-empty">' + (items.length ? '🔍 Ничего не найдено' : '📦 Склад пуст. Добавьте первый товар!') + '</td></tr>';
+      return;
+    }
+    var html = '';
+    for (var i = 0; i < filtered.length; i++) {
+      var item = filtered[i];
+      var level = getStockLevel(item);
+      var rowClass = level === 'low' ? 'awh-row-low' : (level === 'mid' ? 'awh-row-mid' : '');
+      var qtyClass = 'awh-qty awh-qty-' + level;
+      var badgeClass = 'awh-badge awh-badge-' + level;
+      var auditChecked = item.show_in_audit ? 'checked' : '';
+      var auditDisabled = hasAuditColumn ? '' : 'disabled title="Колонка show_in_audit не найдена в БД"';
+
+      html += '<tr class="' + rowClass + '">';
+      html += '<td style="color:#52525b;text-align:center">' + (i+1) + '</td>';
+      html += '<td><div style="font-weight:600">' + escapeHtml(item.name) + '</div>';
+      html += '<div style="margin-top:4px"><span class="' + badgeClass + '">' + getLevelText(level) + '</span></div>';
+      html += '</td>';
+      html += '<td class="' + qtyClass + '" style="text-align:right;font-weight:700;white-space:nowrap;font-size:16px">' + escapeHtml(formatQty(item.quantity)) + '</td>';
+      html += '<td style="text-align:right;color:#a1a1aa;font-weight:600;white-space:nowrap">' + escapeHtml(formatQty(item.middle_minimum)) + '</td>';
+      html += '<td style="text-align:right;color:#a1a1aa;font-weight:600;white-space:nowrap">' + escapeHtml(formatQty(item.minimum)) + '</td>';
+      html += '<td style="text-align:center"><label class="awh-audit-toggle"><input type="checkbox" ' + auditChecked + ' ' + auditDisabled + ' onchange="window.whToggleAudit(' + item.id + ', this.checked)"><span class="awh-audit-slider"></span></label></td>';
+      html += '<td><div class="awh-actions">';
+      html += '<button class="awh-action-btn edit" onclick="window.whEdit(' + item.id + ')" title="Редактировать">✏️</button>';
+      html += '<button class="awh-action-btn danger" onclick="window.whDelete(' + item.id + ')" title="Удалить">🗑️</button>';
+      html += '</div></td>';
+      html += '</tr>';
+    }
+    tbody.innerHTML = html;
+  }
+
+  function addItem() {
+    var name = $('whInpName').value.trim();
+    var qty = parseFloat($('whInpQty').value);
+    var mid = parseFloat($('whInpMid').value);
+    var min = parseFloat($('whInpMin').value);
+    if (!name) { alert('Введите название товара!'); return; }
+    if (isNaN(qty)) qty = 0;
+    if (isNaN(mid)) mid = 0;
+    if (isNaN(min)) min = 0;
+    showStatus('Добавляем товар...', 'loading');
+    fetch(SUPABASE_URL + '/rest/v1/warehouse', { method: 'POST', headers: getHeaders({'Content-Type':'application/json','Prefer':'return=minimal'}), body: JSON.stringify({name:name,quantity:qty,middle_minimum:mid,minimum:min}) })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); $('whInpName').value=''; $('whInpQty').value=''; $('whInpMid').value=''; $('whInpMin').value=''; loadData(); showStatus('✅ Товар добавлен','success'); setTimeout(hideStatus,2000); })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); });
+  }
+
+  function deleteItem(id) {
+    if (!confirm('Удалить товар?')) return;
+    showStatus('Удаляем...', 'loading');
+    fetch(SUPABASE_URL + '/rest/v1/warehouse?id=eq.' + id, { method: 'DELETE', headers: getHeaders() })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); loadData(); showStatus('✅ Удалено','success'); setTimeout(hideStatus,2000); })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); loadData(); });
+  }
+
+  function toggleAudit(id, value) {
+    if (!hasAuditColumn) {
+      alert('Колонка show_in_audit не найдена в БД!\n\nНужно добавить её в Supabase Dashboard:\n1. Table Editor → warehouse\n2. New Column: name=show_in_audit, type=bool, default=false');
+      loadData();
+      return;
+    }
+    fetch(SUPABASE_URL + '/rest/v1/warehouse?id=eq.' + id, {
+      method: 'PATCH',
+      headers: getHeaders({'Content-Type':'application/json','Prefer':'return=minimal'}),
+      body: JSON.stringify({show_in_audit: value})
+    })
+      .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        loadData();
+      })
+      .catch(function(e) {
+        alert('Ошибка: ' + e.message);
+        loadData();
+      });
+  }
+
+  function openEdit(id) {
+    var item = null;
+    for (var i = 0; i < items.length; i++) { if (items[i].id === id) { item = items[i]; break; } }
+    if (!item) return;
+    pendingEditId = id;
+    $('whEditName').value = item.name;
+    $('whEditQty').value = item.quantity;
+    $('whEditMid').value = item.middle_minimum || 0;
+    $('whEditMin').value = item.minimum || 0;
+    $('whEditAudit').checked = !!item.show_in_audit;
+    $('whEditAudit').disabled = !hasAuditColumn;
+    $('whEditModal').style.display = 'flex';
+    setTimeout(function() { $('whEditName').focus(); }, 100);
+  }
+
+  function closeEdit() { $('whEditModal').style.display = 'none'; pendingEditId = null; }
+
+  function saveEdit() {
+    var name = $('whEditName').value.trim();
+    var qty = parseFloat($('whEditQty').value);
+    var mid = parseFloat($('whEditMid').value);
+    var min = parseFloat($('whEditMin').value);
+    var audit = $('whEditAudit').checked;
+    if (!name) { alert('Введите название!'); return; }
+    if (isNaN(qty)) qty = 0;
+    if (isNaN(mid)) mid = 0;
+    if (isNaN(min)) min = 0;
+    if (!pendingEditId) return;
+    var rowId = pendingEditId;
+    showStatus('Сохраняем...', 'loading'); closeEdit();
+    var body = {name:name,quantity:qty,middle_minimum:mid,minimum:min};
+    if (hasAuditColumn) body.show_in_audit = audit;
+    fetch(SUPABASE_URL + '/rest/v1/warehouse?id=eq.' + rowId, { method: 'PATCH', headers: getHeaders({'Content-Type':'application/json','Prefer':'return=minimal'}), body: JSON.stringify(body) })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); loadData(); showStatus('✅ Сохранено','success'); setTimeout(hideStatus,2000); })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); loadData(); });
+  }
+
+  window.whEdit = openEdit;
+  window.whDelete = deleteItem;
+  window.whToggleAudit = toggleAudit;
+
+  $('whAddBtn').addEventListener('click', addItem);
+  $('whInpName').addEventListener('keydown', function(e) { if (e.key === 'Enter') addItem(); });
+  $('whSearch').addEventListener('input', function() { var t; clearTimeout(t); t = setTimeout(function() { filterData($('whSearch').value); }, 300); });
+  $('whEditCancel').addEventListener('click', closeEdit);
+  $('whEditSave').addEventListener('click', saveEdit);
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && $('whEditModal').style.display === 'flex') closeEdit(); });
+
+  loadData();
+})();
+</script>
+ 

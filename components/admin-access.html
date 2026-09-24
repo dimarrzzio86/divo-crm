@@ -1,0 +1,528 @@
+<!-- Страница: Управление доступом к разделам -->
+<!-- Уровень: 5 (только владелец) -->
+
+<div class="divo-page-header">
+  <h1 class="divo-page-title">🔐 Доступы разделов</h1>
+  <button type="button" class="divo-btn-primary" id="divoSaveAccessBtn">
+    💾 Сохранить настройки
+  </button>
+</div>
+
+<div class="divo-access-info">
+  <div class="divo-access-info-icon">ℹ️</div>
+  <div class="divo-access-info-text">
+    Настрой минимальный уровень доступа для каждого раздела.
+    Пользователи с этим уровнем и выше увидят раздел в меню и смогут зайти на страницу.
+  </div>
+</div>
+
+<!-- Уровни — шпаргалка -->
+<div class="divo-levels-legend" id="divoLevelsLegend"></div>
+
+<!-- Таблица разделов -->
+<div class="divo-sections-table" id="divoSectionsTable">
+  <div class="divo-loading">Загрузка разделов...</div>
+</div>
+
+<!-- Сверки склада -->
+<div class="divo-audit-header" style="margin-top:32px;margin-bottom:16px;">
+  <h2 style="font-size:18px;font-weight:700;color:#fafafa;margin:0;display:flex;align-items:center;gap:8px;">
+    📦 Сверки склада
+  </h2>
+  <p style="font-size:13px;color:#71717a;margin:6px 0 0;">Настройте уровни доступа для кнопок сверки на странице склада</p>
+</div>
+<div class="divo-sections-table" id="divoReconciliationTable">
+  <div class="divo-loading">Загрузка сверки...</div>
+</div>
+
+<!-- Статус сохранения -->
+<div class="divo-save-status" id="divoSaveStatus"></div>
+
+<style>
+.divo-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.divo-page-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: #fafafa;
+}
+.divo-btn-primary {
+  background: #22c55e;
+  color: #0a0a0a;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.divo-btn-primary:hover { background: #16a34a; }
+.divo-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.divo-access-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #0c1a1a;
+  border: 1.5px solid #14532d;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+.divo-access-info-icon { font-size: 24px; flex-shrink: 0; }
+.divo-access-info-text {
+  font-size: 14px;
+  color: #86efac;
+  line-height: 1.5;
+}
+
+.divo-levels-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.divo-level-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1.5px solid;
+}
+
+.divo-sections-table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.divo-section-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #0a0a0a;
+  border: 1.5px solid #27272a;
+  border-radius: 12px;
+  padding: 14px 18px;
+  transition: all 0.2s;
+}
+.divo-section-row:hover {
+  border-color: #3f3f46;
+}
+.divo-section-row.changed {
+  border-color: #fbbf24;
+  background: #1a1605;
+}
+.divo-section-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+  width: 32px;
+  text-align: center;
+}
+.divo-section-name {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fafafa;
+}
+.divo-section-group {
+  font-size: 11px;
+  color: #71717a;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+}
+.divo-section-level-selector {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.divo-level-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1.5px solid #3f3f46;
+  background: #0a0a0a;
+  color: #71717a;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.divo-level-btn:hover {
+  border-color: #71717a;
+  color: #fafafa;
+}
+.divo-level-btn.active {
+  color: #0a0a0a;
+  font-weight: 800;
+}
+
+.divo-save-status {
+  display: none;
+  margin-top: 16px;
+  padding: 14px 18px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+.divo-save-status.show { display: block; }
+.divo-save-status.success {
+  background: #14241a;
+  color: #4ade80;
+  border: 1.5px solid #22c55e;
+}
+.divo-save-status.error {
+  background: #7f1d1d;
+  color: #fca5a5;
+}
+.divo-save-status.saving {
+  background: #1e293b;
+  color: #93c5fd;
+}
+
+.divo-loading {
+  text-align: center;
+  padding: 40px;
+  color: #71717a;
+}
+
+@media (max-width: 600px) {
+  .divo-section-row {
+    flex-wrap: wrap;
+  }
+  .divo-section-level-selector {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+</style>
+
+<script>
+// Локальная копия конфига (для редактирования)
+var divoEditConfig = null;
+var divoChangedSections = {};
+
+function divoRenderAccessPage() {
+  // Рендерим шпаргалку уровней
+  var legendEl = document.getElementById('divoLevelsLegend');
+  if (legendEl) {
+    var levels = divoGetLevels();
+    var html = '';
+    for (var i = 0; i < levels.length; i++) {
+      var lv = levels[i];
+      html += '<span class="divo-level-chip" style="border-color:' + lv.color + '; color:' + lv.color + '; background:' + lv.color + '15;">' + lv.icon + ' Ур.' + lv.level + '</span>';
+    }
+    legendEl.innerHTML = html;
+  }
+
+  // Рендерим таблицу разделов
+  var tableEl = document.getElementById('divoSectionsTable');
+  if (!tableEl) return;
+
+  var sections = divoGetAllSections();
+  var levels = divoGetLevels();
+
+  // Делаем копию для редактирования
+  divoEditConfig = JSON.parse(JSON.stringify(sections));
+  divoChangedSections = {};
+
+  var sectionsArr = [];
+  for (var id in sections) {
+    var s = sections[id];
+    s.id = id;
+    sectionsArr.push(s);
+  }
+  // Сортируем: сначала main, потом admin
+  sectionsArr.sort(function(a, b) {
+    if (a.group !== b.group) {
+      return a.group === 'main' ? -1 : 1;
+    }
+    return a.level - b.level;
+  });
+
+  var html = '';
+  for (var i = 0; i < sectionsArr.length; i++) {
+    var s = sectionsArr[i];
+    var groupName = s.group === 'admin' ? 'Админка' : 'Главная';
+
+    html += '<div class="divo-section-row" data-section="' + s.id + '">';
+    html += '  <div class="divo-section-icon">' + s.icon + '</div>';
+    html += '  <div class="divo-section-name">';
+    html += '    <div class="divo-section-group">' + groupName + '</div>';
+    html += '    ' + s.name;
+    html += '  </div>';
+    html += '  <div class="divo-section-level-selector">';
+
+    // Кнопки 1-5
+    for (var j = levels.length - 1; j >= 0; j--) {
+      var lv = levels[j];
+      var active = (s.level === lv.level) ? 'active' : '';
+      var style = active ? 'style="background:' + lv.color + '; border-color:' + lv.color + ';"' : '';
+      html += '<button class="divo-level-btn ' + active + '" data-level="' + lv.level + '" data-section="' + s.id + '" onclick="divoSelectSectionLevel(\'' + s.id + '\', ' + lv.level + ')" ' + style + '>' + lv.level + '</button>';
+    }
+
+    html += '  </div>';
+    html += '</div>';
+  }
+
+  tableEl.innerHTML = html;
+
+  // Рендерим таблицу сверки склада
+  divoRenderReconciliation();
+}
+
+// === РЕНДЕР СВЕРОК СКЛАДА ===
+var divoEditReconciliation = null;
+var divoChangedReconciliation = {};
+
+function divoRenderReconciliation() {
+  var tableEl = document.getElementById('divoReconciliationTable');
+  if (!tableEl) return;
+
+  var reconciliation = divoGetAllReconciliation();
+  var levels = divoGetLevels();
+
+  // Копия для редактирования
+  divoEditReconciliation = JSON.parse(JSON.stringify(reconciliation));
+  divoChangedReconciliation = {};
+
+  var reconArr = [];
+  for (var id in reconciliation) {
+    var r = reconciliation[id];
+    r.id = id;
+    reconArr.push(r);
+  }
+
+  var html = '';
+  for (var i = 0; i < reconArr.length; i++) {
+    var r = reconArr[i];
+    html += '<div class="divo-section-row" data-reconciliation="' + r.id + '">';
+    html += '  <div class="divo-section-icon">' + (r.icon || '📊') + '</div>';
+    html += '  <div class="divo-section-name">';
+    html += '    <div class="divo-section-group">Сверка склада</div>';
+    html += '    ' + r.name;
+    if (r.desc) html += ' <span style="font-size:12px;color:#71717a;font-weight:400">— ' + r.desc + '</span>';
+    html += '  </div>';
+    html += '  <div class="divo-section-level-selector">';
+    for (var j = levels.length - 1; j >= 0; j--) {
+      var lv = levels[j];
+      var active = (r.level === lv.level) ? 'active' : '';
+      var style = active ? 'style="background:' + lv.color + '; border-color:' + lv.color + ';"' : '';
+      html += '<button class="divo-level-btn ' + active + '" data-level="' + lv.level + '" data-reconciliation="' + r.id + '" onclick="divoSelectReconciliationLevel(\'' + r.id + '\', ' + lv.level + ')" ' + style + '>' + lv.level + '</button>';
+    }
+    html += '  </div>';
+    html += '</div>';
+  }
+
+  tableEl.innerHTML = html;
+}
+
+function divoSelectReconciliationLevel(reconId, level) {
+  if (!divoEditReconciliation || !divoEditReconciliation[reconId]) return;
+
+  var oldLevel = divoEditReconciliation[reconId].level;
+  divoEditReconciliation[reconId].level = level;
+
+  var row = document.querySelector('.divo-section-row[data-reconciliation="' + reconId + '"]');
+  if (row) {
+    var btns = row.querySelectorAll('.divo-level-btn');
+    for (var i = 0; i < btns.length; i++) {
+      var btnLevel = parseInt(btns[i].getAttribute('data-level'), 10);
+      if (btnLevel === level) {
+        btns[i].classList.add('active');
+        var lvInfo = divoGetLevels().find(function(l) { return l.level === btnLevel; });
+        if (lvInfo) {
+          btns[i].style.background = lvInfo.color;
+          btns[i].style.borderColor = lvInfo.color;
+        }
+      } else {
+        btns[i].classList.remove('active');
+        btns[i].style.background = '';
+        btns[i].style.borderColor = '';
+      }
+    }
+    if (oldLevel !== level) {
+      row.classList.add('changed');
+      divoChangedReconciliation[reconId] = true;
+    } else {
+      row.classList.remove('changed');
+      delete divoChangedReconciliation[reconId];
+    }
+  }
+
+  var saveBtn = document.getElementById('divoSaveAccessBtn');
+  if (saveBtn) {
+    var changedCount = Object.keys(divoChangedSections).length + Object.keys(divoChangedReconciliation).length;
+    if (changedCount > 0) {
+      saveBtn.textContent = '💾 Сохранить (' + changedCount + ')';
+      saveBtn.style.animation = 'pulse 1.5s infinite';
+    } else {
+      saveBtn.textContent = '💾 Сохранить настройки';
+      saveBtn.style.animation = '';
+    }
+  }
+}
+
+function divoSelectSectionLevel(sectionId, level) {
+  if (!divoEditConfig || !divoEditConfig[sectionId]) return;
+
+  var oldLevel = divoEditConfig[sectionId].level;
+  divoEditConfig[sectionId].level = level;
+
+  // Обновляем кнопки
+  var row = document.querySelector('.divo-section-row[data-section="' + sectionId + '"]');
+  if (row) {
+    var btns = row.querySelectorAll('.divo-level-btn');
+    for (var i = 0; i < btns.length; i++) {
+      var btnLevel = parseInt(btns[i].getAttribute('data-level'), 10);
+      if (btnLevel === level) {
+        btns[i].classList.add('active');
+        var lvInfo = divoGetLevels().find(function(l) { return l.level === btnLevel; });
+        if (lvInfo) {
+          btns[i].style.background = lvInfo.color;
+          btns[i].style.borderColor = lvInfo.color;
+        }
+      } else {
+        btns[i].classList.remove('active');
+        btns[i].style.background = '';
+        btns[i].style.borderColor = '';
+      }
+    }
+
+    // Помечаем как изменённый
+    if (oldLevel !== level) {
+      row.classList.add('changed');
+      divoChangedSections[sectionId] = true;
+    } else {
+      row.classList.remove('changed');
+      delete divoChangedSections[sectionId];
+    }
+  }
+
+  // Обновляем кнопку сохранения
+  var saveBtn = document.getElementById('divoSaveAccessBtn');
+  if (saveBtn) {
+    var changedCount = Object.keys(divoChangedSections).length;
+    if (changedCount > 0) {
+      saveBtn.textContent = '💾 Сохранить (' + changedCount + ')';
+      saveBtn.style.animation = 'pulse 1.5s infinite';
+    } else {
+      saveBtn.textContent = '💾 Сохранить настройки';
+      saveBtn.style.animation = '';
+    }
+  }
+}
+
+function divoSaveAccessConfig() {
+  var changedCount = Object.keys(divoChangedSections).length + Object.keys(divoChangedReconciliation).length;
+  if (changedCount === 0) {
+    divoShowSaveStatus('Нет изменений для сохранения', 'success');
+    return;
+  }
+
+  var saveBtn = document.getElementById('divoSaveAccessBtn');
+  if (saveBtn) saveBtn.disabled = true;
+
+  divoShowSaveStatus('Сохранение...', 'saving');
+
+  // Готовим данные для сохранения
+  var sectionsData = {};
+  for (var id in divoEditConfig) {
+    sectionsData[id] = divoEditConfig[id];
+  }
+
+  // TODO: Когда будет бэкенд — тут будет fetch POST к API
+  // Пока: показываем что изменилось и предлагаем скачать файл
+
+  var changesList = [];
+  for (var secId in divoChangedSections) {
+    var s = divoEditConfig[secId];
+    changesList.push(s.icon + ' ' + s.name + ' → уровень ' + s.level);
+  }
+
+  // Сохраняем локально (localStorage как временная мера)
+  try {
+    localStorage.setItem('divo_access_changes', JSON.stringify(sectionsData));
+    localStorage.setItem('divo_access_changes_time', new Date().toISOString());
+  } catch (e) {}
+
+  // Генерируем обновлённый JSON для скачивания
+  var configToSave = {
+    version: 2,
+    updated: new Date().toISOString(),
+    sections: sectionsData,
+    levels: divoGetLevels()
+  };
+
+  var blob = new Blob([JSON.stringify(configToSave, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'access-config.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  // Обновляем активный конфиг в памяти
+  if (DIVO_ACCESS_CONFIG) {
+    DIVO_ACCESS_CONFIG.sections = sectionsData;
+  }
+
+  setTimeout(function() {
+    if (saveBtn) saveBtn.disabled = false;
+    divoShowSaveStatus('✅ Сохранено! Файл access-config.json скачан. Изменения:\n' + changesList.join('\n') + '\n\nОтправь этот файл мне, чтобы я обновил настройки на сайте.', 'success');
+
+    // Сбрасываем пометки изменений
+    divoChangedSections = {};
+    var rows = document.querySelectorAll('.divo-section-row.changed');
+    for (var i = 0; i < rows.length; i++) {
+      rows[i].classList.remove('changed');
+    }
+    var saveBtn2 = document.getElementById('divoSaveAccessBtn');
+    if (saveBtn2) {
+      saveBtn2.textContent = '💾 Сохранить настройки';
+      saveBtn2.style.animation = '';
+    }
+  }, 500);
+}
+
+function divoShowSaveStatus(msg, type) {
+  var el = document.getElementById('divoSaveStatus');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'divo-save-status show ' + type;
+}
+
+// Инициализация
+divoLoadAccessConfig(function(config) {
+  divoRenderAccessPage();
+});
+
+// Обработчик сохранения
+document.addEventListener('DOMContentLoaded', function() {
+  var saveBtn = document.getElementById('divoSaveAccessBtn');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', divoSaveAccessConfig);
+  }
+});
+
+// Добавляем анимацию pulse
+var style = document.createElement('style');
+style.textContent = '@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }';
+document.head.appendChild(style);
+

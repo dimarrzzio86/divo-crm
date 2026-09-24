@@ -1,0 +1,282 @@
+<!-- Раздел: Контакты (обзор) -->
+<!-- Уровень: 3 (менеджер+) -->
+
+<div class="cnt-page-header">
+  <h1 class="cnt-page-title">📇 Контакты</h1>
+  <span class="cnt-page-count" id="cntTotalCount">…</span>
+</div>
+
+<div class="cnt-search-wrap">
+  <span class="cnt-search-icon">🔍</span>
+  <input type="text" id="cntSearch" class="cnt-search-input" placeholder="Поиск по имени, телефону, категории, комментарию...">
+</div>
+
+<div class="cnt-toggle-bar">
+  <button class="cnt-toggle-btn" id="cntExpandAll">▸ Развернуть все</button>
+  <button class="cnt-toggle-btn" id="cntCollapseAll">▾ Свернуть все</button>
+</div>
+
+<div class="cnt-status" id="cntStatus"></div>
+
+<div id="cntContent">
+  <div class="cnt-loading">Загрузка контактов...</div>
+</div>
+
+<script>
+(function() {
+  var contractors = [];
+  var filtered = [];
+  var partnerPrices = [];
+  var partnersWithPrices = {}; // { partner_id: count }
+  var partnersWithServices = {}; // { partner_id: count услуг }
+
+  function $(id) { return document.getElementById(id); }
+
+  function showStatus(msg, type) {
+    var s = $('cntStatus');
+    if (!s) return;
+    s.textContent = msg;
+    s.className = 'cnt-status show ' + type;
+  }
+  function hideStatus() {
+    var s = $('cntStatus');
+    if (s) s.className = 'cnt-status';
+  }
+
+  function escapeHtml(text) {
+    var d = document.createElement('div');
+    d.textContent = text == null ? '' : String(text);
+    return d.innerHTML;
+  }
+
+  function getInitial(name) {
+    if (!name) return '?';
+    return name.trim().charAt(0).toUpperCase();
+  }
+
+  function formatPhoneLink(phone) {
+    if (!phone) return '';
+    var digits = phone.replace(/\D/g, '');
+    if (digits.length === 11 && digits.charAt(0) === '8') {
+      digits = '7' + digits.substring(1);
+    }
+    if (digits.length === 11 && digits.charAt(0) === '7') {
+      return 'tel:+' + digits;
+    }
+    return 'tel:' + phone.replace(/\s/g, '');
+  }
+
+  function loadData() {
+    showStatus('Загрузка контактов...', 'loading');
+    var url = SUPABASE_URL + '/rest/v1/contractors?select=*&order=category.asc,name.asc';
+    var urlPp = SUPABASE_URL + '/rest/v1/partner_prices?select=partner_id';
+    var urlPs = SUPABASE_URL + '/rest/v1/partner_service_prices?select=partner_id';
+    Promise.all([
+      fetch(url, { method: 'GET', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } }).then(function(r) { return r.json(); }),
+      fetch(urlPp, { method: 'GET', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } }).then(function(r) { return r.json(); }),
+      fetch(urlPs, { method: 'GET', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } }).then(function(r) { return r.json(); })
+    ])
+      .then(function(results) {
+        contractors = results[0] || [];
+        var pp = results[1] || [];
+        var ps = results[2] || [];
+        partnersWithPrices = {};
+        for (var i = 0; i < pp.length; i++) {
+          var pid = pp[i].partner_id;
+          partnersWithPrices[pid] = (partnersWithPrices[pid] || 0) + 1;
+        }
+        partnersWithServices = {};
+        for (var j = 0; j < ps.length; j++) {
+          var pid2 = ps[j].partner_id;
+          partnersWithServices[pid2] = (partnersWithServices[pid2] || 0) + 1;
+        }
+        filtered = contractors.slice();
+        hideStatus();
+        updateCount();
+        render();
+      })
+      .catch(function(e) {
+        console.error('Ошибка:', e);
+        showStatus('Ошибка загрузки: ' + e.message, 'error');
+        $('cntContent').innerHTML = '<div class="cnt-empty"><div class="cnt-empty-icon">⚠️</div>Не удалось загрузить контакты</div>';
+      });
+  }
+
+  function filterData(query) {
+    query = (query || '').toLowerCase().trim();
+    if (!query) {
+      filtered = contractors.slice();
+    } else {
+      filtered = contractors.filter(function(c) {
+        var name = (c.name || '').toLowerCase();
+        var phone = (c.phone || '').toLowerCase();
+        var comment = (c.comment || '').toLowerCase();
+        var category = (c.category || '').toLowerCase();
+        return name.indexOf(query) !== -1 ||
+               phone.indexOf(query) !== -1 ||
+               comment.indexOf(query) !== -1 ||
+               category.indexOf(query) !== -1;
+      });
+    }
+    updateCount();
+    render();
+  }
+
+  function updateCount() {
+    var el = $('cntTotalCount');
+    if (el) {
+      el.textContent = filtered.length + ' из ' + contractors.length;
+    }
+  }
+
+  function render() {
+    var container = $('cntContent');
+    if (!container) return;
+
+    if (!filtered.length) {
+      var msg = contractors.length
+        ? 'Ничего не найдено по вашему запросу'
+        : 'Контактов пока нет';
+      container.innerHTML = '<div class="cnt-empty"><div class="cnt-empty-icon">📇</div>' + msg + '</div>';
+      return;
+    }
+
+    // Группируем по категориям
+    var groups = {};
+    var groupOrder = [];
+    for (var i = 0; i < filtered.length; i++) {
+      var cat = filtered[i].category || 'Без категории';
+      if (!groups[cat]) { groups[cat] = []; groupOrder.push(cat); }
+      groups[cat].push(filtered[i]);
+    }
+    groupOrder.sort();
+
+    var html = '';
+    for (var g = 0; g < groupOrder.length; g++) {
+      var categoryName = groupOrder[g];
+      var items = groups[categoryName];
+
+      html += '<div class="cnt-category" data-cat="' + escapeHtml(categoryName) + '">';
+      html += '<div class="cnt-category-header" onclick="window.cntToggleCategory(this)">';
+      html += '  <span class="cnt-arrow">▶</span>';
+      html += '  <span class="cnt-cat-icon">📁</span>';
+      html += '  <span class="cnt-cat-name">' + escapeHtml(categoryName) + '</span>';
+      html += '  <span class="cnt-cat-count">' + items.length + '</span>';
+      html += '</div>';
+      html += '<div class="cnt-category-body">';
+      html += '  <div class="cnt-grid-wrap">';
+      html += '    <div class="cnt-grid">';
+
+      for (var j = 0; j < items.length; j++) {
+        var c = items[j];
+        var initial = getInitial(c.name);
+        var phoneLink = formatPhoneLink(c.phone);
+        var phoneHtml = c.phone
+          ? '<a href="' + phoneLink + '" class="cnt-field-value is-phone">' + escapeHtml(c.phone) + '</a>'
+          : '<span class="cnt-field-empty">не указан</span>';
+        var commentHtml = c.comment
+          ? '<span class="cnt-field-value">' + escapeHtml(c.comment) + '</span>'
+          : '<span class="cnt-field-empty">—</span>';
+
+        html += '<div class="cnt-card">';
+        html += '  <div class="cnt-card-top">';
+        html += '    <div class="cnt-avatar">' + escapeHtml(initial) + '</div>';
+        html += '    <div class="cnt-card-info">';
+        html += '      <div class="cnt-card-name">' + escapeHtml(c.name || 'Без имени') + '</div>';
+        html += '      <div class="cnt-card-cat">' + escapeHtml(c.category || 'Без категории') + '</div>';
+        html += '    </div>';
+        html += '  </div>';
+        html += '  <div class="cnt-card-field">';
+        html += '    <span class="cnt-field-icon">📞</span>';
+        html += '    <span class="cnt-field-label">Телефон</span>';
+        html += phoneHtml;
+        html += '  </div>';
+        html += '  <div class="cnt-card-field">';
+        html += '    <span class="cnt-field-icon">💬</span>';
+        html += '    <span class="cnt-field-label">Заметка</span>';
+        html += commentHtml;
+        html += '  </div>';
+        // Кнопки прайса и услуг (с проверкой доступа)
+        var ppCount = partnersWithPrices[c.id] || 0;
+        var psCount = partnersWithServices[c.id] || 0;
+        var canSeePrices = (typeof divoHasAccessToSection === 'function') ? divoHasAccessToSection('partner-prices') : true;
+        var canSeeServices = (typeof divoHasAccessToSection === 'function') ? divoHasAccessToSection('partner-services') : true;
+        if ((ppCount > 0 && canSeePrices) || (psCount > 0 && canSeeServices)) {
+          html += '  <div class="cnt-card-actions">';
+          if (ppCount > 0 && canSeePrices) {
+            html += '    <a href="partner-prices.html?partner=' + c.id + '" class="cnt-card-btn-partner" title="Персональный прайс">';
+            html += '      🤝 Прайс';
+            html += '      <span class="cnt-card-btn-count">' + ppCount + '</span>';
+            html += '    </a>';
+          }
+          if (psCount > 0 && canSeeServices) {
+            html += '    <a href="partner-services.html?partner=' + c.id + '" class="cnt-card-btn-services" title="Услуги партнёра">';
+            html += '      🔧 Услуги';
+            html += '      <span class="cnt-card-btn-count">' + psCount + '</span>';
+            html += '    </a>';
+          }
+          html += '  </div>';
+        }
+        html += '</div>';
+      }
+
+      html += '    </div>';
+      html += '  </div>';
+      html += '</div>';
+      html += '</div>';
+    }
+
+    container.innerHTML = html;
+
+    // Разворачиваем первую категорию по умолчанию
+    var firstCat = container.querySelector('.cnt-category');
+    if (firstCat) {
+      firstCat.classList.add('expanded');
+    }
+  }
+
+  // Тоггл категории (глобальная функция)
+  window.cntToggleCategory = function(header) {
+    var cat = header.parentElement;
+    if (cat) cat.classList.toggle('expanded');
+  };
+
+  // Разворачиваем/сворачиваем все
+  function expandAll() {
+    var cats = document.querySelectorAll('.cnt-category');
+    for (var i = 0; i < cats.length; i++) {
+      cats[i].classList.add('expanded');
+    }
+  }
+  function collapseAll() {
+    var cats = document.querySelectorAll('.cnt-category');
+    for (var i = 0; i < cats.length; i++) {
+      cats[i].classList.remove('expanded');
+    }
+  }
+
+  // Инициализация
+  function init() {
+    var search = $('cntSearch');
+    if (search) {
+      var timeout;
+      search.addEventListener('input', function() {
+        clearTimeout(timeout);
+        timeout = setTimeout(function() {
+          filterData(search.value);
+        }, 300);
+      });
+    }
+
+    var expandBtn = $('cntExpandAll');
+    if (expandBtn) expandBtn.addEventListener('click', expandAll);
+
+    var collapseBtn = $('cntCollapseAll');
+    if (collapseBtn) collapseBtn.addEventListener('click', collapseAll);
+
+    loadData();
+  }
+
+  init();
+})();
+</script>

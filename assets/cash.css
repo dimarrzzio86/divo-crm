@@ -1,0 +1,186 @@
+/* ==========================================
+   DIVO CRM — СТИЛИ РАСЧЁТОВ
+   ========================================== */
+
+.cs-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.cs-summary {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.cs-summary-item {
+  background: #18181b;
+  border: 1.5px solid #27272a;
+  border-radius: 12px;
+  padding: 14px 20px;
+  min-width: 140px;
+  text-align: center;
+}
+.cs-summary-label {
+  font-size: 11px;
+  color: #71717a;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.cs-summary-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: #fafafa;
+}
+.cs-summary-value.red { color: #ef4444; }
+.cs-summary-value.green { color: #22c55e; }
+.cs-summary-value.blue { color: #818cf8; }
+
+/* Поиск */
+.cs-search-wrap {
+  position: relative;
+  margin-bottom: 16px;
+}
+.cs-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  pointer-events: none;
+}
+.cs-search-input {
+  width: 100%;
+  padding: 12px 14px 12px 42px;
+  background: #0a0a0a;
+  border: 1.5px solid #3f3f46;
+  border-radius: 10px;
+  color: #fafafa;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+}
+.cs-search-input:focus { border-color: #22c55e; }
+.cs-search-input::placeholder { color: #52525b; }
+
+/* Таблица */
+.cs-table-wrap {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1.5px solid #27272a;
+  background: #18181b;
+}
+.cs-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px;
+}
+.cs-table thead { background: #0a0a0a; }
+.cs-table th {
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 11px;
+  color: #71717a;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+  border-bottom: 1.5px solid #27272a;
+}
+.cs-table td {
+  padding: 12px 16px;
+  font-size: 14px;
+  color: #e4e4e7;
+  border-bottom: 1px solid #27272a;
+}
+.cs-table tr:last-child td { border-bottom: none; }
+.cs-table tr:hover { background: #1f1f23; }
+
+.cs-col-name { font-weight: 600; }
+.cs-col-amount {
+  font-weight: 700;
+  color: #818cf8;
+}
+.cs-col-amount.paid { color: #22c55e; }
+
+/* Статус оплаты */
+.cs-pay-btn {
+  padding: 6px 14px;
+  border: 1.5px solid #3f3f46;
+  background: #27272a;
+  color: #a1a1aa;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.cs-pay-btn:hover {
+  border-color: #22c55e;
+  color: #22c55e;
+}
+.cs-pay-btn.paid {
+  background: #22c55e;
+  border-color: #22c55e;
+  color: #0a0a0a;
+}
+.cs-pay-btn.paid:hover {
+  background: #16a34a;
+}
+
+/* Действия */
+.cs-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+.cs-action-btn {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1.5px solid #3f3f46;
+  background: #27272a;
+  color: #a1a1aa;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.cs-action-btn:hover {
+  border-color: #71717a;
+  color: #fafafa;
+}
+.cs-action-btn.danger:hover {
+  background: #7f1d1d;
+  color: #fff;
+  border-color: #dc2626;
+}
+
+/* Пустые состояния */
+.cs-empty, .cs-loading {
+  text-align: center;
+  padding: 40px 20px;
+  color: #71717a;
+}
+
+.cs-status {
+  display: none;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+.cs-status.show { display: block; }
+.cs-status.loading { background: #1e293b; color: #93c5fd; }
+.cs-status.error { background: #7f1d1d; color: #fca5a5; }
+.cs-status.success { background: #14241a; color: #4ade80; }
+
+@media (max-width: 700px) {
+  .cs-summary-item { min-width: 100px; padding: 10px 14px; }
+  .cs-summary-value { font-size: 18px; }
+}

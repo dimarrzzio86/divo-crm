@@ -1,0 +1,1579 @@
+<!-- Раздел: Прайсы (админка) -->
+<!-- Уровень: 4 (админ+) -->
+
+<div class="apr-page">
+  <div class="apr-header">
+    <div>
+      <h1 class="apr-title">📋 Прайсы</h1>
+      <div class="apr-subtitle">Управление услугами • категории • цены (клиент / партнёр)</div>
+    </div>
+    <div class="apr-stats">
+      <div class="apr-stat">
+        <div class="apr-stat-label">Категорий</div>
+        <div class="apr-stat-value blue" id="prCatCount">—</div>
+      </div>
+      <div class="apr-stat">
+        <div class="apr-stat-label">Услуг</div>
+        <div class="apr-stat-value green" id="prSvcCount">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Форма добавления услуги -->
+  <div class="apr-add-form">
+    <div class="apr-form-title-row">
+      <div class="apr-form-title">➕ Добавить услугу</div>
+      <button class="apr-manage-cats-btn" id="prManageCatsBtn">📁 Категории</button>
+    </div>
+    <div class="apr-form-row">
+      <div class="apr-field">
+        <label>Категория</label>
+        <select id="prAddCat"><option value="">-- Категория --</option></select>
+      </div>
+      <div class="apr-field">
+        <label>Подкатегория</label>
+        <select id="prAddSubcat" disabled><option value="">-- Подкатегория --</option></select>
+      </div>
+      <div class="apr-field apr-field-name">
+        <label>Название услуги</label>
+        <input type="text" id="prAddName" placeholder="Например: Оклейка капота антихром" autocomplete="off">
+      </div>
+      <button class="apr-add-btn" id="prAddBtn">+ Добавить</button>
+    </div>
+  </div>
+
+  <div class="apr-status" id="prStatus"></div>
+
+  <div class="apr-search-wrap">
+    <span class="apr-search-icon">🔍</span>
+    <input type="text" id="prSearch" class="apr-search-input" placeholder="Поиск по названию услуги...">
+  </div>
+
+  <div class="apr-table-wrap">
+    <table class="apr-services-table">
+      <thead>
+        <tr>
+          <th>Услуга</th>
+          <th style="text-align:right;width:130px">Класс 1</th>
+          <th style="text-align:right;width:130px">Класс 2</th>
+          <th style="text-align:right;width:130px">Класс 3</th>
+          <th style="text-align:right;width:130px">Класс 4</th>
+          <th style="text-align:center;width:110px">Действия</th>
+        </tr>
+        <tr class="apr-subhead">
+          <th></th>
+          <th colspan="4" style="text-align:center;font-size:11px;font-weight:400;color:#71717a;text-transform:none;letter-spacing:0;padding:6px;">
+            <span style="color:#fafafa">● Клиент</span>
+            <span style="color:#52525b;margin:0 8px">|</span>
+            <span style="color:#f59e0b">● Партнёр</span>
+          </th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="prTableBody">
+        <tr><td colspan="6" class="apr-empty">Загрузка...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Модалка управления категориями -->
+<div class="apr-modal-overlay" id="prCatsModal" style="display:none;">
+  <div class="apr-modal-box apr-modal-lg">
+    <div class="apr-modal-title">📁 Категории и подкатегории</div>
+    <div class="apr-cats-desc">Управляйте категориями услуг и их подкатегориями</div>
+
+    <!-- Форма добавления категории -->
+    <div class="apr-cat-add-row">
+      <input type="text" id="prCatAddInput" class="apr-modal-input" placeholder="Название новой категории..." autocomplete="off">
+      <button class="apr-modal-btn save" id="prCatAddBtn">+ Категория</button>
+    </div>
+
+    <!-- Список категорий с подкатегориями -->
+    <div class="apr-cats-list" id="prCatsList">
+      <div class="apr-loading">Загрузка...</div>
+    </div>
+
+    <div class="apr-modal-buttons">
+      <button class="apr-modal-btn cancel" id="prCatsClose">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<!-- Модалка редактирования цен -->
+<div class="apr-modal-overlay" id="prPriceModal" style="display:none;">
+  <div class="apr-modal-box">
+    <div class="apr-modal-title" id="prPriceModalTitle">✏️ Цены услуги</div>
+    <div class="apr-class-count-row">
+      <label class="apr-modal-label">Количество классов:</label>
+      <div class="apr-class-count-selector" id="prClassCountSelector">
+        <button type="button" class="apr-class-btn" data-count="0">0</button>
+        <button type="button" class="apr-class-btn" data-count="1">1</button>
+        <button type="button" class="apr-class-btn" data-count="2">2</button>
+        <button type="button" class="apr-class-btn" data-count="3">3</button>
+        <button type="button" class="apr-class-btn" data-count="4">4</button>
+      </div>
+      <span class="apr-class-hint" id="prClassHint">Без классов — одна цена</span>
+    </div>
+    <div class="apr-no-class-field" id="prNoClassField">
+      <div class="apr-price-group">
+        <div class="apr-price-group-title">Цена (без классов)</div>
+        <div class="apr-modal-field">
+          <label class="apr-modal-label">Клиент</label>
+          <input type="number" id="prC0Client" class="apr-modal-input" step="0.01" placeholder="0">
+        </div>
+        <div class="apr-modal-field">
+          <label class="apr-modal-label" style="color:#f59e0b;">Партнёр</label>
+          <input type="number" id="prC0Partner" class="apr-modal-input" step="0.01" placeholder="0">
+        </div>
+      </div>
+    </div>
+    <div class="apr-price-grid" id="prPriceGrid">
+      <div class="apr-price-group">
+        <div class="apr-price-group-title">Класс 1</div>
+        <div class="apr-modal-field">
+          <label class="apr-modal-label">Клиент</label>
+          <input type="number" id="prC1Client" class="apr-modal-input" step="0.01" placeholder="0">
+        </div>
+        <div class="apr-modal-field">
+          <label class="apr-modal-label" style="color:#f59e0b;">Партнёр</label>
+          <input type="number" id="prC1Partner" class="apr-modal-input" step="0.01" placeholder="0">
+        </div>
+      </div>
+      <div class="apr-price-group">
+        <div class="apr-price-group-title">Класс 2</div>
+        <div class="apr-modal-field">
+          <label class="apr-modal-label">Клиент</label>
+          <input type="number" id="prC2Client" class="apr-modal-input" step="0.01" placeholder="0">
+        </div>
+        <div class="apr-modal-field">
+          <label class="apr-modal-label" style="color:#f59e0b;">Партнёр</label>
+          <input type="number" id="prC2Partner" class="apr-modal-input" step="0.01" placeholder="0">
+        </div>
+      </div>
+      <div class="apr-price-group">
+        <div class="apr-price-group-title">Класс 3</div>
+        <div class="apr-modal-field">
+          <label class="apr-modal-label">Клиент</label>
+          <input type="number" id="prC3Client" class="apr-modal-input" step="0.01" placeholder="0">
+        </div>
+        <div class="apr-modal-field">
+          <label class="apr-modal-label" style="color:#f59e0b;">Партнёр</label>
+          <input type="number" id="prC3Partner" class="apr-modal-input" step="0.01" placeholder="0">
+        </div>
+      </div>
+      <div class="apr-price-group">
+        <div class="apr-price-group-title">Класс 4</div>
+        <div class="apr-modal-field">
+          <label class="apr-modal-label">Клиент</label>
+          <input type="number" id="prC4Client" class="apr-modal-input" step="0.01" placeholder="0">
+        </div>
+        <div class="apr-modal-field">
+          <label class="apr-modal-label" style="color:#f59e0b;">Партнёр</label>
+          <input type="number" id="prC4Partner" class="apr-modal-input" step="0.01" placeholder="0">
+        </div>
+      </div>
+    </div>
+    <div class="apr-modal-buttons">
+      <button class="apr-modal-btn cancel" id="prPriceCancel">Отмена</button>
+      <button class="apr-modal-btn save" id="prPriceSave">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<style>
+/* === ПРАЙСЫ АДМИН — ПОЛНЫЕ СТИЛИ === */
+.apr-page { font-family: inherit; }
+
+.apr-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.apr-title { font-size: 28px; font-weight: 800; color: #fafafa; margin: 0; line-height: 1.2; }
+.apr-subtitle { font-size: 14px; color: #71717a; margin-top: 4px; }
+.apr-stats { display: flex; gap: 10px; flex-wrap: wrap; }
+.apr-stat {
+  background: #18181b;
+  border: 1.5px solid #27272a;
+  border-radius: 12px;
+  padding: 12px 18px;
+  text-align: center;
+  min-width: 90px;
+}
+.apr-stat-label { font-size: 11px; color: #71717a; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: 600; }
+.apr-stat-value { font-size: 22px; font-weight: 800; color: #fafafa; }
+.apr-stat-value.blue { color: #818cf8; }
+.apr-stat-value.green { color: #4ade80; }
+
+/* Форма добавления */
+.apr-add-form {
+  background: #18181b;
+  border: 1.5px solid #27272a;
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.apr-form-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #a1a1aa;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 14px;
+}
+.apr-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 2fr auto;
+  gap: 12px;
+  align-items: end;
+}
+.apr-field { display: flex; flex-direction: column; gap: 6px; }
+.apr-field label {
+  font-size: 11px;
+  color: #a1a1aa;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+.apr-field input,
+.apr-field select {
+  padding: 11px 14px;
+  background: #0a0a0a;
+  border: 1.5px solid #3f3f46;
+  border-radius: 10px;
+  color: #fafafa;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+.apr-field input:focus,
+.apr-field select:focus {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34,197,94,0.1);
+}
+.apr-field input::placeholder { color: #52525b; }
+.apr-add-btn {
+  padding: 11px 24px;
+  background: #22c55e;
+  color: #0a0a0a;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+.apr-add-btn:hover { background: #16a34a; box-shadow: 0 0 12px rgba(34,197,94,0.3); }
+.apr-add-btn:active { transform: scale(0.97); }
+
+/* Статус */
+.apr-status { display: none; padding: 12px 16px; border-radius: 10px; margin-bottom: 12px; font-size: 14px; font-weight: 500; }
+.apr-status.show { display: block; }
+.apr-status.loading { background: #1e293b; color: #93c5fd; border: 1px solid #312e81; }
+.apr-status.error { background: #7f1d1d; color: #fca5a5; border: 1px solid #991b1b; }
+.apr-status.success { background: #14241a; color: #4ade80; border: 1px solid #22c55e; }
+
+/* Поиск */
+.apr-search-wrap { position: relative; margin-bottom: 16px; }
+.apr-search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; pointer-events: none; }
+.apr-search-input {
+  width: 100%;
+  padding: 12px 14px 12px 42px;
+  background: #0a0a0a;
+  border: 1.5px solid #3f3f46;
+  border-radius: 10px;
+  color: #fafafa;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+.apr-search-input:focus { border-color: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,0.1); }
+.apr-search-input::placeholder { color: #52525b; }
+
+/* Таблица */
+.apr-table-wrap { overflow-x: auto; border-radius: 14px; border: 1.5px solid #27272a; background: #18181b; }
+.apr-services-table { width: 100%; border-collapse: collapse; min-width: 800px; }
+.apr-services-table thead { background: #0a0a0a; }
+.apr-services-table th {
+  text-align: left;
+  padding: 14px 16px;
+  font-size: 11px;
+  color: #71717a;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+  border-bottom: 1.5px solid #27272a;
+}
+.apr-services-table td {
+  padding: 10px 16px;
+  font-size: 14px;
+  color: #e4e4e7;
+  border-bottom: 1px solid #27272a;
+  vertical-align: middle;
+}
+.apr-services-table tr:last-child td { border-bottom: none; }
+.apr-services-table tbody tr:hover { background: #1f1f23; }
+
+/* Разделители категорий — аккордеон */
+.apr-cat-divider td {
+  background: #0a0a0a;
+  padding: 12px 16px !important;
+  border-bottom: 1.5px solid #27272a;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+.apr-cat-divider td:hover { background: #18181b; }
+.apr-cat-header { display: flex; align-items: center; gap: 8px; }
+.apr-cat-chevron {
+  display: inline-block;
+  transition: transform 0.2s;
+  font-size: 12px;
+  color: #71717a;
+  width: 16px;
+  text-align: center;
+}
+.apr-cat-divider.collapsed .apr-cat-chevron { transform: rotate(-90deg); }
+.apr-cat-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #22c55e;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  flex: 1;
+}
+.apr-cat-count { font-size: 12px; color: #52525b; font-weight: 400; }
+
+/* Подкатегории — аккордеон */
+.apr-subcat-divider td {
+  background: #111113;
+  padding: 8px 16px 8px 48px !important;
+  border-bottom: 1px solid #27272a;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+.apr-subcat-divider td:hover { background: #1a1a1f; }
+.apr-subcat-header { display: flex; align-items: center; gap: 6px; }
+.apr-subcat-chevron {
+  display: inline-block;
+  transition: transform 0.2s;
+  font-size: 10px;
+  color: #71717a;
+  width: 14px;
+  text-align: center;
+}
+.apr-subcat-divider.collapsed .apr-subcat-chevron { transform: rotate(-90deg); }
+.apr-subcat-title { font-size: 12px; font-weight: 600; color: #a1a1aa; flex: 1; }
+.apr-subcat-count { font-size: 11px; color: #52525b; }
+
+/* Скрытые строки */
+.apr-hidden { display: none !important; }
+
+/* Цены */
+.apr-price-cell { text-align: right; white-space: nowrap; }
+.apr-price-client { color: #fafafa; font-weight: 600; }
+.apr-price-partner { color: #f59e0b; font-size: 12px; }
+.apr-service-name { font-weight: 500; color: #fafafa; }
+
+.apr-subhead th { border-bottom: 1px solid #27272a !important; }
+
+/* Действия */
+.apr-actions { display: flex; gap: 6px; align-items: center; justify-content: center; }
+.apr-action-btn {
+  background: #27272a;
+  border: 1.5px solid #3f3f46;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: all 0.15s;
+  line-height: 1;
+  font-family: inherit;
+}
+.apr-action-btn.edit { color: #818cf8; }
+.apr-action-btn.edit:hover { background: #1e1b4b; border-color: #6366f1; }
+.apr-action-btn.danger { color: #ef4444; }
+.apr-action-btn.danger:hover { background: #7f1d1d; border-color: #dc2626; }
+
+/* Пусто */
+.apr-empty { text-align: center; padding: 40px 20px; color: #71717a; font-size: 15px; }
+
+/* Модалка */
+.apr-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  padding: 16px;
+}
+.apr-modal-box {
+  background: #18181b;
+  border: 2px solid #22c55e;
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 550px;
+  width: 100%;
+  box-shadow: 0 0 40px rgba(34,197,94,0.2);
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: aprSlide 0.2s ease-out;
+}
+@keyframes aprSlide {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.apr-modal-title { font-size: 20px; font-weight: 700; color: #fafafa; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+
+/* Сетка цен в модалке */
+/* Кнопка управления категориями */
+.apr-form-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  gap: 12px;
+}
+.apr-manage-cats-btn {
+  padding: 8px 16px;
+  background: #18181b;
+  border: 1.5px solid #3f3f46;
+  color: #a1a1aa;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.apr-manage-cats-btn:hover {
+  border-color: #818cf8;
+  color: #818cf8;
+  background: #1e1b4b;
+}
+
+/* Модалка категорий */
+.apr-modal-lg { max-width: 600px; }
+.apr-cats-desc { font-size: 14px; color: #a1a1aa; margin-bottom: 16px; }
+
+.apr-cat-add-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.apr-cat-add-row .apr-modal-input { flex: 1; }
+.apr-cat-add-row .apr-modal-btn { white-space: nowrap; }
+
+.apr-cats-list {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #27272a;
+  border-radius: 10px;
+  background: #0a0a0a;
+  margin-bottom: 16px;
+}
+
+/* Элемент категории в модалке */
+.apr-cat-item {
+  border-bottom: 1px solid #27272a;
+}
+.apr-cat-item:last-child { border-bottom: none; }
+.apr-cat-item-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #18181b;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.apr-cat-item-header:hover { background: #1f1f23; }
+.apr-cat-item-chevron {
+  font-size: 10px;
+  color: #71717a;
+  width: 14px;
+  text-align: center;
+  transition: transform 0.2s;
+}
+.apr-cat-item.collapsed .apr-cat-item-chevron { transform: rotate(-90deg); }
+.apr-cat-item-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 700;
+  color: #22c55e;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.apr-cat-item-name-input {
+  flex: 1;
+  padding: 6px 10px;
+  background: #0a0a0a;
+  border: 1.5px solid #3f3f46;
+  border-radius: 6px;
+  color: #fafafa;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  outline: none;
+  text-transform: uppercase;
+}
+.apr-cat-item-name-input:focus { border-color: #22c55e; }
+.apr-cat-item-count {
+  font-size: 11px;
+  color: #52525b;
+  background: #27272a;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.apr-cat-item-actions {
+  display: flex;
+  gap: 4px;
+}
+.apr-cat-item-btn {
+  background: #27272a;
+  border: 1px solid #3f3f46;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.15s;
+  line-height: 1;
+  font-family: inherit;
+}
+.apr-cat-item-btn:hover { background: #3f3f46; }
+.apr-cat-item-btn.edit { color: #818cf8; }
+.apr-cat-item-btn.edit:hover { background: #1e1b4b; border-color: #6366f1; }
+.apr-cat-item-btn.danger { color: #ef4444; }
+.apr-cat-item-btn.danger:hover { background: #7f1d1d; border-color: #dc2626; }
+
+/* Подкатегории внутри категории */
+.apr-subcat-list {
+  padding: 4px 16px 8px 40px;
+  background: #0a0a0a;
+}
+.apr-cat-item.collapsed .apr-subcat-list { display: none; }
+.apr-subcat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #18181b;
+}
+.apr-subcat-item:last-child { border-bottom: none; }
+.apr-subcat-item-name {
+  flex: 1;
+  font-size: 13px;
+  color: #a1a1aa;
+}
+.apr-subcat-item-name-input {
+  flex: 1;
+  padding: 5px 10px;
+  background: #18181b;
+  border: 1.5px solid #3f3f46;
+  border-radius: 6px;
+  color: #fafafa;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+.apr-subcat-item-name-input:focus { border-color: #22c55e; }
+
+/* Форма добавления подкатегории */
+.apr-subcat-add-row {
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #0a0a0a;
+}
+.apr-subcat-add-input {
+  flex: 1;
+  padding: 6px 10px;
+  background: #18181b;
+  border: 1.5px solid #3f3f46;
+  border-radius: 6px;
+  color: #fafafa;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+.apr-subcat-add-input:focus { border-color: #22c55e; }
+.apr-subcat-add-input::placeholder { color: #52525b; }
+.apr-subcat-add-btn {
+  padding: 6px 12px;
+  background: #27272a;
+  border: 1.5px solid #3f3f46;
+  color: #a1a1aa;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.apr-subcat-add-btn:hover { border-color: #22c55e; color: #22c55e; }
+.apr-subcat-empty {
+  padding: 12px;
+  font-size: 12px;
+  color: #52525b;
+  text-align: center;
+}
+
+/* Селектор количества классов */
+.apr-class-count-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  background: #0a0a0a;
+  border: 1.5px solid #3f3f46;
+  border-radius: 10px;
+}
+.apr-class-count-selector {
+  display: flex;
+  gap: 4px;
+}
+.apr-class-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1.5px solid #3f3f46;
+  background: #18181b;
+  color: #71717a;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.apr-class-btn:hover {
+  border-color: #71717a;
+  color: #fafafa;
+}
+.apr-class-btn.active {
+  background: #22c55e;
+  color: #0a0a0a;
+  border-color: #22c55e;
+}
+.apr-class-hint {
+  font-size: 12px;
+  color: #52525b;
+}
+
+/* Когда классов 0 — показываем одно поле цены */
+.apr-no-class-field {
+  display: none;
+  margin-bottom: 16px;
+}
+.apr-no-class-field.show { display: block; }
+.apr-no-class-field .apr-modal-field { margin-bottom: 0; }
+
+/* Скрыть группы классов, которые не нужны */
+.apr-price-group.hidden { display: none; }
+
+.apr-price-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+.apr-price-group {
+  background: #0a0a0a;
+  border: 1px solid #3f3f46;
+  border-radius: 10px;
+  padding: 14px;
+}
+.apr-price-group-title { font-size: 13px; font-weight: 700; color: #fafafa; margin-bottom: 10px; }
+.apr-modal-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.apr-modal-field:last-child { margin-bottom: 0; }
+.apr-modal-label {
+  font-size: 11px;
+  color: #71717a;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+.apr-modal-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid #3f3f46;
+  border-radius: 8px;
+  font-size: 14px;
+  box-sizing: border-box;
+  background: #18181b;
+  color: #fafafa;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.apr-modal-input:focus { border-color: #22c55e; box-shadow: 0 0 0 2px rgba(34,197,94,0.1); }
+
+.apr-modal-buttons { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.apr-modal-btn {
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.apr-modal-btn.cancel { background: #27272a; color: #a1a1aa; }
+.apr-modal-btn.cancel:hover { background: #3f3f46; color: #fafafa; }
+.apr-modal-btn.save { background: #22c55e; color: #0a0a0a; }
+.apr-modal-btn.save:hover { background: #16a34a; }
+
+@media (max-width: 800px) {
+  .apr-form-row { grid-template-columns: 1fr 1fr; }
+  .apr-field-name { grid-column: 1 / -1; }
+  .apr-add-btn { grid-column: 1 / -1; padding: 12px; }
+  /* Кнопка управления категориями */
+.apr-form-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  gap: 12px;
+}
+.apr-manage-cats-btn {
+  padding: 8px 16px;
+  background: #18181b;
+  border: 1.5px solid #3f3f46;
+  color: #a1a1aa;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.apr-manage-cats-btn:hover {
+  border-color: #818cf8;
+  color: #818cf8;
+  background: #1e1b4b;
+}
+
+/* Модалка категорий */
+.apr-modal-lg { max-width: 600px; }
+.apr-cats-desc { font-size: 14px; color: #a1a1aa; margin-bottom: 16px; }
+
+.apr-cat-add-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.apr-cat-add-row .apr-modal-input { flex: 1; }
+.apr-cat-add-row .apr-modal-btn { white-space: nowrap; }
+
+.apr-cats-list {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #27272a;
+  border-radius: 10px;
+  background: #0a0a0a;
+  margin-bottom: 16px;
+}
+
+/* Элемент категории в модалке */
+.apr-cat-item {
+  border-bottom: 1px solid #27272a;
+}
+.apr-cat-item:last-child { border-bottom: none; }
+.apr-cat-item-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #18181b;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.apr-cat-item-header:hover { background: #1f1f23; }
+.apr-cat-item-chevron {
+  font-size: 10px;
+  color: #71717a;
+  width: 14px;
+  text-align: center;
+  transition: transform 0.2s;
+}
+.apr-cat-item.collapsed .apr-cat-item-chevron { transform: rotate(-90deg); }
+.apr-cat-item-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 700;
+  color: #22c55e;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.apr-cat-item-name-input {
+  flex: 1;
+  padding: 6px 10px;
+  background: #0a0a0a;
+  border: 1.5px solid #3f3f46;
+  border-radius: 6px;
+  color: #fafafa;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  outline: none;
+  text-transform: uppercase;
+}
+.apr-cat-item-name-input:focus { border-color: #22c55e; }
+.apr-cat-item-count {
+  font-size: 11px;
+  color: #52525b;
+  background: #27272a;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.apr-cat-item-actions {
+  display: flex;
+  gap: 4px;
+}
+.apr-cat-item-btn {
+  background: #27272a;
+  border: 1px solid #3f3f46;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.15s;
+  line-height: 1;
+  font-family: inherit;
+}
+.apr-cat-item-btn:hover { background: #3f3f46; }
+.apr-cat-item-btn.edit { color: #818cf8; }
+.apr-cat-item-btn.edit:hover { background: #1e1b4b; border-color: #6366f1; }
+.apr-cat-item-btn.danger { color: #ef4444; }
+.apr-cat-item-btn.danger:hover { background: #7f1d1d; border-color: #dc2626; }
+
+/* Подкатегории внутри категории */
+.apr-subcat-list {
+  padding: 4px 16px 8px 40px;
+  background: #0a0a0a;
+}
+.apr-cat-item.collapsed .apr-subcat-list { display: none; }
+.apr-subcat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #18181b;
+}
+.apr-subcat-item:last-child { border-bottom: none; }
+.apr-subcat-item-name {
+  flex: 1;
+  font-size: 13px;
+  color: #a1a1aa;
+}
+.apr-subcat-item-name-input {
+  flex: 1;
+  padding: 5px 10px;
+  background: #18181b;
+  border: 1.5px solid #3f3f46;
+  border-radius: 6px;
+  color: #fafafa;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+.apr-subcat-item-name-input:focus { border-color: #22c55e; }
+
+/* Форма добавления подкатегории */
+.apr-subcat-add-row {
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #0a0a0a;
+}
+.apr-subcat-add-input {
+  flex: 1;
+  padding: 6px 10px;
+  background: #18181b;
+  border: 1.5px solid #3f3f46;
+  border-radius: 6px;
+  color: #fafafa;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+.apr-subcat-add-input:focus { border-color: #22c55e; }
+.apr-subcat-add-input::placeholder { color: #52525b; }
+.apr-subcat-add-btn {
+  padding: 6px 12px;
+  background: #27272a;
+  border: 1.5px solid #3f3f46;
+  color: #a1a1aa;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.apr-subcat-add-btn:hover { border-color: #22c55e; color: #22c55e; }
+.apr-subcat-empty {
+  padding: 12px;
+  font-size: 12px;
+  color: #52525b;
+  text-align: center;
+}
+
+/* Селектор количества классов */
+.apr-class-count-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  background: #0a0a0a;
+  border: 1.5px solid #3f3f46;
+  border-radius: 10px;
+}
+.apr-class-count-selector {
+  display: flex;
+  gap: 4px;
+}
+.apr-class-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1.5px solid #3f3f46;
+  background: #18181b;
+  color: #71717a;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.apr-class-btn:hover {
+  border-color: #71717a;
+  color: #fafafa;
+}
+.apr-class-btn.active {
+  background: #22c55e;
+  color: #0a0a0a;
+  border-color: #22c55e;
+}
+.apr-class-hint {
+  font-size: 12px;
+  color: #52525b;
+}
+
+/* Когда классов 0 — показываем одно поле цены */
+.apr-no-class-field {
+  display: none;
+  margin-bottom: 16px;
+}
+.apr-no-class-field.show { display: block; }
+.apr-no-class-field .apr-modal-field { margin-bottom: 0; }
+
+/* Скрыть группы классов, которые не нужны */
+.apr-price-group.hidden { display: none; }
+
+.apr-price-grid { grid-template-columns: 1fr; }
+  .apr-stats { width: 100%; }
+  .apr-stat { flex: 1; min-width: 0; }
+  .apr-header { flex-direction: column; align-items: flex-start; }
+}
+</style>
+
+<script>
+(function() {
+  var services = [];
+  var categories = [];
+  var subcategories = [];
+  var filtered = [];
+  var pendingPriceId = null;
+
+  function $(id) { return document.getElementById(id); }
+  function showStatus(msg, type) { var s = $('prStatus'); s.textContent = msg; s.className = 'apr-status show ' + type; }
+  function hideStatus() { $('prStatus').className = 'apr-status'; }
+  function escapeHtml(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; }
+  function fmtPrice(p) { var n = Number(p || 0); if (n === 0) return '—'; if (n % 1 === 0) return String(n) + ' ₽'; return n.toFixed(2).replace(/\.?0+$/, '') + ' ₽'; }
+  function getHeaders(extra) { var h = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }; for (var k in extra) h[k] = extra[k]; return h; }
+
+  function getCatName(catId) { for (var i = 0; i < categories.length; i++) { if (categories[i].id === catId) return categories[i].name; } return 'Без категории'; }
+  function getSubcatName(subId) { if (!subId) return ''; for (var i = 0; i < subcategories.length; i++) { if (subcategories[i].id === subId) return subcategories[i].name; } return ''; }
+
+  function loadAll() {
+    showStatus('Загрузка прайсов...', 'loading');
+    Promise.all([
+      fetch(SUPABASE_URL + '/rest/v1/service_categories?select=*&order=sort_order.asc,name.asc', { headers: getHeaders() }).then(function(r) { return r.json(); }),
+      fetch(SUPABASE_URL + '/rest/v1/service_subcategories?select=*&order=sort_order.asc,name.asc', { headers: getHeaders() }).then(function(r) { return r.json(); }),
+      fetch(SUPABASE_URL + '/rest/v1/services?select=*&order=name.asc', { headers: getHeaders() }).then(function(r) { return r.json(); })
+    ])
+      .then(function(results) {
+        categories = results[0] || [];
+        subcategories = results[1] || [];
+        services = results[2] || [];
+        filtered = services.slice();
+        hideStatus();
+        renderCategorySelect();
+        updateStats();
+        render();
+      })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); });
+  }
+
+  function renderCategorySelect() {
+    var sel = $('prAddCat');
+    var html = '<option value="">-- Категория --</option>';
+    for (var i = 0; i < categories.length; i++) {
+      html += '<option value="' + categories[i].id + '">' + escapeHtml(categories[i].name) + '</option>';
+    }
+    sel.innerHTML = html;
+  }
+
+  function renderSubcatSelect() {
+    var selCat = $('prAddCat'), selSub = $('prAddSubcat');
+    var catId = parseInt(selCat.value, 10);
+    if (!catId) { selSub.innerHTML = '<option value="">-- Подкатегория --</option>'; selSub.disabled = true; return; }
+    selSub.disabled = false;
+    var html = '<option value="">-- Без подкатегории --</option>';
+    for (var i = 0; i < subcategories.length; i++) {
+      if (subcategories[i].category_id === catId) {
+        html += '<option value="' + subcategories[i].id + '">' + escapeHtml(subcategories[i].name) + '</option>';
+      }
+    }
+    selSub.innerHTML = html;
+  }
+
+  function updateStats() {
+    $('prCatCount').textContent = categories.length;
+    $('prSvcCount').textContent = filtered.length;
+  }
+
+  function filterData(query) {
+    query = (query || '').toLowerCase().trim();
+    if (!query) { filtered = services.slice(); }
+    else { filtered = services.filter(function(s) { return (s.name||'').toLowerCase().indexOf(query) !== -1; }); }
+    updateStats();
+    render();
+  }
+
+  function render() {
+    var tbody = $('prTableBody');
+    if (!filtered.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="apr-empty">' + (services.length ? '🔍 Ничего не найдено' : '📋 Услуг пока нет. Добавьте первую!') + '</td></tr>';
+      return;
+    }
+
+    var groups = {};
+    var groupOrder = [];
+    for (var i = 0; i < filtered.length; i++) {
+      var s = filtered[i];
+      var catName = getCatName(s.category_id);
+      var subName = getSubcatName(s.subcategory_id) || '';
+      var key = catName + '|||' + subName;
+      if (!groups[key]) { groups[key] = { catName: catName, subName: subName, items: [] }; groupOrder.push(key); }
+      groups[key].items.push(s);
+    }
+
+    // Считаем количество услуг в каждой категории
+    var catCounts = {};
+    for (var g0 = 0; g0 < groupOrder.length; g0++) {
+      var g0name = groups[groupOrder[g0]].catName;
+      catCounts[g0name] = (catCounts[g0name] || 0) + groups[groupOrder[g0]].items.length;
+    }
+
+    var html = '';
+    var prevCat = null;
+    var catIdx = 0;
+    var subIdx = 0;
+    for (var g = 0; g < groupOrder.length; g++) {
+      var group = groups[groupOrder[g]];
+      if (group.catName !== prevCat) {
+        var catId = 'cat-' + catIdx;
+        html += '<tr class="apr-cat-divider" data-cat-id="' + catId + '" onclick="window.prToggleCat(this)">';
+        html += '<td colspan="6"><div class="apr-cat-header">';
+        html += '<span class="apr-cat-chevron">▼</span>';
+        html += '<span class="apr-cat-title">📁 ' + escapeHtml(group.catName) + '</span>';
+        html += '<span class="apr-cat-count">' + catCounts[group.catName] + ' услуг</span>';
+        html += '</div></td></tr>';
+        prevCat = group.catName;
+        catIdx++;
+        subIdx = 0;
+      }
+      var subId = 'sub-' + (catIdx - 1) + '-' + subIdx;
+      if (group.subName) {
+        html += '<tr class="apr-subcat-divider" data-cat-parent="cat-' + (catIdx-1) + '" data-sub-id="' + subId + '" onclick="window.prToggleSub(this)">';
+        html += '<td colspan="6"><div class="apr-subcat-header">';
+        html += '<span class="apr-subcat-chevron">▼</span>';
+        html += '<span class="apr-subcat-title">↳ ' + escapeHtml(group.subName) + '</span>';
+        html += '<span class="apr-subcat-count">' + group.items.length + '</span>';
+        html += '</div></td></tr>';
+        subIdx++;
+      }
+      for (var k = 0; k < group.items.length; k++) {
+        var item = group.items[k];
+        var cc = item.class_count != null ? Number(item.class_count) : 4;
+        if (isNaN(cc)) cc = 4;
+        html += '<tr class="apr-svc-row" data-cat-parent="cat-' + (catIdx-1) + '"' + (group.subName ? ' data-sub-parent="' + subId + '"' : '') + '>';
+        html += '<td><div class="apr-service-name">' + escapeHtml(item.name) + '</div></td>';
+        if (cc === 0) {
+          html += renderPriceCell(item.price_c1_client, item.price_c1_partner);
+          html += '<td class="apr-price-cell" colspan="3" style="color:#52525b;text-align:center;font-size:12px">—</td>';
+        } else {
+          html += renderPriceCell(item.price_c1_client, item.price_c1_partner);
+          if (cc >= 2) { html += renderPriceCell(item.price_c2_client, item.price_c2_partner); } else { html += '<td class="apr-price-cell apr-price-empty">—</td>'; }
+          if (cc >= 3) { html += renderPriceCell(item.price_c3_client, item.price_c3_partner); } else { html += '<td class="apr-price-cell apr-price-empty">—</td>'; }
+          if (cc >= 4) { html += renderPriceCell(item.price_c4_client, item.price_c4_partner); } else { html += '<td class="apr-price-cell apr-price-empty">—</td>'; }
+        }
+        html += '<td><div class="apr-actions">';
+        html += '<button class="apr-action-btn edit" onclick="event.stopPropagation(); window.prEditPrices(' + item.id + ')" title="Цены">💰</button>';
+        html += '<button class="apr-action-btn danger" onclick="event.stopPropagation(); window.prDelete(' + item.id + ')" title="Удалить">🗑️</button>';
+        html += '</div></td>';
+        html += '</tr>';
+      }
+    }
+    tbody.innerHTML = html;
+  }
+
+  function renderPriceCell(clientPrice, partnerPrice) {
+    var html = '<td class="apr-price-cell">';
+    html += '<div class="apr-price-client">' + escapeHtml(fmtPrice(clientPrice)) + '</div>';
+    if (partnerPrice) {
+      html += '<div class="apr-price-partner">' + escapeHtml(fmtPrice(partnerPrice)) + '</div>';
+    }
+    html += '</td>';
+    return html;
+  }
+
+  function addService() {
+    var catId = $('prAddCat').value;
+    var subId = $('prAddSubcat').value;
+    var name = $('prAddName').value.trim();
+    if (!catId) { alert('Выберите категорию!'); return; }
+    if (!name) { alert('Введите название услуги!'); return; }
+    showStatus('Добавляем услугу...', 'loading');
+    var payload = { category_id: parseInt(catId, 10), name: name };
+    if (subId) payload.subcategory_id = parseInt(subId, 10);
+    fetch(SUPABASE_URL + '/rest/v1/services', {
+      method: 'POST',
+      headers: getHeaders({'Content-Type':'application/json','Prefer':'return=minimal'}),
+      body: JSON.stringify(payload)
+    })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); $('prAddName').value=''; loadAll(); showStatus('✅ Услуга добавлена','success'); setTimeout(hideStatus,2000); })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); });
+  }
+
+  function deleteService(id) {
+    if (!confirm('Удалить услугу?')) return;
+    showStatus('Удаляем...', 'loading');
+    fetch(SUPABASE_URL + '/rest/v1/services?id=eq.' + id, { method: 'DELETE', headers: getHeaders() })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); loadAll(); showStatus('✅ Удалено','success'); setTimeout(hideStatus,2000); })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); loadAll(); });
+  }
+
+  var pendingClassCount = 4;
+
+  function openPriceModal(id) {
+    var svc = null;
+    for (var i = 0; i < services.length; i++) { if (services[i].id === id) { svc = services[i]; break; } }
+    if (!svc) return;
+    pendingPriceId = id;
+    pendingClassCount = svc.class_count != null ? Number(svc.class_count) : 4;
+    if (isNaN(pendingClassCount)) pendingClassCount = 4;
+    $('prPriceModalTitle').textContent = '✏️ Цены: ' + svc.name;
+    $('prC1Client').value = svc.price_c1_client || '';
+    $('prC1Partner').value = svc.price_c1_partner || '';
+    $('prC2Client').value = svc.price_c2_client || '';
+    $('prC2Partner').value = svc.price_c2_partner || '';
+    $('prC3Client').value = svc.price_c3_client || '';
+    $('prC3Partner').value = svc.price_c3_partner || '';
+    $('prC4Client').value = svc.price_c4_client || '';
+    $('prC4Partner').value = svc.price_c4_partner || '';
+    $('prC0Client').value = svc.price_c1_client || '';
+    $('prC0Partner').value = svc.price_c1_partner || '';
+    updateClassSelector(pendingClassCount);
+    $('prPriceModal').style.display = 'flex';
+  }
+
+  function updateClassSelector(count) {
+    pendingClassCount = count;
+    var btns = document.querySelectorAll('.apr-class-btn');
+    for (var i = 0; i < btns.length; i++) {
+      var btnCount = parseInt(btns[i].getAttribute('data-count'), 10);
+      if (btnCount === count) {
+        btns[i].classList.add('active');
+      } else {
+        btns[i].classList.remove('active');
+      }
+    }
+    var groups = document.querySelectorAll('#prPriceGrid .apr-price-group');
+    for (var g = 0; g < groups.length; g++) {
+      var gIdx = g + 1;
+      if (gIdx <= count) {
+        groups[g].classList.remove('hidden');
+      } else {
+        groups[g].classList.add('hidden');
+      }
+    }
+    var noClass = $('prNoClassField');
+    if (count === 0) {
+      noClass.classList.add('show');
+      $('prClassHint').textContent = 'Без классов — одна цена для всех';
+    } else {
+      noClass.classList.remove('show');
+      $('prClassHint').textContent = count + ' ' + (count === 1 ? 'класс' : (count < 5 ? 'класса' : 'классов'));
+    }
+  }
+
+  function closePriceModal() { $('prPriceModal').style.display = 'none'; pendingPriceId = null; }
+
+  function savePriceModal() {
+    if (!pendingPriceId) return;
+    var id = pendingPriceId;
+    var cc = pendingClassCount;
+    function num(elId) { var v = parseFloat($(elId).value); return isNaN(v) ? 0 : v; }
+    var payload = { class_count: cc };
+    if (cc === 0) {
+      payload.price_c1_client = num('prC0Client');
+      payload.price_c1_partner = num('prC0Partner');
+      payload.price_c2_client = 0; payload.price_c2_partner = 0;
+      payload.price_c3_client = 0; payload.price_c3_partner = 0;
+      payload.price_c4_client = 0; payload.price_c4_partner = 0;
+    } else {
+      payload.price_c1_client = num('prC1Client'); payload.price_c1_partner = num('prC1Partner');
+      if (cc >= 2) { payload.price_c2_client = num('prC2Client'); payload.price_c2_partner = num('prC2Partner'); } else { payload.price_c2_client = 0; payload.price_c2_partner = 0; }
+      if (cc >= 3) { payload.price_c3_client = num('prC3Client'); payload.price_c3_partner = num('prC3Partner'); } else { payload.price_c3_client = 0; payload.price_c3_partner = 0; }
+      if (cc >= 4) { payload.price_c4_client = num('prC4Client'); payload.price_c4_partner = num('prC4Partner'); } else { payload.price_c4_client = 0; payload.price_c4_partner = 0; }
+    }
+    showStatus('Сохраняем цены...', 'loading');
+    closePriceModal();
+    fetch(SUPABASE_URL + '/rest/v1/services?id=eq.' + id, {
+      method: 'PATCH',
+      headers: getHeaders({'Content-Type':'application/json','Prefer':'return=minimal'}),
+      body: JSON.stringify(payload)
+    })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); loadAll(); showStatus('✅ Цены сохранены','success'); setTimeout(hideStatus,2000); })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); loadAll(); });
+  }
+
+  function toggleCat(row) {
+    var catId = row.getAttribute('data-cat-id');
+    row.classList.toggle('collapsed');
+    var collapsed = row.classList.contains('collapsed');
+    var rows = document.querySelectorAll('#prTableBody tr');
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      if (r === row) continue;
+      if (r.getAttribute('data-cat-parent') === catId) {
+        if (collapsed) {
+          r.classList.add('apr-hidden');
+        } else {
+          // Показываем, но если подкатегория свёрнута — оставляем скрытыми её услуги
+          var subParent = r.getAttribute('data-sub-parent');
+          var subRow = subParent ? document.querySelector('[data-sub-id="' + subParent + '"]') : null;
+          if (subRow && subRow.classList.contains('collapsed') && r.classList.contains('apr-svc-row')) {
+            r.classList.add('apr-hidden');
+          } else {
+            r.classList.remove('apr-hidden');
+          }
+        }
+      }
+    }
+  }
+
+  function toggleSub(row) {
+    var subId = row.getAttribute('data-sub-id');
+    row.classList.toggle('collapsed');
+    var collapsed = row.classList.contains('collapsed');
+    var rows = document.querySelectorAll('#prTableBody tr');
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      if (r.getAttribute('data-sub-parent') === subId && r.classList.contains('apr-svc-row')) {
+        if (collapsed) {
+          r.classList.add('apr-hidden');
+        } else {
+          // Проверяем что категория не свёрнута
+          var catParent = r.getAttribute('data-cat-parent');
+          var catRow = document.querySelector('[data-cat-id="' + catParent + '"]');
+          if (catRow && catRow.classList.contains('collapsed')) {
+            r.classList.add('apr-hidden');
+          } else {
+            r.classList.remove('apr-hidden');
+          }
+        }
+      }
+    }
+  }
+
+  // === УПРАВЛЕНИЕ КАТЕГОРИЯМИ ===
+  function openCatsModal() {
+    $('prCatsModal').style.display = 'flex';
+    renderCatsList();
+  }
+
+  function closeCatsModal() {
+    $('prCatsModal').style.display = 'none';
+  }
+
+  function renderCatsList() {
+    var list = $('prCatsList');
+    if (!categories.length) {
+      list.innerHTML = '<div class="apr-subcat-empty">Категорий пока нет. Добавьте первую выше!</div>';
+      return;
+    }
+
+    var html = '';
+    for (var i = 0; i < categories.length; i++) {
+      var cat = categories[i];
+      var subCount = 0;
+      for (var s = 0; s < subcategories.length; s++) {
+        if (subcategories[s].category_id === cat.id) subCount++;
+      }
+      html += '<div class="apr-cat-item" data-cat-id="' + cat.id + '">';
+      // Заголовок категории
+      html += '<div class="apr-cat-item-header" onclick="window.prToggleCatItem(' + cat.id + ')">';
+      html += '<span class="apr-cat-item-chevron">▼</span>';
+      html += '<span class="apr-cat-item-name" id="catName-' + cat.id + '">' + escapeHtml(cat.name) + '</span>';
+      html += '<span class="apr-cat-item-count">' + subCount + ' подк.</span>';
+      html += '<div class="apr-cat-item-actions">';
+      html += '<button class="apr-cat-item-btn edit" onclick="event.stopPropagation(); window.prEditCat(' + cat.id + ')" title="Переименовать">✏️</button>';
+      html += '<button class="apr-cat-item-btn danger" onclick="event.stopPropagation(); window.prDeleteCat(' + cat.id + ')" title="Удалить">🗑️</button>';
+      html += '</div>';
+      html += '</div>';
+      // Подкатегории
+      html += '<div class="apr-subcat-list" id="subList-' + cat.id + '">';
+      var hasSubs = false;
+      for (var s2 = 0; s2 < subcategories.length; s2++) {
+        if (subcategories[s2].category_id === cat.id) {
+          hasSubs = true;
+          var sub = subcategories[s2];
+          html += '<div class="apr-subcat-item">';
+          html += '<span class="apr-subcat-item-name" id="subName-' + sub.id + '">' + escapeHtml(sub.name) + '</span>';
+          html += '<div class="apr-cat-item-actions">';
+          html += '<button class="apr-cat-item-btn edit" onclick="window.prEditSub(' + sub.id + ')" title="Переименовать">✏️</button>';
+          html += '<button class="apr-cat-item-btn danger" onclick="window.prDeleteSub(' + sub.id + ')" title="Удалить">🗑️</button>';
+          html += '</div>';
+          html += '</div>';
+        }
+      }
+      if (!hasSubs) {
+        html += '<div class="apr-subcat-empty">Подкатегорий нет</div>';
+      }
+      // Форма добавления подкатегории
+      html += '<div class="apr-subcat-add-row">';
+      html += '<input type="text" class="apr-subcat-add-input" id="subAdd-' + cat.id + '" placeholder="Новая подкатегория..." autocomplete="off">';
+      html += '<button class="apr-subcat-add-btn" onclick="window.prAddSub(' + cat.id + ')">+ Добавить</button>';
+      html += '</div>';
+      html += '</div>'; // конец subcat-list
+      html += '</div>'; // конец cat-item
+    }
+    list.innerHTML = html;
+  }
+
+  function toggleCatItem(catId) {
+    var item = document.querySelector('.apr-cat-item[data-cat-id="' + catId + '"]');
+    if (item) item.classList.toggle('collapsed');
+  }
+
+  function addCategory() {
+    var input = $('prCatAddInput');
+    var name = input.value.trim();
+    if (!name) { alert('Введите название категории!'); return; }
+    showStatus('Добавляем категорию...', 'loading');
+    fetch(SUPABASE_URL + '/rest/v1/service_categories', {
+      method: 'POST',
+      headers: getHeaders({'Content-Type':'application/json','Prefer':'return=minimal'}),
+      body: JSON.stringify({ name: name, sort_order: 0 })
+    })
+      .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        input.value = '';
+        return loadAll().then(function() {
+          renderCatsList();
+          showStatus('✅ Категория добавлена', 'success');
+          setTimeout(hideStatus, 2000);
+        });
+      })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); });
+  }
+
+  function addSubcategory(catId) {
+    var input = $('subAdd-' + catId);
+    var name = input.value.trim();
+    if (!name) { alert('Введите название подкатегории!'); return; }
+    showStatus('Добавляем подкатегорию...', 'loading');
+    fetch(SUPABASE_URL + '/rest/v1/service_subcategories', {
+      method: 'POST',
+      headers: getHeaders({'Content-Type':'application/json','Prefer':'return=minimal'}),
+      body: JSON.stringify({ category_id: catId, name: name, sort_order: 0 })
+    })
+      .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        input.value = '';
+        return loadAll().then(function() {
+          renderCatsList();
+          showStatus('✅ Подкатегория добавлена', 'success');
+          setTimeout(hideStatus, 2000);
+        });
+      })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); });
+  }
+
+  function editCat(catId) {
+    var nameEl = $('catName-' + catId);
+    if (!nameEl) return;
+    var oldName = nameEl.textContent;
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'apr-cat-item-name-input';
+    input.value = oldName;
+    nameEl.replaceWith(input);
+    input.focus();
+    input.select();
+
+    function save() {
+      var newName = input.value.trim();
+      if (!newName || newName === oldName) { loadAll().then(renderCatsList); return; }
+      showStatus('Сохраняем...', 'loading');
+      fetch(SUPABASE_URL + '/rest/v1/service_categories?id=eq.' + catId, {
+        method: 'PATCH',
+        headers: getHeaders({'Content-Type':'application/json','Prefer':'return=minimal'}),
+        body: JSON.stringify({ name: newName })
+      })
+        .then(function(r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return loadAll().then(function() {
+            renderCatsList();
+            showStatus('✅ Сохранено', 'success');
+            setTimeout(hideStatus, 2000);
+          });
+        })
+        .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); });
+    }
+
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') save();
+      if (e.key === 'Escape') { loadAll().then(renderCatsList); }
+    });
+    input.addEventListener('blur', save);
+  }
+
+  function editSub(subId) {
+    var nameEl = $('subName-' + subId);
+    if (!nameEl) return;
+    var oldName = nameEl.textContent;
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'apr-subcat-item-name-input';
+    input.value = oldName;
+    nameEl.replaceWith(input);
+    input.focus();
+    input.select();
+
+    function save() {
+      var newName = input.value.trim();
+      if (!newName || newName === oldName) { loadAll().then(renderCatsList); return; }
+      showStatus('Сохраняем...', 'loading');
+      fetch(SUPABASE_URL + '/rest/v1/service_subcategories?id=eq.' + subId, {
+        method: 'PATCH',
+        headers: getHeaders({'Content-Type':'application/json','Prefer':'return=minimal'}),
+        body: JSON.stringify({ name: newName })
+      })
+        .then(function(r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return loadAll().then(function() {
+            renderCatsList();
+            showStatus('✅ Сохранено', 'success');
+            setTimeout(hideStatus, 2000);
+          });
+        })
+        .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); });
+    }
+
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') save();
+      if (e.key === 'Escape') { loadAll().then(renderCatsList); }
+    });
+    input.addEventListener('blur', save);
+  }
+
+  function deleteCat(catId) {
+    if (!confirm('Удалить категорию? Все услуги в ней будут без категории!')) return;
+    showStatus('Удаляем категорию...', 'loading');
+    fetch(SUPABASE_URL + '/rest/v1/service_categories?id=eq.' + catId, { method: 'DELETE', headers: getHeaders() })
+      .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return loadAll().then(function() {
+          renderCatsList();
+          showStatus('✅ Категория удалена', 'success');
+          setTimeout(hideStatus, 2000);
+        });
+      })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); });
+  }
+
+  function deleteSub(subId) {
+    if (!confirm('Удалить подкатегорию? Услуги потеряют привязку.')) return;
+    showStatus('Удаляем подкатегорию...', 'loading');
+    fetch(SUPABASE_URL + '/rest/v1/service_subcategories?id=eq.' + subId, { method: 'DELETE', headers: getHeaders() })
+      .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return loadAll().then(function() {
+          renderCatsList();
+          showStatus('✅ Подкатегория удалена', 'success');
+          setTimeout(hideStatus, 2000);
+        });
+      })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); });
+  }
+
+  window.prEditPrices = openPriceModal;
+  window.prDelete = deleteService;
+  window.prToggleCat = toggleCat;
+  window.prToggleSub = toggleSub;
+  window.prToggleCatItem = toggleCatItem;
+  window.prAddCat = addCategory;
+  window.prAddSub = addSubcategory;
+  window.prEditCat = editCat;
+  window.prEditSub = editSub;
+  window.prDeleteCat = deleteCat;
+  window.prDeleteSub = deleteSub;
+
+  $('prAddBtn').addEventListener('click', addService);
+  $('prAddCat').addEventListener('change', renderSubcatSelect);
+  $('prAddName').addEventListener('keydown', function(e) { if (e.key === 'Enter') addService(); });
+  $('prSearch').addEventListener('input', function() { var t; clearTimeout(t); t = setTimeout(function() { filterData($('prSearch').value); }, 300); });
+  // Обработчик кнопок количества классов
+  var classBtns = document.querySelectorAll('.apr-class-btn');
+  for (var cb = 0; cb < classBtns.length; cb++) {
+    classBtns[cb].addEventListener('click', function() {
+      var count = parseInt(this.getAttribute('data-count'), 10);
+      updateClassSelector(count);
+    });
+  }
+  $('prManageCatsBtn').addEventListener('click', openCatsModal);
+  $('prCatAddBtn').addEventListener('click', addCategory);
+  $('prCatAddInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') addCategory(); });
+  $('prCatsClose').addEventListener('click', closeCatsModal);
+  $('prPriceCancel').addEventListener('click', closePriceModal);
+  $('prPriceSave').addEventListener('click', savePriceModal);
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      if ($('prPriceModal').style.display === 'flex') closePriceModal();
+      if ($('prCatsModal').style.display === 'flex') closeCatsModal();
+    }
+  });
+
+  loadAll();
+})();
+</script>

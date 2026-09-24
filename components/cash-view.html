@@ -1,0 +1,523 @@
+<!-- Раздел: Расчёты -->
+<!-- Уровень: 3 (менеджер+) -->
+
+<div class="cs-page-header">
+  <h1 class="cnt-page-title">💰 Расчёты</h1>
+  <div class="cs-summary" id="csSummary">
+    <div class="cs-summary-item">
+      <div class="cs-summary-label">Долг</div>
+      <div class="cs-summary-value red" id="csTotalDebt">—</div>
+    </div>
+    <div class="cs-summary-item">
+      <div class="cs-summary-label">Оплачено</div>
+      <div class="cs-summary-value green" id="csTotalPaid">—</div>
+    </div>
+    <div class="cs-summary-item">
+      <div class="cs-summary-label">Всего</div>
+      <div class="cs-summary-value blue" id="csTotalCount">—</div>
+    </div>
+  </div>
+</div>
+
+<div class="cs-add-form">
+  <div class="cs-form-row">
+    <div class="cs-form-field">
+      <label>Категория</label>
+      <select id="csInpCategory"><option value="">-- Загрузка --</option></select>
+    </div>
+    <div class="cs-form-field">
+      <label>Имя контрагента</label>
+      <select id="csInpName" disabled><option value="">-- Сначала категорию --</option></select>
+    </div>
+    <div class="cs-form-field">
+      <label>Сумма</label>
+      <input type="number" id="csInpAmount" placeholder="0" step="0.01">
+    </div>
+    <div class="cs-form-field">
+      <label>Дата</label>
+      <input type="date" id="csInpDate">
+    </div>
+    <button class="cs-add-btn" id="csAddBtn">+ Добавить</button>
+  </div>
+  <div class="cs-comments-row">
+    <input type="text" id="csInpComments" placeholder="Комментарий к записи...">
+  </div>
+</div>
+
+<div class="cs-search-wrap">
+  <span class="cs-search-icon">🔍</span>
+  <input type="text" id="csSearch" class="cs-search-input" placeholder="Поиск по имени, сумме, комментарию...">
+</div>
+
+<div class="cs-status" id="csStatus"></div>
+
+<div class="cs-table-wrap">
+  <table class="cs-table">
+    <thead>
+      <tr>
+        <th>Имя</th><th>Сумма</th><th>Комментарий</th><th>Дата</th>
+        <th style="text-align:center">Статус</th>
+        <th style="text-align:center">Действия</th>
+      </tr>
+    </thead>
+    <tbody id="csTableBody"><tr><td colspan="6" class="cs-loading">Загрузка...</td></tr></tbody>
+  </table>
+</div>
+
+<div class="cs-modal-overlay" id="csPayModal" style="display:none;">
+  <div class="cs-modal-box">
+    <div class="cs-modal-title">💰 Оплата записи</div>
+    <div class="cs-modal-desc">Выберите способ оплаты и дату.</div>
+    <div class="cs-pay-info" id="csPayInfo"></div>
+    <div class="cs-modal-field">
+      <label class="cs-modal-label">Дата оплаты</label>
+      <input type="date" class="cs-modal-input" id="csPayDate">
+    </div>
+    <button class="cs-modal-btn full" id="csPayFull">✓ Оплачено полностью</button>
+    <div class="cs-pay-divider">или частичная оплата</div>
+    <div class="cs-modal-field">
+      <label class="cs-modal-label">Сумма частичной оплаты</label>
+      <input type="number" class="cs-modal-input" id="csPayAmount" step="0.01" placeholder="0">
+    </div>
+    <button class="cs-modal-btn part" id="csPayPart">Оплатить часть</button>
+    <div class="cs-modal-buttons"><button class="cs-modal-btn cancel" id="csPayCancel">Отмена</button></div>
+  </div>
+</div>
+
+<div class="cs-modal-overlay" id="csEditModal" style="display:none;">
+  <div class="cs-modal-box">
+    <div class="cs-modal-title">✏️ Редактирование записи</div>
+    <div class="cs-modal-grid">
+      <div class="cs-modal-field">
+        <label class="cs-modal-label">Категория</label>
+        <select id="csEditCategory" class="cs-modal-input"><option value="">-- Выберите --</option></select>
+      </div>
+      <div class="cs-modal-field">
+        <label class="cs-modal-label">Имя</label>
+        <select id="csEditName" class="cs-modal-input" disabled><option value="">-- Сначала категорию --</option></select>
+      </div>
+      <div class="cs-modal-field">
+        <label class="cs-modal-label">Сумма</label>
+        <input type="number" id="csEditAmount" class="cs-modal-input" step="0.01">
+      </div>
+      <div class="cs-modal-field">
+        <label class="cs-modal-label">Дата</label>
+        <input type="date" id="csEditDate" class="cs-modal-input">
+      </div>
+      <div class="cs-modal-field full">
+        <label class="cs-modal-label">Комментарий</label>
+        <input type="text" id="csEditComments" class="cs-modal-input">
+      </div>
+    </div>
+    <div class="cs-modal-buttons">
+      <button class="cs-modal-btn cancel" id="csEditCancel">Отмена</button>
+      <button class="cs-modal-btn save" id="csEditSave">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<div class="cs-modal-overlay" id="csHistoryModal" style="display:none;">
+  <div class="cs-modal-box cs-modal-lg">
+    <div class="cs-modal-title">📋 История операций</div>
+    <div class="cs-modal-desc" id="csHistoryDesc">Все записи по контрагенту</div>
+    <div class="cs-history-summary" id="csHistorySummary"></div>
+    <div class="cs-history-table-wrap">
+      <table class="cs-history-table">
+        <thead>
+          <tr><th>Категория</th><th>Сумма</th><th>Комментарий</th><th>Дата</th><th>Статус</th></tr>
+        </thead>
+        <tbody id="csHistoryBody"><tr><td colspan="5" class="cs-empty">Загрузка...</td></tr></tbody>
+      </table>
+    </div>
+    <div class="cs-modal-buttons"><button class="cs-modal-btn cancel" id="csHistoryClose">Закрыть</button></div>
+  </div>
+</div>
+
+<style>
+.cs-add-form { background: #18181b; border: 1.5px solid #27272a; border-radius: 12px; padding: 18px; margin-bottom: 16px; }
+.cs-form-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 12px; align-items: end; }
+.cs-form-field { display: flex; flex-direction: column; gap: 6px; }
+.cs-form-field label { font-size: 11px; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+.cs-form-field input, .cs-form-field select { padding: 10px 14px; background: #0a0a0a; border: 1.5px solid #3f3f46; border-radius: 8px; color: #fafafa; font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.2s; }
+.cs-form-field input:focus, .cs-form-field select:focus { border-color: #22c55e; }
+.cs-add-btn { padding: 10px 20px; background: #22c55e; color: #0a0a0a; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 14px; font-family: inherit; white-space: nowrap; }
+.cs-add-btn:hover { background: #16a34a; }
+.cs-comments-row { margin-top: 12px; }
+.cs-comments-row input { padding: 10px 14px; border: 1.5px solid #3f3f46; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box; background: #0a0a0a; color: #fafafa; font-family: inherit; outline: none; }
+.cs-comments-row input:focus { border-color: #22c55e; }
+.cs-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 999; padding: 16px; }
+.cs-modal-box { background: #18181b; border: 2px solid #22c55e; border-radius: 16px; padding: 28px; max-width: 500px; width: 100%; box-shadow: 0 0 40px rgba(34,197,94,0.15); max-height: 90vh; overflow-y: auto; }
+.cs-modal-box.cs-modal-lg { max-width: 800px; }
+.cs-modal-title { font-size: 20px; font-weight: 700; color: #fafafa; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.cs-modal-desc { font-size: 14px; color: #a1a1aa; margin-bottom: 20px; }
+.cs-modal-field { display: flex; flex-direction: column; margin-bottom: 14px; }
+.cs-modal-label { font-size: 11px; color: #71717a; margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.cs-modal-input { width: 100%; padding: 12px 14px; border: 1.5px solid #3f3f46; border-radius: 10px; font-size: 15px; box-sizing: border-box; background: #0a0a0a; color: #fafafa; font-family: inherit; outline: none; }
+.cs-modal-input:focus { border-color: #22c55e; }
+.cs-modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.cs-modal-grid .full { grid-column: 1 / -1; }
+.cs-pay-info { background: #0a0a0a; border: 1px solid #3f3f46; border-radius: 10px; padding: 14px 16px; margin-bottom: 20px; font-size: 14px; }
+.cs-pay-info-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.cs-pay-info-row:last-child { margin-bottom: 0; }
+.cs-pay-info-label { color: #71717a; }
+.cs-pay-info-value { font-weight: 600; color: #e4e4e7; }
+.cs-pay-info-value.amount { color: #22c55e; font-size: 18px; }
+.cs-modal-btn { padding: 12px 24px; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; font-family: inherit; }
+.cs-modal-btn.full { width: 100%; background: #22c55e; color: #0a0a0a; margin-bottom: 14px; }
+.cs-modal-btn.part { width: 100%; background: #f59e0b; color: #0a0a0a; }
+.cs-modal-btn.cancel { background: #27272a; color: #a1a1aa; }
+.cs-modal-btn.save { background: #818cf8; color: #0a0a0a; }
+.cs-pay-divider { text-align: center; color: #52525b; font-size: 13px; margin: 14px 0; position: relative; }
+.cs-modal-buttons { display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px; }
+.cs-name-link { color: #22c55e; font-weight: 600; cursor: pointer; text-decoration: underline dotted; transition: all 0.2s; }
+.cs-name-link:hover { color: #4ade80; text-decoration: underline; }
+.cs-history-summary { display: flex; gap: 12px; margin-bottom: 20px; }
+.cs-history-summary-item { flex: 1; text-align: center; padding: 14px 8px; background: #0a0a0a; border: 1px solid #3f3f46; border-radius: 10px; }
+.cs-history-summary-label { font-size: 11px; color: #71717a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.cs-history-summary-value { font-size: 18px; font-weight: 700; color: #fafafa; }
+.cs-history-summary-value.red { color: #ef4444; }
+.cs-history-summary-value.green { color: #22c55e; }
+.cs-history-table-wrap { border-radius: 10px; border: 1px solid #3f3f46; overflow: hidden; margin-bottom: 16px; max-height: 400px; overflow-y: auto; }
+.cs-history-table { width: 100%; border-collapse: collapse; }
+.cs-history-table th { padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #3f3f46; background: #27272a; }
+.cs-history-table td { padding: 10px 12px; font-size: 13px; border-bottom: 1px solid #27272a; color: #e4e4e7; vertical-align: top; word-break: break-word; }
+.cs-history-table tbody tr:hover { background: #1f1f23; }
+.cs-history-table tbody tr:last-child td { border-bottom: none; }
+.cs-cat-badge { display: inline-block; padding: 3px 10px; background: #312e81; color: #a5b4fc; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.cs-cat-badge.payment-badge { background: #14532d; color: #4ade80; }
+.cs-action-btns { display: flex; gap: 4px; align-items: center; justify-content: center; }
+.cs-del-btn, .cs-edit-btn { background: none; border: none; cursor: pointer; font-size: 18px; padding: 6px 8px; border-radius: 6px; transition: background 0.2s; line-height: 1; }
+.cs-del-btn { color: #ef4444; }
+.cs-del-btn:hover { background: #1a0000; }
+.cs-edit-btn { color: #818cf8; }
+.cs-edit-btn:hover { background: #0c0a1a; }
+@media (max-width: 800px) {
+  .cs-form-row { grid-template-columns: 1fr 1fr; }
+  .cs-add-btn { grid-column: 1 / -1; }
+  .cs-modal-grid { grid-template-columns: 1fr; }
+}
+</style>
+
+<script>
+(function() {
+  var entries = [], filtered = [], contractors = [], categoriesList = [];
+  var pendingPayId = null, pendingPayRow = null, pendingEditId = null;
+
+  function $(id) { return document.getElementById(id); }
+  function showStatus(msg, type) { var s = $('csStatus'); s.textContent = msg; s.className = 'cs-status show ' + type; }
+  function hideStatus() { $('csStatus').className = 'cs-status'; }
+  function escapeHtml(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; }
+  function formatMoney(amount) { return Number(amount || 0).toLocaleString('ru-RU') + ' ₽'; }
+  function formatDate(dateStr) {
+    if (!dateStr) return '—';
+    var d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + d.getFullYear();
+  }
+  function getHeaders(extra) {
+    var h = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
+    for (var k in extra) h[k] = extra[k];
+    return h;
+  }
+  function isPaymentRecord(comments) { return comments && comments.indexOf('Часть от') === 0; }
+  function findCategoryByName(name) {
+    for (var i = 0; i < contractors.length; i++) { if (contractors[i].name === name) return contractors[i].category; }
+    return null;
+  }
+
+  function loadContractors() {
+    return fetch(SUPABASE_URL + '/rest/v1/contractors?select=*&order=category.asc,name.asc', { method: 'GET', headers: getHeaders() })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function(data) {
+        contractors = data || [];
+        var seen = {}; categoriesList = [];
+        for (var i = 0; i < contractors.length; i++) { var c = contractors[i].category; if (!seen[c]) { seen[c] = true; categoriesList.push(c); } }
+        categoriesList.sort();
+        renderCategorySelect();
+      });
+  }
+
+  function renderCategorySelect() {
+    var sel = $('csInpCategory');
+    var html = '<option value="">-- Выберите --</option>';
+    for (var i = 0; i < categoriesList.length; i++) html += '<option value="' + escapeHtml(categoriesList[i]) + '">' + escapeHtml(categoriesList[i]) + '</option>';
+    sel.innerHTML = html;
+  }
+
+  function renderNameSelect() {
+    var selCat = $('csInpCategory'), selName = $('csInpName'), selectedCat = selCat.value;
+    if (!selectedCat) { selName.innerHTML = '<option value="">-- Сначала категорию --</option>'; selName.disabled = true; return; }
+    selName.disabled = false;
+    var html = '<option value="">-- Выберите имя --</option>';
+    for (var i = 0; i < contractors.length; i++) { if (contractors[i].category === selectedCat) html += '<option value="' + escapeHtml(contractors[i].name) + '">' + escapeHtml(contractors[i].name) + '</option>'; }
+    selName.innerHTML = html;
+  }
+
+  function loadData() {
+    showStatus('Загрузка расчётов...', 'loading');
+    fetch(SUPABASE_URL + '/rest/v1/entries?select=*', { method: 'GET', headers: getHeaders() })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function(data) { entries = data || []; filtered = entries.slice(); hideStatus(); updateSummary(); render(); })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); });
+  }
+
+  function updateSummary() {
+    var totalDebt = 0, totalPaid = 0;
+    for (var i = 0; i < filtered.length; i++) { var a = Number(filtered[i].amount || 0); if (filtered[i].is_checked) totalPaid += a; else totalDebt += a; }
+    $('csTotalDebt').textContent = formatMoney(totalDebt);
+    $('csTotalPaid').textContent = formatMoney(totalPaid);
+    $('csTotalCount').textContent = filtered.length;
+  }
+
+  function filterData(query) {
+    query = (query || '').toLowerCase().trim();
+    if (!query) { filtered = entries.slice(); }
+    else { filtered = entries.filter(function(e) { return (e.name||'').toLowerCase().indexOf(query) !== -1 || String(e.amount||'').toLowerCase().indexOf(query) !== -1 || (e.comments||'').toLowerCase().indexOf(query) !== -1; }); }
+    updateSummary(); render();
+  }
+
+  function render() {
+    var tbody = $('csTableBody');
+    if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="6" class="cs-empty">' + (entries.length ? 'Ничего не найдено' : 'Записей пока нет') + '</td></tr>'; return; }
+    var sorted = filtered.slice().sort(function(a,b) {
+      if (a.is_checked !== b.is_checked) return a.is_checked ? 1 : -1;
+      var dA = a.entry_date||'', dB = b.entry_date||'';
+      if (dA !== dB) return dA < dB ? 1 : -1;
+      return (b.id||0) - (a.id||0);
+    });
+    var html = '';
+    for (var i = 0; i < sorted.length; i++) {
+      var e = sorted[i];
+      var isPayment = isPaymentRecord(e.comments);
+      var amountClass = e.is_checked ? 'cs-col-amount paid' : 'cs-col-amount';
+      var statusBtn;
+      if (isPayment) statusBtn = '<span class="cs-pay-btn payment">Платёж</span>';
+      else if (e.is_checked) statusBtn = '<button class="cs-pay-btn paid" onclick="window.csUnmark(' + e.id + ')">✓ Оплачено</button>';
+      else statusBtn = '<button class="cs-pay-btn" onclick="window.csOpenPay(' + e.id + ')">Отметить</button>';
+      var safeName = e.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+      var nameHtml = isPayment ? '<span style="color:#71717a;font-style:italic">' + escapeHtml(e.name) + '</span>' : '<span class="cs-name-link" onclick="window.csOpenHistory(\'' + safeName + '\')">' + escapeHtml(e.name) + '</span>';
+      var actionsHtml;
+      if (isPayment) { actionsHtml = '<button class="cs-del-btn" onclick="window.csDelete(' + e.id + ')" title="Удалить">✕</button>'; }
+      else { actionsHtml = '<button class="cs-edit-btn" onclick="window.csEdit(' + e.id + ')" title="Редактировать">✏️</button><button class="cs-del-btn" onclick="window.csDelete(' + e.id + ')" title="Удалить">✕</button>'; }
+      html += '<tr>';
+      html += '<td class="cs-col-name">' + nameHtml + '</td>';
+      html += '<td class="' + amountClass + '">' + formatMoney(e.amount) + '</td>';
+      html += '<td style="color:#a1a1aa;font-size:13px">' + (e.comments ? escapeHtml(e.comments) : '<span style="color:#52525b">—</span>') + '</td>';
+      html += '<td>' + formatDate(e.entry_date) + '</td>';
+      html += '<td style="text-align:center">' + statusBtn + '</td>';
+      html += '<td><div class="cs-action-btns">' + actionsHtml + '</div></td>';
+      html += '</tr>';
+    }
+    tbody.innerHTML = html;
+  }
+
+  function addEntry() {
+    var category = $('csInpCategory').value, name = $('csInpName').value;
+    var amount = parseFloat($('csInpAmount').value), comments = $('csInpComments').value.trim();
+    var entryDate = $('csInpDate').value || new Date().toISOString().split('T')[0];
+    if (!category) { alert('Выберите категорию!'); return; }
+    if (!name) { alert('Выберите имя!'); return; }
+    if (isNaN(amount)) { alert('Введите сумму!'); return; }
+    showStatus('Добавляем...', 'loading');
+    fetch(SUPABASE_URL + '/rest/v1/entries', { method: 'POST', headers: getHeaders({'Content-Type':'application/json','Prefer':'return=minimal'}), body: JSON.stringify({name:name,amount:amount,comments:comments,entry_date:entryDate,is_checked:false}) })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); $('csInpAmount').value=''; $('csInpComments').value=''; loadData(); showStatus('✅ Добавлено','success'); setTimeout(hideStatus,2000); })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); });
+  }
+
+  function deleteEntry(id) {
+    if (!confirm('Удалить запись?')) return;
+    showStatus('Удаляем...', 'loading');
+    fetch(SUPABASE_URL + '/rest/v1/entries?id=eq.' + id, { method: 'DELETE', headers: getHeaders() })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); loadData(); showStatus('✅ Удалено','success'); setTimeout(hideStatus,2000); })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); loadData(); });
+  }
+
+  function openPayModal(rowId) {
+    pendingPayId = rowId;
+    fetch(SUPABASE_URL + '/rest/v1/entries?id=eq.' + rowId + '&select=*', { method: 'GET', headers: getHeaders() })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function(data) {
+        if (!data || !data.length) throw new Error('Не найдена');
+        pendingPayRow = data[0];
+        var row = pendingPayRow;
+        var html = '<div class="cs-pay-info-row"><span class="cs-pay-info-label">Контрагент:</span><span class="cs-pay-info-value">' + escapeHtml(row.name) + '</span></div>';
+        html += '<div class="cs-pay-info-row"><span class="cs-pay-info-label">Сумма долга:</span><span class="cs-pay-info-value amount">' + formatMoney(row.amount) + '</span></div>';
+        $('csPayInfo').innerHTML = html;
+        $('csPayDate').value = new Date().toISOString().split('T')[0];
+        $('csPayAmount').value = '';
+        $('csPayModal').style.display = 'flex';
+        setTimeout(function() { $('csPayAmount').focus(); }, 100);
+      })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); });
+  }
+
+  function closePayModal() { $('csPayModal').style.display = 'none'; pendingPayId = null; pendingPayRow = null; }
+
+  function payFull() {
+    var date = $('csPayDate').value;
+    if (!date) { alert('Выберите дату!'); return; }
+    if (!pendingPayId || !pendingPayRow) return;
+    var rowId = pendingPayId; closePayModal(); togglePaid(rowId, true, date);
+  }
+
+  function payPart() {
+    var date = $('csPayDate').value, payAmount = parseFloat($('csPayAmount').value);
+    if (!date) { alert('Выберите дату!'); return; }
+    if (isNaN(payAmount) || payAmount <= 0) { alert('Введите сумму!'); return; }
+    if (!pendingPayId || !pendingPayRow) return;
+    var row = pendingPayRow;
+    if (payAmount > row.amount) { alert('Сумма больше долга!'); return; }
+    var newAmount = row.amount - payAmount;
+    var isFullPay = (newAmount <= 0);
+    var paymentComment = 'Часть от долга: «' + (row.comments||'') + '» от ' + formatDate(row.entry_date);
+    showStatus('Создаём платёж...', 'loading'); closePayModal();
+    fetch(SUPABASE_URL + '/rest/v1/entries', { method: 'POST', headers: getHeaders({'Content-Type':'application/json','Prefer':'return=minimal'}), body: JSON.stringify({name:row.name,amount:payAmount,comments:paymentComment,entry_date:date,is_checked:true,checked_date:date}) })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status);
+        if (isFullPay) { return togglePaid(row.id, true, date, true); }
+        else { var newComment = (row.comments||'') + ' | Частично оплачено ' + formatMoney(payAmount) + ' от ' + formatDate(date);
+          return fetch(SUPABASE_URL + '/rest/v1/entries?id=eq.' + row.id, { method: 'PATCH', headers: getHeaders({'Content-Type':'application/json','Prefer':'return=minimal'}), body: JSON.stringify({amount:newAmount,comments:newComment}) }); }
+      })
+      .then(function() { loadData(); showStatus('✅ Платёж создан','success'); setTimeout(hideStatus,2000); })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); loadData(); });
+  }
+
+  function togglePaid(id, newValue, paidDate, silent) {
+    var body = { is_checked: newValue };
+    if (newValue && paidDate) body.checked_date = paidDate;
+    else if (!newValue) body.checked_date = null;
+    if (!silent) showStatus('Обновляем...', 'loading');
+    return fetch(SUPABASE_URL + '/rest/v1/entries?id=eq.' + id, { method: 'PATCH', headers: getHeaders({'Content-Type':'application/json','Prefer':'return=minimal'}), body: JSON.stringify(body) })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); loadData(); if (!silent) { showStatus(newValue?'✅ Отмечено':'✅ Снято','success'); setTimeout(hideStatus,2000); } })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); loadData(); });
+  }
+
+  function unmark(id) { if (confirm('Снять отметку об оплате?')) togglePaid(id, false, null); }
+
+  function openEditModal(rowId) {
+    pendingEditId = rowId;
+    fetch(SUPABASE_URL + '/rest/v1/entries?id=eq.' + rowId + '&select=*', { method: 'GET', headers: getHeaders() })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function(data) {
+        if (!data || !data.length) throw new Error('Не найдена');
+        var row = data[0];
+        var catSel = $('csEditCategory');
+        var html = '<option value="">-- Выберите --</option>';
+        for (var i = 0; i < categoriesList.length; i++) html += '<option value="' + escapeHtml(categoriesList[i]) + '">' + escapeHtml(categoriesList[i]) + '</option>';
+        catSel.innerHTML = html;
+        var cat = findCategoryByName(row.name);
+        if (cat) catSel.value = cat;
+        renderEditNameSelect();
+        $('csEditName').value = row.name;
+        $('csEditAmount').value = row.amount;
+        $('csEditDate').value = row.entry_date || '';
+        $('csEditComments').value = row.comments || '';
+        $('csEditModal').style.display = 'flex';
+      })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); });
+  }
+
+  function renderEditNameSelect() {
+    var selCat = $('csEditCategory'), selName = $('csEditName'), selectedCat = selCat.value;
+    if (!selectedCat) { selName.innerHTML = '<option value="">-- Сначала категорию --</option>'; selName.disabled = true; return; }
+    selName.disabled = false;
+    var html = '<option value="">-- Выберите --</option>';
+    for (var i = 0; i < contractors.length; i++) { if (contractors[i].category === selectedCat) html += '<option value="' + escapeHtml(contractors[i].name) + '">' + escapeHtml(contractors[i].name) + '</option>'; }
+    selName.innerHTML = html;
+  }
+
+  function closeEditModal() { $('csEditModal').style.display = 'none'; pendingEditId = null; }
+
+  function saveEditModal() {
+    var name = $('csEditName').value, amount = parseFloat($('csEditAmount').value);
+    var entryDate = $('csEditDate').value, comments = $('csEditComments').value.trim();
+    if (!name) { alert('Выберите имя!'); return; }
+    if (isNaN(amount)) { alert('Введите сумму!'); return; }
+    if (!pendingEditId) return;
+    var rowId = pendingEditId; showStatus('Сохраняем...', 'loading'); closeEditModal();
+    fetch(SUPABASE_URL + '/rest/v1/entries?id=eq.' + rowId, { method: 'PATCH', headers: getHeaders({'Content-Type':'application/json','Prefer':'return=minimal'}), body: JSON.stringify({name:name,amount:amount,entry_date:entryDate,comments:comments}) })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); loadData(); showStatus('✅ Сохранено','success'); setTimeout(hideStatus,2000); })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); loadData(); });
+  }
+
+  function openHistoryModal(name) {
+    $('csHistoryDesc').textContent = 'Все записи по контрагенту: ' + name;
+    $('csHistoryBody').innerHTML = '<tr><td colspan="5" class="cs-empty">Загрузка...</td></tr>';
+    $('csHistorySummary').innerHTML = '';
+    $('csHistoryModal').style.display = 'flex';
+    fetch(SUPABASE_URL + '/rest/v1/entries?name=eq.' + encodeURIComponent(name) + '&select=*', { method: 'GET', headers: getHeaders() })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function(data) { renderHistoryTable(data); })
+      .catch(function(e) { $('csHistoryBody').innerHTML = '<tr><td colspan="5" class="cs-empty">Ошибка: ' + escapeHtml(e.message) + '</td></tr>'; });
+  }
+
+  function renderHistoryTable(data) {
+    var tbody = $('csHistoryBody');
+    if (!data.length) { tbody.innerHTML = '<tr><td colspan="5" class="cs-empty">Операций пока нет</td></tr>'; renderHistorySummary(data); return; }
+    data = data.slice().sort(function(a,b) {
+      if (a.is_checked !== b.is_checked) return a.is_checked ? 1 : -1;
+      var dA = a.entry_date||'', dB = b.entry_date||'';
+      if (dA !== dB) return dA < dB ? 1 : -1;
+      return (b.id||0) - (a.id||0);
+    });
+    var html = '';
+    for (var i = 0; i < data.length; i++) {
+      var row = data[i];
+      var isPayment = isPaymentRecord(row.comments);
+      var cat = findCategoryByName(row.name) || '—';
+      var badgeClass = isPayment ? 'cs-cat-badge payment-badge' : 'cs-cat-badge';
+      var badgeText = isPayment ? '💳 Оплата' : escapeHtml(cat);
+      var amountClass = isPayment ? 'cs-col-amount paid' : 'cs-col-amount';
+      html += '<tr>';
+      html += '<td><span class="' + badgeClass + '">' + badgeText + '</span></td>';
+      html += '<td class="' + amountClass + '">' + formatMoney(row.amount) + '</td>';
+      html += '<td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(row.comments) + '</td>';
+      html += '<td>' + formatDate(row.entry_date) + '</td>';
+      html += '<td>' + (row.is_checked ? '<span style="color:#22c55e;font-weight:600">✓ Оплачено</span>' : '<span style="color:#71717a">Не оплачено</span>') + '</td>';
+      html += '</tr>';
+    }
+    tbody.innerHTML = html;
+    renderHistorySummary(data);
+  }
+
+  function renderHistorySummary(data) {
+    var totalDebt = 0, totalPaid = 0;
+    for (var i = 0; i < data.length; i++) { if (data[i].is_checked) totalPaid += Number(data[i].amount||0); else totalDebt += Number(data[i].amount||0); }
+    var html = '';
+    html += '<div class="cs-history-summary-item"><div class="cs-history-summary-label">Долг</div><div class="cs-history-summary-value red">' + formatMoney(totalDebt) + '</div></div>';
+    html += '<div class="cs-history-summary-item"><div class="cs-history-summary-label">Оплачено</div><div class="cs-history-summary-value green">' + formatMoney(totalPaid) + '</div></div>';
+    html += '<div class="cs-history-summary-item"><div class="cs-history-summary-label">Всего</div><div class="cs-history-summary-value">' + data.length + '</div></div>';
+    $('csHistorySummary').innerHTML = html;
+  }
+
+  function closeHistoryModal() { $('csHistoryModal').style.display = 'none'; }
+
+  window.csOpenPay = openPayModal;
+  window.csUnmark = unmark;
+  window.csEdit = openEditModal;
+  window.csDelete = deleteEntry;
+  window.csOpenHistory = openHistoryModal;
+
+  $('csAddBtn').addEventListener('click', addEntry);
+  $('csInpCategory').addEventListener('change', renderNameSelect);
+  $('csInpAmount').addEventListener('keydown', function(e) { if (e.key === 'Enter') addEntry(); });
+  $('csInpComments').addEventListener('keydown', function(e) { if (e.key === 'Enter') addEntry(); });
+  $('csSearch').addEventListener('input', function() { var t; clearTimeout(t); t = setTimeout(function() { filterData($('csSearch').value); }, 300); });
+  $('csPayCancel').addEventListener('click', closePayModal);
+  $('csPayFull').addEventListener('click', payFull);
+  $('csPayPart').addEventListener('click', payPart);
+  $('csEditCancel').addEventListener('click', closeEditModal);
+  $('csEditSave').addEventListener('click', saveEditModal);
+  $('csEditCategory').addEventListener('change', renderEditNameSelect);
+  $('csHistoryClose').addEventListener('click', closeHistoryModal);
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      if ($('csPayModal').style.display === 'flex') closePayModal();
+      if ($('csEditModal').style.display === 'flex') closeEditModal();
+      if ($('csHistoryModal').style.display === 'flex') closeHistoryModal();
+    }
+  });
+
+  $('csInpDate').value = new Date().toISOString().split('T')[0];
+  loadContractors().then(loadData);
+})();
+</script>

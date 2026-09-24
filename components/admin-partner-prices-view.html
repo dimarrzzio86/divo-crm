@@ -1,0 +1,770 @@
+<!-- Раздел: Прайсы партнёров (админка) -->
+<!-- Уровень: 4 (админ+) -->
+
+<div class="app-page">
+  <div class="app-header">
+    <div>
+      <h1 class="app-title">🤝 Прайсы партнёров</h1>
+      <div class="app-subtitle">Персональные цены по услугам для каждого партнёра</div>
+    </div>
+    <div class="app-stats">
+      <div class="app-stat">
+        <div class="app-stat-label">Партнёров</div>
+        <div class="app-stat-value blue" id="ppPartnerCount">—</div>
+      </div>
+      <div class="app-stat">
+        <div class="app-stat-label">Прайсов</div>
+        <div class="app-stat-value green" id="ppPriceCount">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Форма добавления -->
+  <div class="app-add-form">
+    <div class="app-form-title">➕ Добавить персональный прайс</div>
+
+    <!-- Выбор партнёра -->
+    <div class="app-form-section">
+      <div class="app-form-section-title">👤 Партнёр</div>
+      <div class="app-form-row">
+        <div class="app-field">
+          <label>Категория</label>
+          <select id="ppPartnerCat"><option value="">-- Категория --</option></select>
+        </div>
+        <div class="app-field">
+          <label>Имя</label>
+          <select id="ppPartnerName" disabled><option value="">-- Имя --</option></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Выбор услуги -->
+    <div class="app-form-section">
+      <div class="app-form-section-title">📋 Услуга</div>
+      <div class="app-form-row app-form-row-3">
+        <div class="app-field">
+          <label>Категория</label>
+          <select id="ppSvcCat"><option value="">-- Категория --</option></select>
+        </div>
+        <div class="app-field">
+          <label>Подкатегория</label>
+          <select id="ppSvcSubcat" disabled><option value="">-- Подкатегория --</option></select>
+        </div>
+        <div class="app-field">
+          <label>Услуга</label>
+          <select id="ppSvcName" disabled><option value="">-- Услуга --</option></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Цены по классам -->
+    <div class="app-form-section" id="ppPriceSection" style="display:none;">
+      <div class="app-form-section-title">💰 Цены</div>
+      <div class="pp-class-hint" id="ppClassHint">Выберите услугу</div>
+      <div class="pp-price-inputs" id="ppPriceInputs"></div>
+    </div>
+
+    <button class="app-add-btn" id="ppAddBtn" disabled>+ Добавить прайс</button>
+  </div>
+
+  <div class="app-status" id="ppStatus"></div>
+
+  <!-- Поиск -->
+  <div class="app-search-wrap">
+    <span class="app-search-icon">🔍</span>
+    <input type="text" id="ppSearch" class="app-search-input" placeholder="Поиск по партнёру или услуге...">
+  </div>
+
+  <!-- Модалка редактирования цен -->
+  <div class="pp-modal-overlay" id="ppEditModal" style="display:none;">
+    <div class="pp-modal-box">
+      <div class="pp-modal-title" id="ppEditTitle">✏️ Редактировать цены</div>
+      <div class="pp-modal-partner" id="ppEditPartner"></div>
+      <div class="pp-modal-service" id="ppEditService"></div>
+      <div class="pp-modal-prices" id="ppEditInputs"></div>
+      <div class="pp-modal-buttons">
+        <button class="pp-modal-btn cancel" id="ppEditCancel">Отмена</button>
+        <button class="pp-modal-btn save" id="ppEditSave">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Список прайсов -->
+  <div class="pp-list" id="ppList">
+    <div class="app-loading">Загрузка...</div>
+  </div>
+</div>
+
+<style>
+.app-page { font-family: inherit; }
+.app-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 24px; flex-wrap: wrap; gap: 16px;
+}
+.app-title { font-size: 28px; font-weight: 800; color: #fafafa; margin: 0; }
+.app-subtitle { font-size: 14px; color: #71717a; margin-top: 4px; }
+.app-stats { display: flex; gap: 10px; }
+.app-stat {
+  background: #18181b; border: 1.5px solid #27272a; border-radius: 12px;
+  padding: 12px 18px; text-align: center; min-width: 90px;
+}
+.app-stat-label { font-size: 11px; color: #71717a; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: 600; }
+.app-stat-value { font-size: 22px; font-weight: 800; }
+.app-stat-value.blue { color: #818cf8; }
+.app-stat-value.green { color: #4ade80; }
+
+.app-add-form { background: #18181b; border: 1.5px solid #27272a; border-radius: 14px; padding: 20px; margin-bottom: 16px; }
+.app-form-title { font-size: 14px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+.app-form-section { margin-bottom: 16px; }
+.app-form-section-title { font-size: 13px; font-weight: 600; color: #f59e0b; margin-bottom: 8px; }
+.app-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: end; }
+.app-form-row-3 { grid-template-columns: 1fr 1fr 1fr; }
+.app-field { display: flex; flex-direction: column; gap: 6px; }
+.app-field label { font-size: 11px; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+.app-field select, .app-field input {
+  padding: 11px 14px; background: #0a0a0a; border: 1.5px solid #3f3f46; border-radius: 10px;
+  color: #fafafa; font-size: 14px; font-family: inherit; outline: none; width: 100%; box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.app-field select:focus, .app-field input:focus { border-color: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,0.1); }
+.app-field select:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.pp-class-hint { font-size: 12px; color: #71717a; margin-bottom: 10px; }
+.pp-price-inputs { display: flex; flex-wrap: wrap; gap: 10px; }
+.pp-price-input-group {
+  background: #0a0a0a; border: 1px solid #3f3f46; border-radius: 10px; padding: 12px; min-width: 140px; flex: 1; max-width: 200px;
+}
+.pp-price-input-group-title { font-size: 12px; font-weight: 700; color: #fafafa; margin-bottom: 8px; }
+.pp-price-input-group.no-class .pp-price-input-group-title { color: #818cf8; }
+.pp-price-input-group input {
+  width: 100%; padding: 8px 10px; background: #18181b; border: 1.5px solid #3f3f46; border-radius: 6px;
+  color: #fafafa; font-size: 14px; font-family: inherit; outline: none; box-sizing: border-box; margin-bottom: 6px;
+}
+.pp-price-input-group input:last-child { margin-bottom: 0; }
+.pp-price-input-group input:focus { border-color: #f59e0b; }
+.pp-price-input-group label { font-size: 10px; color: #71717a; display: block; margin-bottom: 2px; text-transform: uppercase; }
+
+.app-add-btn {
+  padding: 12px 28px; background: #f59e0b; color: #0a0a0a; border: none; border-radius: 10px;
+  font-weight: 700; cursor: pointer; font-size: 14px; font-family: inherit; transition: all 0.2s; width: 100%;
+}
+.app-add-btn:hover:not(:disabled) { background: #d97706; box-shadow: 0 0 12px rgba(245,158,11,0.3); }
+.app-add-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.app-status { display: none; padding: 12px 16px; border-radius: 10px; margin-bottom: 12px; font-size: 14px; }
+.app-status.show { display: block; }
+.app-status.loading { background: #1e293b; color: #93c5fd; }
+.app-status.error { background: #7f1d1d; color: #fca5a5; }
+.app-status.success { background: #14241a; color: #4ade80; }
+
+.app-search-wrap { position: relative; margin-bottom: 16px; }
+.app-search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; pointer-events: none; }
+.app-search-input {
+  width: 100%; padding: 12px 14px 12px 42px; background: #0a0a0a; border: 1.5px solid #3f3f46; border-radius: 10px;
+  color: #fafafa; font-size: 14px; font-family: inherit; outline: none; box-sizing: border-box;
+}
+.app-search-input:focus { border-color: #f59e0b; }
+.app-search-input::placeholder { color: #52525b; }
+.app-loading { text-align: center; padding: 40px; color: #71717a; }
+
+/* Аккордеон партнёров */
+.pp-list { display: flex; flex-direction: column; gap: 10px; }
+
+.pp-partner-block {
+  background: #18181b;
+  border: 1.5px solid #27272a;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.pp-partner-block:hover { border-color: #3f3f46; }
+
+.pp-partner-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 18px;
+  cursor: pointer;
+  user-select: none;
+  background: #0a0a0a;
+  transition: background 0.15s;
+}
+.pp-partner-header:hover { background: #18181b; }
+.pp-partner-chevron {
+  display: inline-block;
+  transition: transform 0.2s;
+  font-size: 12px;
+  color: #71717a;
+  width: 16px;
+  text-align: center;
+}
+.pp-partner-block.collapsed .pp-partner-chevron { transform: rotate(-90deg); }
+.pp-partner-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #f59e0b;
+}
+.pp-partner-cat {
+  font-size: 12px;
+  color: #52525b;
+  font-weight: 400;
+}
+.pp-partner-count {
+  margin-left: auto;
+  font-size: 12px;
+  color: #52525b;
+  background: #27272a;
+  padding: 3px 10px;
+  border-radius: 10px;
+}
+
+.pp-partner-body {
+  display: block;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pp-partner-block.collapsed .pp-partner-body { display: none; }
+
+/* Список прайсов */
+.pp-item {
+  background: #18181b; border: 1.5px solid #27272a; border-radius: 12px; padding: 16px 20px;
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap; transition: border-color 0.2s;
+}
+.pp-item:hover { border-color: #3f3f46; }
+.pp-item-partner {
+  font-size: 16px; font-weight: 700; color: #f59e0b; min-width: 180px; flex: 1;
+}
+.pp-item-service {
+  font-size: 14px; font-weight: 500; color: #fafafa; flex: 2;
+}
+.pp-item-prices { display: flex; gap: 8px; flex-wrap: wrap; }
+.pp-item-price {
+  background: #0a0a0a; border: 1px solid #27272a; border-radius: 8px; padding: 6px 12px;
+  font-size: 13px; text-align: center; min-width: 70px;
+}
+.pp-item-price-label { font-size: 10px; color: #71717a; text-transform: uppercase; }
+.pp-item-price-value { font-size: 15px; font-weight: 700; color: #fafafa; }
+.pp-item-price.empty .pp-item-price-value { color: #52525b; }
+.pp-item-delete {
+  background: #27272a; border: 1px solid #3f3f46; color: #ef4444; cursor: pointer;
+  font-size: 16px; padding: 6px 10px; border-radius: 8px; transition: all 0.15s; line-height: 1;
+}
+.pp-item-delete:hover { background: #7f1d1d; border-color: #dc2626; }
+
+/* Кнопка редактирования */
+.pp-item-edit {
+  background: #27272a; border: 1px solid #3f3f46; color: #818cf8; cursor: pointer;
+  font-size: 16px; padding: 6px 10px; border-radius: 8px; transition: all 0.15s; line-height: 1;
+}
+.pp-item-edit:hover { background: #1e1b4b; border-color: #6366f1; }
+
+/* Модалка редактирования */
+.pp-modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7); z-index: 1000;
+  display: none; align-items: center; justify-content: center; padding: 16px;
+}
+.pp-modal-overlay[style*="flex"] { display: flex !important; }
+.pp-modal-box {
+  background: #18181b; border: 1.5px solid #3f3f46; border-radius: 14px;
+  padding: 24px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto;
+}
+.pp-modal-title { font-size: 18px; font-weight: 700; color: #fafafa; margin-bottom: 8px; }
+.pp-modal-partner { font-size: 14px; color: #f59e0b; font-weight: 600; margin-bottom: 4px; }
+.pp-modal-service { font-size: 16px; color: #fafafa; font-weight: 600; margin-bottom: 16px; }
+.pp-modal-prices { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+.pp-modal-input-group {
+  background: #0a0a0a; border: 1px solid #3f3f46; border-radius: 10px; padding: 12px; min-width: 130px; flex: 1; max-width: 180px;
+}
+.pp-modal-input-group-title { font-size: 12px; font-weight: 700; color: #fafafa; margin-bottom: 8px; }
+.pp-modal-input-group label { font-size: 10px; color: #71717a; text-transform: uppercase; display: block; margin-bottom: 2px; }
+.pp-modal-input-group input {
+  width: 100%; padding: 8px 10px; background: #18181b; border: 1.5px solid #3f3f46; border-radius: 6px;
+  color: #fafafa; font-size: 14px; font-family: inherit; outline: none; box-sizing: border-box;
+}
+.pp-modal-input-group input:focus { border-color: #f59e0b; }
+.pp-modal-buttons { display: flex; gap: 10px; }
+.pp-modal-btn {
+  flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer;
+  font-size: 14px; font-family: inherit; transition: all 0.2s;
+}
+.pp-modal-btn.cancel { background: #27272a; color: #a1a1aa; border: 1px solid #3f3f46; }
+.pp-modal-btn.cancel:hover { background: #3f3f46; }
+.pp-modal-btn.save { background: #f59e0b; color: #0a0a0a; }
+.pp-modal-btn.save:hover { background: #d97706; }
+.pp-empty { text-align: center; padding: 30px; color: #71717a; font-size: 15px; }
+
+/* Аккордеон партнёров */
+.pp-partner-block {
+  background: #18181b;
+  border: 1.5px solid #27272a;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.pp-partner-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  cursor: pointer;
+  user-select: none;
+  background: #0a0a0a;
+  transition: background 0.15s;
+}
+.pp-partner-header:hover { background: #18181b; }
+.pp-partner-chevron {
+  display: inline-block;
+  transition: transform 0.2s;
+  font-size: 12px;
+  color: #71717a;
+  width: 16px;
+  text-align: center;
+}
+.pp-partner-block.collapsed .pp-partner-chevron { transform: rotate(-90deg); }
+.pp-partner-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #f59e0b;
+  flex: 1;
+}
+.pp-partner-cat {
+  font-size: 11px;
+  color: #52525b;
+  background: #27272a;
+  padding: 2px 8px;
+  border-radius: 8px;
+}
+.pp-partner-count {
+  font-size: 12px;
+  color: #52525b;
+  background: #27272a;
+  padding: 3px 10px;
+  border-radius: 10px;
+}
+.pp-partner-body {
+  display: block;
+  padding: 8px;
+}
+.pp-partner-block.collapsed .pp-partner-body { display: none; }
+/* Внутри тела — карточки услуг уже есть .pp-item */
+
+@media (max-width: 700px) {
+  .app-form-row, .app-form-row-3 { grid-template-columns: 1fr; }
+}
+</style>
+
+<script>
+(function() {
+  var partners = [];
+  var services = [];
+  var svcCategories = [];
+  var svcSubcategories = [];
+  var partnerPrices = [];
+  var filtered = [];
+  var selectedSvc = null;
+
+  function $(id) { return document.getElementById(id); }
+  function showStatus(msg, type) { var s = $('ppStatus'); s.textContent = msg; s.className = 'app-status show ' + type; }
+  function hideStatus() { $('ppStatus').className = 'app-status'; }
+  function escapeHtml(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; }
+  function fmtPrice(p) { var n = Number(p || 0); if (n === 0) return '—'; if (n % 1 === 0) return String(n) + ' ₽'; return n.toFixed(2).replace(/\.?0+$/, '') + ' ₽'; }
+  function getHeaders(extra) { var h = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }; for (var k in extra) h[k] = extra[k]; return h; }
+
+  function loadAll() {
+    showStatus('Загрузка...', 'loading');
+    Promise.all([
+      fetch(SUPABASE_URL + '/rest/v1/contractors?select=*&order=category.asc,name.asc', { headers: getHeaders() }).then(function(r) { return r.json(); }),
+      fetch(SUPABASE_URL + '/rest/v1/service_categories?select=*&order=sort_order.asc,name.asc', { headers: getHeaders() }).then(function(r) { return r.json(); }),
+      fetch(SUPABASE_URL + '/rest/v1/service_subcategories?select=*&order=sort_order.asc,name.asc', { headers: getHeaders() }).then(function(r) { return r.json(); }),
+      fetch(SUPABASE_URL + '/rest/v1/services?select=*&order=name.asc', { headers: getHeaders() }).then(function(r) { return r.json(); }),
+      fetch(SUPABASE_URL + '/rest/v1/partner_prices?select=*&order=partner_id.asc', { headers: getHeaders() }).then(function(r) { return r.json(); })
+    ])
+      .then(function(results) {
+        partners = results[0] || [];
+        svcCategories = results[1] || [];
+        svcSubcategories = results[2] || [];
+        services = results[3] || [];
+        partnerPrices = results[4] || [];
+        filtered = partnerPrices.slice();
+        hideStatus();
+        renderPartnerCatSelect();
+        renderSvcCatSelect();
+        updateStats();
+        renderList();
+      })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); });
+  }
+
+  // === ПАРТНЁРЫ ===
+  function renderPartnerCatSelect() {
+    var cats = [];
+    var seen = {};
+    for (var i = 0; i < partners.length; i++) {
+      var cat = partners[i].category || 'Без категории';
+      if (!seen[cat]) { seen[cat] = true; cats.push(cat); }
+    }
+    var html = '<option value="">-- Категория --</option>';
+    for (var c = 0; c < cats.length; c++) {
+      html += '<option value="' + escapeHtml(cats[c]) + '">' + escapeHtml(cats[c]) + '</option>';
+    }
+    $('ppPartnerCat').innerHTML = html;
+  }
+
+  function renderPartnerNameSelect() {
+    var cat = $('ppPartnerCat').value;
+    var sel = $('ppPartnerName');
+    if (!cat) { sel.innerHTML = '<option value="">-- Имя --</option>'; sel.disabled = true; return; }
+    sel.disabled = false;
+    var html = '<option value="">-- Имя --</option>';
+    for (var i = 0; i < partners.length; i++) {
+      if ((partners[i].category || 'Без категории') === cat) {
+        html += '<option value="' + partners[i].id + '">' + escapeHtml(partners[i].name) + '</option>';
+      }
+    }
+    sel.innerHTML = html;
+  }
+
+  // === УСЛУГИ ===
+  function renderSvcCatSelect() {
+    var html = '<option value="">-- Категория --</option>';
+    for (var i = 0; i < svcCategories.length; i++) {
+      html += '<option value="' + svcCategories[i].id + '">' + escapeHtml(svcCategories[i].name) + '</option>';
+    }
+    $('ppSvcCat').innerHTML = html;
+  }
+
+  function renderSvcSubcatSelect() {
+    var catId = parseInt($('ppSvcCat').value, 10);
+    var sel = $('ppSvcSubcat');
+    if (!catId) { sel.innerHTML = '<option value="">-- Подкатегория --</option>'; sel.disabled = true; return; }
+    sel.disabled = false;
+    var html = '<option value="">-- Без подкатегории --</option>';
+    for (var i = 0; i < svcSubcategories.length; i++) {
+      if (svcSubcategories[i].category_id === catId) {
+        html += '<option value="' + svcSubcategories[i].id + '">' + escapeHtml(svcSubcategories[i].name) + '</option>';
+      }
+    }
+    sel.innerHTML = html;
+  }
+
+  function renderSvcNameSelect() {
+    var catId = parseInt($('ppSvcCat').value, 10);
+    var subId = parseInt($('ppSvcSubcat').value, 10);
+    var sel = $('ppSvcName');
+    if (!catId) { sel.innerHTML = '<option value="">-- Услуга --</option>'; sel.disabled = true; return; }
+    sel.disabled = false;
+    var html = '<option value="">-- Услуга --</option>';
+    for (var i = 0; i < services.length; i++) {
+      if (services[i].category_id === catId) {
+        if (subId) {
+          if (services[i].subcategory_id === subId) {
+            html += '<option value="' + services[i].id + '">' + escapeHtml(services[i].name) + '</option>';
+          }
+        } else {
+          if (!services[i].subcategory_id) {
+            html += '<option value="' + services[i].id + '">' + escapeHtml(services[i].name) + '</option>';
+          }
+        }
+      }
+    }
+    sel.innerHTML = html;
+  }
+
+  function onSvcSelected() {
+    var svcId = parseInt($('ppSvcName').value, 10);
+    selectedSvc = null;
+    for (var i = 0; i < services.length; i++) {
+      if (services[i].id === svcId) { selectedSvc = services[i]; break; }
+    }
+    if (!selectedSvc) { $('ppPriceSection').style.display = 'none'; $('ppAddBtn').disabled = true; return; }
+
+    var cc = selectedSvc.class_count != null ? Number(selectedSvc.class_count) : 4;
+    if (isNaN(cc)) cc = 4;
+
+    $('ppPriceSection').style.display = 'block';
+    $('ppClassHint').textContent = cc === 0 ? 'Без классов — одна цена' : (cc + ' ' + (cc === 1 ? 'класс' : (cc < 5 ? 'класса' : 'классов')));
+
+    var html = '';
+    if (cc === 0) {
+      html += '<div class="pp-price-input-group no-class">';
+      html += '<div class="pp-price-input-group-title">Цена</div>';
+      html += '<label>Цена</label>';
+      html += '<input type="number" id="ppPrice0" step="0.01" placeholder="0">';
+      html += '</div>';
+    } else {
+      for (var c = 1; c <= cc; c++) {
+        html += '<div class="pp-price-input-group">';
+        html += '<div class="pp-price-input-group-title">Класс ' + c + '</div>';
+        html += '<label>Цена</label>';
+        html += '<input type="number" id="ppPrice' + c + '" step="0.01" placeholder="0">';
+        html += '</div>';
+      }
+    }
+    $('ppPriceInputs').innerHTML = html;
+    $('ppAddBtn').disabled = false;
+  }
+
+  // === ДОБАВЛЕНИЕ ===
+  function addPrice() {
+    var partnerId = parseInt($('ppPartnerName').value, 10);
+    if (!partnerId) { alert('Выберите партнёра!'); return; }
+    if (!selectedSvc) { alert('Выберите услугу!'); return; }
+
+    // Проверка дубликата
+    for (var i = 0; i < partnerPrices.length; i++) {
+      if (partnerPrices[i].partner_id === partnerId && partnerPrices[i].service_id === selectedSvc.id) {
+        alert('У этого партнёра уже есть прайс на эту услугу!');
+        return;
+      }
+    }
+
+    var cc = selectedSvc.class_count != null ? Number(selectedSvc.class_count) : 4;
+    if (isNaN(cc)) cc = 4;
+
+    var payload = {
+      partner_id: partnerId,
+      service_id: selectedSvc.id,
+      class_count: cc,
+      price_c1: 0, price_c2: 0, price_c3: 0, price_c4: 0
+    };
+
+    if (cc === 0) {
+      payload.price_c1 = parseFloat($('ppPrice0').value) || 0;
+    } else {
+      for (var c = 1; c <= cc; c++) {
+        payload['price_c' + c] = parseFloat($('ppPrice' + c).value) || 0;
+      }
+    }
+
+    showStatus('Добавляем прайс...', 'loading');
+    fetch(SUPABASE_URL + '/rest/v1/partner_prices', {
+      method: 'POST',
+      headers: getHeaders({'Content-Type':'application/json','Prefer':'return=minimal'}),
+      body: JSON.stringify(payload)
+    })
+      .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        // Сброс формы
+        $('ppSvcName').value = '';
+        $('ppPriceSection').style.display = 'none';
+        $('ppAddBtn').disabled = true;
+        selectedSvc = null;
+        loadAll();
+        showStatus('✅ Прайс добавлен', 'success');
+        setTimeout(hideStatus, 2000);
+      })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); });
+  }
+
+  function deletePrice(id) {
+    if (!confirm('Удалить персональный прайс?')) return;
+    showStatus('Удаляем...', 'loading');
+    fetch(SUPABASE_URL + '/rest/v1/partner_prices?id=eq.' + id, { method: 'DELETE', headers: getHeaders() })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); loadAll(); showStatus('✅ Удалено', 'success'); setTimeout(hideStatus,2000); })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); loadAll(); });
+  }
+
+  // === СПИСОК ===
+  function getPartnerName(id) {
+    for (var i = 0; i < partners.length; i++) { if (partners[i].id === id) return partners[i].name; }
+    return 'Неизвестно';
+  }
+  function getPartnerCat(id) {
+    for (var i = 0; i < partners.length; i++) { if (partners[i].id === id) return partners[i].category || 'Без категории'; }
+    return '';
+  }
+  function getServiceName(id) {
+    for (var i = 0; i < services.length; i++) { if (services[i].id === id) return services[i].name; }
+    return 'Неизвестно';
+  }
+
+  function updateStats() {
+    var partnersSet = {};
+    for (var i = 0; i < partnerPrices.length; i++) { partnersSet[partnerPrices[i].partner_id] = true; }
+    $('ppPartnerCount').textContent = Object.keys(partnersSet).length;
+    $('ppPriceCount').textContent = filtered.length;
+  }
+
+  function filterData(query) {
+    query = (query || '').toLowerCase().trim();
+    if (!query) { filtered = partnerPrices.slice(); }
+    else {
+      filtered = partnerPrices.filter(function(p) {
+        var pName = getPartnerName(p.partner_id).toLowerCase();
+        var sName = getServiceName(p.service_id).toLowerCase();
+        return pName.indexOf(query) !== -1 || sName.indexOf(query) !== -1;
+      });
+    }
+    updateStats();
+    renderList();
+  }
+
+  function renderList() {
+    var list = $('ppList');
+    if (!filtered.length) {
+      list.innerHTML = '<div class="pp-empty">' + (partnerPrices.length ? '🔍 Ничего не найдено' : 'Прайсов пока нет. Добавьте первый!') + '</div>';
+      return;
+    }
+
+    // Группировка по партнёрам
+    var groups = {};
+    var order = [];
+    for (var i = 0; i < filtered.length; i++) {
+      var pid = filtered[i].partner_id;
+      if (!groups[pid]) { groups[pid] = []; order.push(pid); }
+      groups[pid].push(filtered[i]);
+    }
+
+    var html = '';
+    for (var g = 0; g < order.length; g++) {
+      var pid = order[g];
+      var items = groups[pid];
+      var pName = getPartnerName(pid);
+      var pCat = getPartnerCat(pid);
+
+      // Аккордеон партнёра
+      html += '<div class="pp-partner-block" data-pid="' + pid + '">';
+      html += '<div class="pp-partner-header" onclick="window.ppTogglePartner(' + pid + ')">';
+      html += '<span class="pp-partner-chevron">▼</span>';
+      html += '<span class="pp-partner-name">🤝 ' + escapeHtml(pName) + '</span>';
+      html += '<span class="pp-partner-cat">(' + escapeHtml(pCat) + ')</span>';
+      html += '<span class="pp-partner-count">' + items.length + ' услуг</span>';
+      html += '</div>';
+      html += '<div class="pp-partner-body">';
+
+      for (var k = 0; k < items.length; k++) {
+        var item = items[k];
+        var sName = getServiceName(item.service_id);
+        var cc = item.class_count != null ? Number(item.class_count) : 4;
+        if (isNaN(cc)) cc = 4;
+
+        html += '<div class="pp-item">';
+        html += '<div class="pp-item-service">' + escapeHtml(sName) + '</div>';
+
+        html += '<div class="pp-item-prices">';
+        if (cc === 0) {
+          var p0 = Number(item.price_c1 || 0);
+          html += '<div class="pp-item-price' + (p0 ? '' : ' empty') + '">';
+          html += '<div class="pp-item-price-label">Цена</div>';
+          html += '<div class="pp-item-price-value">' + escapeHtml(fmtPrice(p0)) + '</div>';
+          html += '</div>';
+        } else {
+          for (var c = 1; c <= cc; c++) {
+            var pv = Number(item['price_c' + c] || 0);
+            html += '<div class="pp-item-price' + (pv ? '' : ' empty') + '">';
+            html += '<div class="pp-item-price-label">Кл.' + c + '</div>';
+            html += '<div class="pp-item-price-value">' + escapeHtml(fmtPrice(pv)) + '</div>';
+            html += '</div>';
+          }
+        }
+        html += '</div>';
+
+        html += '<button class="pp-item-edit" onclick="window.ppEdit(' + item.id + ')" title="Редактировать">✏️</button>';
+        html += '<button class="pp-item-delete" onclick="window.ppDelete(' + item.id + ')" title="Удалить">🗑️</button>';
+        html += '</div>';
+      }
+      html += '</div>'; // pp-partner-body
+      html += '</div>'; // pp-partner-block
+    }
+    list.innerHTML = html;
+  }
+
+  var pendingEditId = null;
+
+  function openEditModal(id) {
+    var pp = null;
+    for (var i = 0; i < partnerPrices.length; i++) { if (partnerPrices[i].id === id) { pp = partnerPrices[i]; break; } }
+    if (!pp) return;
+    pendingEditId = id;
+    var pName = getPartnerName(pp.partner_id);
+    var sName = getServiceName(pp.service_id);
+    $('ppEditTitle').textContent = '✏️ Редактировать цены';
+    $('ppEditPartner').textContent = '🤝 ' + pName;
+    $('ppEditService').textContent = '📋 ' + sName;
+    var cc = pp.class_count != null ? Number(pp.class_count) : 4;
+    if (isNaN(cc)) cc = 4;
+    var html = '';
+    if (cc === 0) {
+      html += '<div class="pp-modal-input-group">';
+      html += '<div class="pp-modal-input-group-title">Цена</div>';
+      html += '<label>Цена</label>';
+      html += '<input type="number" id="ppEditPrice0" step="0.01" placeholder="0" value="' + (Number(pp.price_c1 || 0) || '') + '">';
+      html += '</div>';
+    } else {
+      for (var c = 1; c <= cc; c++) {
+        var val = Number(pp['price_c' + c] || 0);
+        html += '<div class="pp-modal-input-group">';
+        html += '<div class="pp-modal-input-group-title">Класс ' + c + '</div>';
+        html += '<label>Цена</label>';
+        html += '<input type="number" id="ppEditPrice' + c + '" step="0.01" placeholder="0" value="' + (val || '') + '">';
+        html += '</div>';
+      }
+    }
+    $('ppEditInputs').innerHTML = html;
+    $('ppEditModal').style.display = 'flex';
+  }
+
+  function closeEditModal() {
+    $('ppEditModal').style.display = 'none';
+    pendingEditId = null;
+  }
+
+  function saveEditModal() {
+    if (!pendingEditId) return;
+    var id = pendingEditId;
+    var pp = null;
+    for (var i = 0; i < partnerPrices.length; i++) { if (partnerPrices[i].id === id) { pp = partnerPrices[i]; break; } }
+    if (!pp) return;
+    var cc = pp.class_count != null ? Number(pp.class_count) : 4;
+    if (isNaN(cc)) cc = 4;
+    var payload = {};
+    if (cc === 0) {
+      payload.price_c1 = parseFloat($('ppEditPrice0').value) || 0;
+    } else {
+      for (var c = 1; c <= cc; c++) {
+        payload['price_c' + c] = parseFloat($('ppEditPrice' + c).value) || 0;
+      }
+    }
+    showStatus('Сохраняем...', 'loading');
+    closeEditModal();
+    fetch(SUPABASE_URL + '/rest/v1/partner_prices?id=eq.' + id, {
+      method: 'PATCH',
+      headers: getHeaders({'Content-Type':'application/json','Prefer':'return=minimal'}),
+      body: JSON.stringify(payload)
+    })
+      .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        loadAll();
+        showStatus('✅ Цены сохранены', 'success');
+        setTimeout(hideStatus, 2000);
+      })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); loadAll(); });
+  }
+
+  function togglePartner(pid) {
+    var block = document.querySelector('.pp-partner-block[data-pid="' + pid + '"]');
+    if (block) block.classList.toggle('collapsed');
+  }
+
+  window.ppDelete = deletePrice;
+  window.ppEdit = openEditModal;
+  window.ppTogglePartner = togglePartner;
+
+  // События
+  $('ppPartnerCat').addEventListener('change', renderPartnerNameSelect);
+  $('ppSvcCat').addEventListener('change', function() { renderSvcSubcatSelect(); $('ppSvcName').innerHTML = '<option value="">-- Услуга --</option>'; $('ppSvcName').disabled = true; $('ppPriceSection').style.display = 'none'; $('ppAddBtn').disabled = true; });
+  $('ppSvcSubcat').addEventListener('change', function() { renderSvcNameSelect(); $('ppPriceSection').style.display = 'none'; $('ppAddBtn').disabled = true; });
+  $('ppSvcName').addEventListener('change', onSvcSelected);
+  $('ppEditCancel').addEventListener('click', closeEditModal);
+  $('ppEditSave').addEventListener('click', saveEditModal);
+  $('ppEditModal').addEventListener('click', function(e) { if (e.target === this) closeEditModal(); });
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && $('ppEditModal').style.display === 'flex') closeEditModal(); });
+  $('ppAddBtn').addEventListener('click', addPrice);
+  $('ppSearch').addEventListener('input', function() { var t; clearTimeout(t); t = setTimeout(function() { filterData($('ppSearch').value); }, 300); });
+
+  loadAll();
+})();
+</script>

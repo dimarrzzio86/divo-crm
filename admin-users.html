@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Диво Детейлинг — Пользователи</title>
+<link rel="stylesheet" href="/assets/style.css?v=62">
+<link rel="stylesheet" href="/assets/auth.css?v=62">
+</head>
+<body>
+
+<div id="divoAuthContainer"></div>
+
+<div class="divo-layout" id="divoMainLayout" style="display:none;">
+
+  <header class="divo-header" id="divo-header"></header>
+
+  <div class="divo-body">
+
+    <aside class="divo-sidebar" id="divo-sidebar"></aside>
+
+    <main class="divo-content" id="divoContent"></main>
+
+  </div>
+
+  <div class="divo-footer">© Диво Детейлинг • 2026</div>
+
+</div>
+
+<script src="/components/components.js?v=62"></script>
+<script>
+function divoCheckAuthAndInit() {
+  var user = divoGetUser();
+
+  if (!user) {
+    var mainLayout = document.getElementById('divoMainLayout');
+    if (mainLayout) mainLayout.style.display = 'none';
+
+    fetch('/components/auth-form.html?v=51')
+      .then(function(r) { return r.text(); })
+      .then(function(html) {
+        var c = document.getElementById('divoAuthContainer');
+        if (c) {
+          c.innerHTML = html;
+          var btn = document.getElementById('divoAuthBtn');
+          if (btn) btn.addEventListener('click', divoDoLogin);
+          var pass = document.getElementById('divoAuthPassword');
+          if (pass) pass.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') divoDoLogin();
+          });
+        }
+      });
+    return;
+  }
+
+  // Проверка доступа: уровень 5 (владелец)
+  if (!divoCheckPageAccess(5)) return;
+
+  var mainLayout = document.getElementById('divoMainLayout');
+  if (mainLayout) mainLayout.style.display = 'flex';
+
+  var authContainer = document.getElementById('divoAuthContainer');
+  if (authContainer) authContainer.innerHTML = '';
+
+  divoInit();
+
+  // Грузим контент страницы пользователей
+  fetch('/components/admin-users.html?v=51')
+    .then(function(r) { return r.text(); })
+    .then(function(html) {
+      var content = document.getElementById('divoContent');
+      if (content) {
+        content.innerHTML = html;
+        // Выполняем скрипты
+        var scripts = content.querySelectorAll('script');
+        for (var i = 0; i < scripts.length; i++) {
+          var s = document.createElement('script');
+          s.textContent = scripts[i].textContent;
+          content.appendChild(s);
+        }
+      }
+    });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', divoCheckAuthAndInit);
+} else {
+  divoCheckAuthAndInit();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,207 @@
+<!-- Раздел: Прайс партнёра (просмотр) -->
+<!-- Уровень: 3 (менеджер+) -->
+
+<div class="ppv-page">
+  <div class="ppv-header">
+    <a href="contacts.html" class="ppv-back">← К контактам</a>
+    <h1 class="ppv-title" id="ppvTitle">🤝 Прайс партнёра</h1>
+  </div>
+
+  <div class="ppv-status" id="ppvStatus"></div>
+
+  <div id="ppvContent">
+    <div class="ppv-loading">Загрузка...</div>
+  </div>
+</div>
+
+<style>
+.ppv-page { font-family: inherit; }
+.ppv-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.ppv-back {
+  display: inline-block;
+  padding: 8px 14px;
+  background: #18181b;
+  border: 1.5px solid #27272a;
+  color: #a1a1aa;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  font-family: inherit;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.ppv-back:hover { border-color: #3f3f46; color: #fafafa; }
+.ppv-title { font-size: 24px; font-weight: 800; color: #fafafa; margin: 0; }
+
+.ppv-status { display: none; padding: 12px 16px; border-radius: 10px; margin-bottom: 12px; font-size: 14px; }
+.ppv-status.show { display: block; }
+.ppv-status.loading { background: #1e293b; color: #93c5fd; }
+.ppv-status.error { background: #7f1d1d; color: #fca5a5; }
+
+.ppv-loading { text-align: center; padding: 40px; color: #71717a; }
+.ppv-empty { text-align: center; padding: 30px; color: #71717a; }
+
+.ppv-svc-list { display: flex; flex-direction: column; gap: 8px; }
+.ppv-svc-item {
+  background: #18181b;
+  border: 1.5px solid #27272a;
+  border-radius: 12px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.ppv-svc-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: #fafafa;
+  flex: 1;
+  min-width: 180px;
+}
+.ppv-svc-prices { display: flex; gap: 8px; flex-wrap: wrap; }
+.ppv-svc-price {
+  background: #0a0a0a;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  padding: 6px 12px;
+  text-align: center;
+  min-width: 70px;
+}
+.ppv-svc-price-label { font-size: 10px; color: #71717a; text-transform: uppercase; }
+.ppv-svc-price-value { font-size: 15px; font-weight: 700; color: #f59e0b; }
+.ppv-svc-price.empty .ppv-svc-price-value { color: #52525b; }
+</style>
+
+<script>
+(function() {
+  var partnerId = null;
+  var partners = [];
+  var services = [];
+  var svcCategories = [];
+  var svcSubcategories = [];
+  var partnerPrices = [];
+
+  function $(id) { return document.getElementById(id); }
+  function showStatus(msg, type) { var s = $('ppvStatus'); s.textContent = msg; s.className = 'ppv-status show ' + type; }
+  function hideStatus() { $('ppvStatus').className = 'ppv-status'; }
+  function escapeHtml(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; }
+  function fmtPrice(p) { var n = Number(p || 0); if (n === 0) return '—'; if (n % 1 === 0) return String(n) + ' ₽'; return n.toFixed(2).replace(/\.?0+$/, '') + ' ₽'; }
+  function getHeaders() { return { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }; }
+
+  function getPartnerName(id) {
+    for (var i = 0; i < partners.length; i++) { if (partners[i].id === id) return partners[i].name; }
+    return 'Неизвестно';
+  }
+  function getPartnerCat(id) {
+    for (var i = 0; i < partners.length; i++) { if (partners[i].id === id) return partners[i].category || 'Без категории'; }
+    return '';
+  }
+  function getServiceName(id) {
+    for (var i = 0; i < services.length; i++) { if (services[i].id === id) return services[i].name; }
+    return 'Неизвестно';
+  }
+
+  function init() {
+    // Получаем partner_id из URL (?partner=13)
+    var params = new URLSearchParams(window.location.search);
+    partnerId = parseInt(params.get('partner'), 10);
+    if (!partnerId) {
+      $('ppvContent').innerHTML = '<div class="ppv-empty">Партнёр не указан</div>';
+      return;
+    }
+
+    showStatus('Загрузка...', 'loading');
+    Promise.all([
+      fetch(SUPABASE_URL + '/rest/v1/contractors?select=*&order=category.asc,name.asc', { headers: getHeaders() }).then(function(r) { return r.json(); }),
+      fetch(SUPABASE_URL + '/rest/v1/service_categories?select=*&order=sort_order.asc,name.asc', { headers: getHeaders() }).then(function(r) { return r.json(); }),
+      fetch(SUPABASE_URL + '/rest/v1/service_subcategories?select=*&order=sort_order.asc,name.asc', { headers: getHeaders() }).then(function(r) { return r.json(); }),
+      fetch(SUPABASE_URL + '/rest/v1/services?select=*&order=name.asc', { headers: getHeaders() }).then(function(r) { return r.json(); }),
+      fetch(SUPABASE_URL + '/rest/v1/partner_prices?partner_id=eq.' + partnerId + '&select=*&order=service_id.asc', { headers: getHeaders() }).then(function(r) { return r.json(); })
+    ])
+      .then(function(results) {
+        partners = results[0] || [];
+        svcCategories = results[1] || [];
+        svcSubcategories = results[2] || [];
+        services = results[3] || [];
+        partnerPrices = results[4] || [];
+        hideStatus();
+
+        var pName = getPartnerName(partnerId);
+        var pCat = getPartnerCat(partnerId);
+        $('ppvTitle').textContent = '🤝 ' + pName;
+        document.title = '🤝 ' + pName + ' — прайс';
+
+        render();
+      })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); });
+  }
+
+  function render() {
+    var container = $('ppvContent');
+    if (!partnerPrices.length) {
+      container.innerHTML = '<div class="ppv-empty">У этого партнёра пока нет персональных цен.<br>Добавьте их в разделе «Прайсы партнёров» (настройки).</div>';
+      return;
+    }
+
+    // Группировка по категориям услуг
+    var catGroups = {};
+    var catOrder = [];
+    for (var i = 0; i < partnerPrices.length; i++) {
+      var pp = partnerPrices[i];
+      var svc = null;
+      for (var s = 0; s < services.length; s++) { if (services[s].id === pp.service_id) { svc = services[s]; break; } }
+      if (!svc) continue;
+      var catName = 'Без категории';
+      for (var c = 0; c < svcCategories.length; c++) { if (svcCategories[c].id === svc.category_id) { catName = svcCategories[c].name; break; } }
+      if (!catGroups[catName]) { catGroups[catName] = []; catOrder.push(catName); }
+      catGroups[catName].push(pp);
+    }
+
+    var html = '';
+    for (var ci = 0; ci < catOrder.length; ci++) {
+      var catName = catOrder[ci];
+      var items = catGroups[catName];
+      html += '<div style="font-size:14px;font-weight:700;color:#22c55e;text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px;">📁 ' + escapeHtml(catName) + '</div>';
+      html += '<div class="ppv-svc-list">';
+      for (var k = 0; k < items.length; k++) {
+        var item = items[k];
+        var sName = getServiceName(item.service_id);
+        var cc = item.class_count != null ? Number(item.class_count) : 4;
+        if (isNaN(cc)) cc = 4;
+
+        html += '<div class="ppv-svc-item">';
+        html += '<div class="ppv-svc-name">' + escapeHtml(sName) + '</div>';
+        html += '<div class="ppv-svc-prices">';
+        if (cc === 0) {
+          var p0 = Number(item.price_c1 || 0);
+          html += '<div class="ppv-svc-price' + (p0 ? '' : ' empty') + '">';
+          html += '<div class="ppv-svc-price-label">Цена</div>';
+          html += '<div class="ppv-svc-price-value">' + escapeHtml(fmtPrice(p0)) + '</div>';
+          html += '</div>';
+        } else {
+          for (var c = 1; c <= cc; c++) {
+            var pv = Number(item['price_c' + c] || 0);
+            html += '<div class="ppv-svc-price' + (pv ? '' : ' empty') + '">';
+            html += '<div class="ppv-svc-price-label">Кл.' + c + '</div>';
+            html += '<div class="ppv-svc-price-value">' + escapeHtml(fmtPrice(pv)) + '</div>';
+            html += '</div>';
+          }
+        }
+        html += '</div>';
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+    container.innerHTML = html;
+  }
+
+  init();
+})();
+</script>

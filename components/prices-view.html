@@ -1,0 +1,531 @@
+<!-- Раздел: Прайсы (просмотр) -->
+<!-- Уровень: 3 (менеджер+) -->
+
+<div class="prv-page">
+  <div class="prv-header">
+    <div>
+      <h1 class="prv-title">📋 Прайсы</h1>
+      <div class="prv-subtitle" id="prvSubtitle">Загрузка...</div>
+    </div>
+  </div>
+
+  <!-- Переключатель Клиент / Партнёр (липкий при скролле) -->
+  <div class="prv-toggle-sticky">
+    <div class="prv-toggle-wrap" id="prvToggleWrap">
+      <button class="prv-toggle-btn active" id="prvToggleClient" data-mode="client">👤 Клиент</button>
+      <button class="prv-toggle-btn" id="prvTogglePartner" data-mode="partner">🤝 Партнёр</button>
+    </div>
+  </div>
+
+  <div class="prv-search-wrap">
+    <span class="prv-search-icon">🔍</span>
+    <input type="text" id="prvSearch" class="prv-search-input" placeholder="Поиск по названию услуги...">
+    <button class="prv-toggle-all-btn" id="prvToggleAll" title="Свернуть/развернуть все категории">📁 Свернуть все</button>
+  </div>
+
+  <div class="prv-status" id="prvStatus"></div>
+
+  <!-- Список категорий (аккордеон) -->
+  <div class="prv-cats-accordion" id="prvCatsList">
+    <div class="prv-loading">Загрузка прайсов...</div>
+  </div>
+</div>
+
+<style>
+.prv-page { font-family: inherit; }
+.prv-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.prv-title { font-size: 28px; font-weight: 800; color: #fafafa; margin: 0; line-height: 1.2; }
+.prv-subtitle { font-size: 14px; color: #71717a; margin-top: 4px; }
+
+/* Переключатель — sticky (прилипает к верху при скролле) */
+.prv-toggle-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+/* Переключатель */
+.prv-toggle-wrap {
+  display: flex;
+  gap: 0;
+  background: rgba(10, 10, 11, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.5px solid #3f3f46;
+  border-radius: 10px;
+  padding: 4px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+.prv-toggle-btn {
+  padding: 8px 20px;
+  background: transparent;
+  border: none;
+  color: #71717a;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  border-radius: 8px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.prv-toggle-btn:hover { color: #fafafa; }
+.prv-toggle-btn.active { background: #22c55e; color: #0a0a0a; }
+.prv-toggle-btn[data-mode="partner"].active { background: #f59e0b; color: #0a0a0a; }
+
+/* Поиск */
+.prv-search-wrap { position: relative; margin-bottom: 16px; }
+.prv-search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; pointer-events: none; }
+.prv-search-input {
+  width: 100%;
+  padding: 12px 14px 12px 42px;
+  background: #0a0a0a;
+  border: 1.5px solid #3f3f46;
+  border-radius: 10px;
+  color: #fafafa;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+.prv-search-input:focus { border-color: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,0.1); }
+.prv-search-input::placeholder { color: #52525b; }
+
+/* Кнопка свернуть/развернуть все */
+.prv-toggle-all-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 8px 16px;
+  background: #18181b;
+  border: 1.5px solid #3f3f46;
+  color: #a1a1aa;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+.prv-toggle-all-btn:hover {
+  border-color: #818cf8;
+  color: #818cf8;
+  background: #1e1b4b;
+}
+@media (max-width: 700px) {
+  .prv-search-wrap { display: flex; flex-wrap: wrap; align-items: center; }
+  .prv-search-input { flex: 1; min-width: 200px; }
+  .prv-toggle-all-btn { position: static; transform: none; margin-top: 8px; }
+}
+
+/* Статус */
+.prv-status { display: none; padding: 12px 16px; border-radius: 10px; margin-bottom: 12px; font-size: 14px; }
+.prv-status.show { display: block; }
+.prv-status.loading { background: #1e293b; color: #93c5fd; }
+.prv-status.error { background: #7f1d1d; color: #fca5a5; }
+
+/* Аккордеон категорий */
+.prv-cats-accordion { display: flex; flex-direction: column; gap: 8px; }
+
+.prv-cat-block {
+  background: #18181b;
+  border: 1.5px solid #27272a;
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.prv-cat-block.collapsed { border-color: #27272a; }
+
+.prv-cat-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  cursor: pointer;
+  user-select: none;
+  background: #0a0a0a;
+  transition: background 0.15s;
+}
+.prv-cat-header:hover { background: #18181b; }
+.prv-cat-chevron {
+  display: inline-block;
+  transition: transform 0.2s;
+  font-size: 12px;
+  color: #71717a;
+  width: 16px;
+  text-align: center;
+}
+.prv-cat-block.collapsed .prv-cat-chevron { transform: rotate(-90deg); }
+.prv-cat-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #22c55e;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  flex: 1;
+}
+.prv-cat-count {
+  font-size: 12px;
+  color: #52525b;
+  background: #27272a;
+  padding: 3px 10px;
+  border-radius: 10px;
+}
+
+.prv-cat-body { display: block; }
+.prv-cat-block.collapsed .prv-cat-body { display: none; }
+
+/* Подкатегории */
+.prv-subcat-block {
+  border-top: 1px solid #27272a;
+}
+.prv-subcat-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px 10px 48px;
+  cursor: pointer;
+  user-select: none;
+  background: #111113;
+  transition: background 0.15s;
+}
+.prv-subcat-header:hover { background: #1a1a1f; }
+.prv-subcat-chevron {
+  display: inline-block;
+  transition: transform 0.2s;
+  font-size: 10px;
+  color: #71717a;
+  width: 14px;
+  text-align: center;
+}
+.prv-subcat-block.collapsed .prv-subcat-chevron { transform: rotate(-90deg); }
+.prv-subcat-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #a1a1aa;
+  flex: 1;
+}
+.prv-subcat-count {
+  font-size: 11px;
+  color: #52525b;
+  background: #18181b;
+  padding: 2px 8px;
+  border-radius: 8px;
+}
+.prv-subcat-body { display: block; }
+.prv-subcat-block.collapsed .prv-subcat-body { display: none; }
+
+/* Услуга */
+.prv-svc-row {
+  display: grid;
+  gap: 0;
+  padding: 0;
+  border-top: 1px solid #27272a;
+  align-items: center;
+}
+.prv-svc-row:last-child { border-bottom: none; }
+
+.prv-svc-name-cell {
+  padding: 12px 20px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #fafafa;
+}
+.prv-svc-row.prv-svc-no-sub .prv-svc-name-cell { padding-left: 20px; }
+
+.prv-svc-prices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+  padding: 0 20px 12px 20px;
+}
+
+.prv-price-col {
+  flex: 1;
+  min-width: 80px;
+  text-align: center;
+  background: #0a0a0a;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  padding: 8px 4px;
+  margin: 0 2px;
+}
+.prv-price-col-label {
+  font-size: 10px;
+  color: #71717a;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+.prv-price-value {
+  font-size: 16px;
+  font-weight: 700;
+}
+.prv-price-value.client { color: #fafafa; }
+.prv-price-value.partner { color: #f59e0b; }
+.prv-price-value.empty { color: #52525b; font-size: 14px; }
+.prv-price-empty-text { color: #52525b; font-size: 14px; padding: 12px 20px; text-align: center; }
+
+.prv-loading { text-align: center; padding: 40px; color: #71717a; }
+.prv-empty { text-align: center; padding: 30px; color: #71717a; font-size: 15px; }
+
+@media (max-width: 600px) {
+  .prv-svc-prices { flex-direction: column; }
+  .prv-price-col { margin: 2px 0; }
+}
+</style>
+
+<script>
+(function() {
+  var services = [];
+  var categories = [];
+  var subcategories = [];
+  var filtered = [];
+  var priceMode = 'client'; // 'client' or 'partner'
+  var collapsedCats = {}; // catIdx -> true
+  var collapsedSubs = {}; // subIdx -> true
+
+  function $(id) { return document.getElementById(id); }
+  function showStatus(msg, type) { var s = $('prvStatus'); s.textContent = msg; s.className = 'prv-status show ' + type; }
+  function hideStatus() { $('prvStatus').className = 'prv-status'; }
+  function escapeHtml(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; }
+  function fmtPrice(p) { var n = Number(p || 0); if (n === 0) return '—'; if (n % 1 === 0) return String(n) + ' ₽'; return n.toFixed(2).replace(/\.?0+$/, '') + ' ₽'; }
+  function getHeaders(extra) { var h = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }; for (var k in extra) h[k] = extra[k]; return h; }
+
+  function loadAll() {
+    showStatus('Загрузка прайсов...', 'loading');
+    Promise.all([
+      fetch(SUPABASE_URL + '/rest/v1/service_categories?select=*&order=sort_order.asc,name.asc', { headers: getHeaders() }).then(function(r) { return r.json(); }),
+      fetch(SUPABASE_URL + '/rest/v1/service_subcategories?select=*&order=sort_order.asc,name.asc', { headers: getHeaders() }).then(function(r) { return r.json(); }),
+      fetch(SUPABASE_URL + '/rest/v1/services?select=*&order=name.asc', { headers: getHeaders() }).then(function(r) { return r.json(); })
+    ])
+      .then(function(results) {
+        categories = results[0] || [];
+        subcategories = results[1] || [];
+        services = results[2] || [];
+        filtered = services.slice();
+        hideStatus();
+        updateSubtitle();
+        render();
+      })
+      .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); });
+  }
+
+  function updateSubtitle() {
+    $('prvSubtitle').textContent = categories.length + ' категорий • ' + filtered.length + ' услуг';
+  }
+
+  function filterData(query) {
+    query = (query || '').toLowerCase().trim();
+    if (!query) { filtered = services.slice(); }
+    else { filtered = services.filter(function(s) { return (s.name||'').toLowerCase().indexOf(query) !== -1; }); }
+    updateSubtitle();
+    render();
+  }
+
+  function getCatName(catId) { for (var i = 0; i < categories.length; i++) { if (categories[i].id === catId) return categories[i].name; } return 'Без категории'; }
+  function getSubcatName(subId) { if (!subId) return ''; for (var i = 0; i < subcategories.length; i++) { if (subcategories[i].id === subId) return subcategories[i].name; } return ''; }
+
+  function getPrice(item, classNum) {
+    if (priceMode === 'partner') {
+      if (classNum === 0) return item.price_c1_partner;
+      return item['price_c' + classNum + '_partner'];
+    } else {
+      if (classNum === 0) return item.price_c1_client;
+      return item['price_c' + classNum + '_client'];
+    }
+  }
+
+  function renderServiceRow(item) {
+    var cc = item.class_count != null ? Number(item.class_count) : 4;
+    if (isNaN(cc)) cc = 4;
+
+    var html = '<div class="prv-svc-row">';
+    html += '<div class="prv-svc-name-cell">' + escapeHtml(item.name) + '</div>';
+
+    if (cc === 0) {
+      // Без классов — одна цена
+      var price = getPrice(item, 0);
+      var hasPrice = price && Number(price) > 0;
+      html += '<div class="prv-svc-prices">';
+      html += '<div class="prv-price-col" style="flex:1;min-width:120px;">';
+      html += '<div class="prv-price-col-label">Цена</div>';
+      html += '<div class="prv-price-value ' + priceMode + (hasPrice ? '' : ' empty') + '">' + escapeHtml(fmtPrice(price)) + '</div>';
+      html += '</div>';
+      html += '</div>';
+    } else {
+      html += '<div class="prv-svc-prices">';
+      for (var c = 1; c <= cc; c++) {
+        var price = getPrice(item, c);
+        var hasPrice = price && Number(price) > 0;
+        html += '<div class="prv-price-col">';
+        html += '<div class="prv-price-col-label">Класс ' + c + '</div>';
+        html += '<div class="prv-price-value ' + priceMode + (hasPrice ? '' : ' empty') + '">' + escapeHtml(fmtPrice(price)) + '</div>';
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function render() {
+    var container = $('prvCatsList');
+    if (!filtered.length) {
+      container.innerHTML = '<div class="prv-empty">' + (services.length ? '🔍 Ничего не найдено' : 'Услуг пока нет') + '</div>';
+      return;
+    }
+
+    // Группировка по категориям
+    var catGroups = {};
+    var catOrder = [];
+    for (var i = 0; i < filtered.length; i++) {
+      var s = filtered[i];
+      var catName = getCatName(s.category_id);
+      if (!catGroups[catName]) { catGroups[catName] = []; catOrder.push(catName); }
+      catGroups[catName].push(s);
+    }
+
+    var html = '';
+    for (var ci = 0; ci < catOrder.length; ci++) {
+      var catName = catOrder[ci];
+      var catItems = catGroups[catName];
+      var catCollapsed = collapsedCats[ci] ? ' collapsed' : '';
+      html += '<div class="prv-cat-block' + catCollapsed + '" data-cat-idx="' + ci + '">';
+      html += '<div class="prv-cat-header" onclick="window.prvToggleCat(' + ci + ')">';
+      html += '<span class="prv-cat-chevron">▼</span>';
+      html += '<span class="prv-cat-title">📁 ' + escapeHtml(catName) + '</span>';
+      html += '<span class="prv-cat-count">' + catItems.length + ' услуг</span>';
+      html += '</div>';
+      html += '<div class="prv-cat-body">';
+
+      // Группировка по подкатегориям внутри категории
+      var subGroups = {};
+      var subOrder = [];
+      var noSubItems = [];
+      for (var si = 0; si < catItems.length; si++) {
+        var item = catItems[si];
+        var subName = getSubcatName(item.subcategory_id);
+        if (subName) {
+          if (!subGroups[subName]) { subGroups[subName] = []; subOrder.push(subName); }
+          subGroups[subName].push(item);
+        } else {
+          noSubItems.push(item);
+        }
+      }
+
+      // Услуги без подкатегории
+      for (var ni = 0; ni < noSubItems.length; ni++) {
+        html += renderServiceRow(noSubItems[ni]);
+      }
+
+      // Подкатегории
+      for (var sgi = 0; sgi < subOrder.length; sgi++) {
+        var subName = subOrder[sgi];
+        var subItems = subGroups[subName];
+        var subIdx = ci + '_' + sgi;
+        var subCollapsed = collapsedSubs[subIdx] ? ' collapsed' : '';
+        html += '<div class="prv-subcat-block' + subCollapsed + '" data-sub-idx="' + subIdx + '">';
+        html += '<div class="prv-subcat-header" onclick="window.prvToggleSub(\'' + subIdx + '\')">';
+        html += '<span class="prv-subcat-chevron">▼</span>';
+        html += '<span class="prv-subcat-title">↳ ' + escapeHtml(subName) + '</span>';
+        html += '<span class="prv-subcat-count">' + subItems.length + '</span>';
+        html += '</div>';
+        html += '<div class="prv-subcat-body">';
+        for (var ski = 0; ski < subItems.length; ski++) {
+          html += renderServiceRow(subItems[ski]);
+        }
+        html += '</div>';
+        html += '</div>';
+      }
+
+      html += '</div>'; // cat-body
+      html += '</div>'; // cat-block
+    }
+    container.innerHTML = html;
+    updateToggleAllBtn();
+  }
+
+  function toggleCat(catIdx) {
+    var block = document.querySelector('.prv-cat-block[data-cat-idx="' + catIdx + '"]');
+    if (block) {
+      block.classList.toggle('collapsed');
+      collapsedCats[catIdx] = block.classList.contains('collapsed');
+    }
+  }
+
+  function toggleSub(subIdx) {
+    var block = document.querySelector('.prv-subcat-block[data-sub-idx="' + subIdx + '"]');
+    if (block) {
+      block.classList.toggle('collapsed');
+      collapsedSubs[subIdx] = block.classList.contains('collapsed');
+    }
+  }
+
+  function toggleAll() {
+    // Проверяем — все ли категории свёрнуты
+    var allCollapsed = true;
+    var catBlocks = document.querySelectorAll('.prv-cat-block');
+    for (var i = 0; i < catBlocks.length; i++) {
+      if (!catBlocks[i].classList.contains('collapsed')) { allCollapsed = false; break; }
+    }
+    // Если все свёрнуты — разворачиваем все
+    // Если хотя бы одна развёрнута — сворачиваем все
+    var shouldCollapse = !allCollapsed;
+    for (var j = 0; j < catBlocks.length; j++) {
+      var idx = catBlocks[j].getAttribute('data-cat-idx');
+      if (shouldCollapse) {
+        catBlocks[j].classList.add('collapsed');
+        collapsedCats[idx] = true;
+      } else {
+        catBlocks[j].classList.remove('collapsed');
+        collapsedCats[idx] = false;
+      }
+    }
+    // Обновляем текст кнопки
+    var btn = $('prvToggleAll');
+    if (btn) btn.textContent = shouldCollapse ? '📂 Развернуть все' : '📁 Свернуть все';
+  }
+
+  function updateToggleAllBtn() {
+    var catBlocks = document.querySelectorAll('.prv-cat-block');
+    var allCollapsed = true;
+    for (var i = 0; i < catBlocks.length; i++) {
+      if (!catBlocks[i].classList.contains('collapsed')) { allCollapsed = false; break; }
+    }
+    var btn = $('prvToggleAll');
+    if (btn) btn.textContent = allCollapsed ? '📂 Развернуть все' : '📁 Свернуть все';
+  }
+
+  function setPriceMode(mode) {
+    priceMode = mode;
+    $('prvToggleClient').classList.toggle('active', mode === 'client');
+    $('prvTogglePartner').classList.toggle('active', mode === 'partner');
+    render();
+  }
+
+  window.prvToggleCat = toggleCat;
+  window.prvToggleSub = toggleSub;
+
+  $('prvToggleAll').addEventListener('click', toggleAll);
+  $('prvToggleClient').addEventListener('click', function() { setPriceMode('client'); });
+  $('prvTogglePartner').addEventListener('click', function() { setPriceMode('partner'); });
+  $('prvSearch').addEventListener('input', function() { var t; clearTimeout(t); t = setTimeout(function() { filterData($('prvSearch').value); }, 300); });
+
+  loadAll();
+})();
+</script>

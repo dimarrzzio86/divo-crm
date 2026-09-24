@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Диво Детейлинг — CRM</title>
+<link rel="stylesheet" href="/assets/style.css?v=60">
+<link rel="stylesheet" href="/assets/dashboard.css?v=60">
+<link rel="stylesheet" href="/assets/auth.css?v=60">
+</head>
+<body>
+
+<div id="divoAuthContainer"></div>
+
+<div class="divo-layout" id="divoMainLayout" style="display:none;">
+
+  <header class="divo-header" id="divo-header"></header>
+
+  <div class="divo-body">
+
+    <aside class="divo-sidebar" id="divo-sidebar"></aside>
+
+    <main class="divo-content">
+      <div class="divo-dashboard">
+
+        <div class="divo-dashboard-card" data-level="3" onclick="location.href='contacts.html'" style="cursor:pointer;">
+          <div class="divo-dashboard-head">
+            <div class="divo-dashboard-title-block">
+              <span class="divo-dashboard-icon">📇</span>
+              <div>
+                <div class="divo-dashboard-title">Контакты</div>
+                <div class="divo-dashboard-desc">Контрагенты и телефоны</div>
+              </div>
+            </div>
+          </div>
+          <div class="divo-dashboard-body">
+            <div class="divo-dashboard-placeholder">
+              <span class="divo-dashboard-placeholder-icon">👥</span>
+              <span>Список контрагентов</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="divo-dashboard-card" data-level="3" onclick="location.href='warehouse.html'" style="cursor:pointer;">
+          <div class="divo-dashboard-head">
+            <div class="divo-dashboard-title-block">
+              <span class="divo-dashboard-icon">📦</span>
+              <div>
+                <div class="divo-dashboard-title">Склад</div>
+                <div class="divo-dashboard-desc">Учёт остатков</div>
+              </div>
+            </div>
+          </div>
+          <div class="divo-dashboard-body">
+            <div class="divo-dashboard-placeholder">
+              <span class="divo-dashboard-placeholder-icon">📊</span>
+              <span>Остатки и минимумы</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="divo-dashboard-card" data-level="3" onclick="location.href='cash.html'" style="cursor:pointer;">
+          <div class="divo-dashboard-head">
+            <div class="divo-dashboard-title-block">
+              <span class="divo-dashboard-icon">💰</span>
+              <div>
+                <div class="divo-dashboard-title">Расчёты</div>
+                <div class="divo-dashboard-desc">Долги и оплаты</div>
+              </div>
+            </div>
+          </div>
+          <div class="divo-dashboard-body">
+            <div class="divo-dashboard-placeholder">
+              <span class="divo-dashboard-placeholder-icon">💵</span>
+              <span>Расчёты появятся здесь</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="divo-dashboard-card" data-level="3" onclick="location.href='prices.html'" style="cursor:pointer;">
+          <div class="divo-dashboard-head">
+            <div class="divo-dashboard-title-block">
+              <span class="divo-dashboard-icon">📋</span>
+              <div>
+                <div class="divo-dashboard-title">Прайсы</div>
+                <div class="divo-dashboard-desc">Услуги и цены</div>
+              </div>
+            </div>
+          </div>
+          <div class="divo-dashboard-body">
+            <div class="divo-dashboard-placeholder">
+              <span class="divo-dashboard-placeholder-icon">💲</span>
+              <span>Прайс-лист услуг</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+
+  <div class="divo-footer">© Диво Детейлинг • 2026</div>
+
+</div>
+
+<script src="/components/components.js?v=60"></script>
+<script>
+function divoCheckAuthAndInit() {
+  var user = divoGetUser();
+
+  if (!user) {
+    var mainLayout = document.getElementById('divoMainLayout');
+    if (mainLayout) mainLayout.style.display = 'none';
+
+    fetch('/components/auth-form.html?v=51')
+      .then(function(r) { return r.text(); })
+      .then(function(html) {
+        var c = document.getElementById('divoAuthContainer');
+        if (c) {
+          c.innerHTML = html;
+          var btn = document.getElementById('divoAuthBtn');
+          if (btn) btn.addEventListener('click', divoDoLogin);
+          var pass = document.getElementById('divoAuthPassword');
+          if (pass) pass.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') divoDoLogin();
+          });
+        }
+      });
+    return;
+  }
+
+  // Залогинен — показываем layout
+  var mainLayout = document.getElementById('divoMainLayout');
+  if (mainLayout) mainLayout.style.display = 'flex';
+
+  var authContainer = document.getElementById('divoAuthContainer');
+  if (authContainer) authContainer.innerHTML = '';
+
+  divoInit();
+
+  // Скрываем карточки по уровню
+  var userLevel = divoGetLevel();
+  var cards = document.querySelectorAll('.divo-dashboard-card[data-level]');
+  for (var i = 0; i < cards.length; i++) {
+    var reqLevel = parseInt(cards[i].getAttribute('data-level'), 10);
+    if (!isNaN(reqLevel) && userLevel < reqLevel) {
+      cards[i].style.display = 'none';
+    }
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', divoCheckAuthAndInit);
+} else {
+  divoCheckAuthAndInit();
+}
+</script>
+</body>
+</html>
