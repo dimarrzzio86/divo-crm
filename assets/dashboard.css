@@ -94,8 +94,8 @@
 .dash-task-item.done .dash-task-check { background: #22c55e; border-color: #22c55e; }
 .dash-task-check-mark { color: #0a0a0a; font-size: 12px; font-weight: 900; display: none; }
 .dash-task-item.done .dash-task-check-mark { display: block; }
-.dash-task-text { flex: 1; font-size: 13px; color: #fafafa; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dash-task-time { font-size: 11px; color: #3b82f6; background: #1e3a8a; padding: 2px 6px; border-radius: 4px; flex-shrink: 0; }
+.dash-task-text { flex: 1; font-size: 15px; color: #fafafa; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-task-time { font-size: 12px; color: #60a5fa; background: #1e3a8a; padding: 3px 8px; border-radius: 6px; flex-shrink: 0; font-weight: 600; }
 .dash-tasks-more {
   text-align: center; padding: 8px; font-size: 13px; color: #3b82f6; font-weight: 600; cursor: pointer;
 }
