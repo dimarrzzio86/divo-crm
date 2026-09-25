@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ТЕСТ загрузки задач</title>
+</head>
+<body style="background:#0a0a0a;color:#fafafa;font-family:monospace;padding:20px;">
+
+<h1>🔍 Диагностика загрузки задач</h1>
+
+<div id="log" style="background:#18181b;padding:16px;border-radius:8px;margin:16px 0;min-height:200px;font-size:14px;"></div>
+
+<script>
+function log(msg) {
+  var el = document.getElementById('log');
+  el.innerHTML += msg + '<br>';
+  el.scrollTop = el.scrollHeight;
+  console.log(msg);
+}
+
+log('1. Страница загружена');
+log('2. Проверяем components.js...');
+</script>
+
+<script src="/components/components.js?v=72"></script>
+<script src="/components/access-config.js?v=72"></script>
+<script>
+log('3. components.js загружен');
+log('   SUPABASE_URL: ' + (typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : 'НЕ ОПРЕДЕЛЁН'));
+log('   SUPABASE_KEY: ' + (typeof SUPABASE_KEY !== 'undefined' ? 'есть (' + SUPABASE_KEY.length + ' chars)' : 'НЕ ОПРЕДЕЛЁН'));
+log('   divoGetUser: ' + (typeof divoGetUser));
+log('   divoGetLevel: ' + (typeof divoGetLevel));
+log('');
+
+log('4. access-config.js загружен');
+log('   divoLoadAccessConfig: ' + (typeof divoLoadAccessConfig));
+log('   divoHasAccessToSection: ' + (typeof divoHasAccessToSection));
+log('   divoCheckSectionAccess: ' + (typeof divoCheckSectionAccess));
+log('');
+
+log('5. Проверяем пользователя...');
+var user = divoGetUser();
+log('   user: ' + (user ? JSON.stringify(user) : 'НЕ ЗАЛОГИНЕН'));
+if (user) {
+  log('   username: ' + user.username);
+  log('   level: ' + divoGetLevel());
+  log('');
+  
+  log('6. Грузим конфиг доступов...');
+  divoLoadAccessConfig(function(config) {
+    log('   Конфиг загружен!');
+    log('   admin-tasks в конфиге: ' + (config.sections && config.sections['admin-tasks'] ? 'ДА (level=' + config.sections['admin-tasks'].level + ')' : 'НЕТ'));
+    log('   daily-tasks в конфиге: ' + (config.sections && config.sections['daily-tasks'] ? 'ДА (level=' + config.sections['daily-tasks'].level + ')' : 'НЕТ'));
+    log('');
+    
+    var hasAccess = divoHasAccessToSection('admin-tasks');
+    log('7. Доступ к admin-tasks: ' + (hasAccess ? 'ЕСТЬ ✅' : 'НЕТ ❌'));
+    
+    if (hasAccess) {
+      log('');
+      log('8. Грузим задачи напрямую...');
+      var today = new Date();
+      var dateStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+      log('   Сегодня: ' + dateStr);
+      
+      fetch(SUPABASE_URL + '/rest/v1/daily_tasks?task_date=eq.' + dateStr + '&select=*', {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+      })
+        .then(function(r) {
+          log('   HTTP статус: ' + r.status);
+          return r.json();
+        })
+        .then(function(data) {
+          log('   Задач найдено: ' + data.length);
+          for (var i = 0; i < Math.min(3, data.length); i++) {
+            log('   - ' + data[i].task_text + ' (imp=' + data[i].importance + ')');
+          }
+          log('');
+          log('✅ ВСЁ РАБОТАЕТ! Проблема в admin-tasks-view.html');
+        })
+        .catch(function(e) {
+          log('❌ Ошибка: ' + e.message);
+        });
+    } else {
+      log('❌ НЕТ ДОСТУПА — отсюда редирект!');
+    }
+  });
+} else {
+  log('');
+  log('❌ НЕ ЗАЛОГИНЕН — нужно войти сначала');
+}
+</script>
+
+</body>
+</html>
