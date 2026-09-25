@@ -10,6 +10,7 @@ var DIVO_ACCESS_LOADING = false;
 var DIVO_ACCESS_DEFAULT = {
   sections: {
     "tasks":            { "level": 2, "name": "В работе",         "icon": "🔧", "group": "main", "url": "tasks.html" },
+    "daily-tasks":      { "level": 2, "name": "Задачи на сегодня", "icon": "📝", "group": "main", "url": "tasks.html" },
     "schedule":         { "level": 3, "name": "График записей",   "icon": "📅", "group": "main", "url": "schedule.html" },
     "orders":           { "level": 2, "name": "Заказ-наряды",     "icon": "📝", "group": "main", "url": "orders.html" },
     "cash":             { "level": 3, "name": "Расчёты",          "icon": "💰", "group": "main", "url": "cash.html" },
