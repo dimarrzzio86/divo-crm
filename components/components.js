@@ -2,10 +2,16 @@
    DIVO CRM v2 — ЛОГИКА КОМПОНЕНТОВ
    ========================================== */
 
-var DIVO_VERSION = 'v72';
+var DIVO_VERSION = 'v73';
 
 var SUPABASE_URL = 'https://jnbqzngsglnjzzpsvvgn.supabase.co';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuYnF6bmdzZ2xuanp6cHN2dmduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyMzIwOTEsImV4cCI6MjEwNDgwODA5MX0.uHVMUKBtO0326KB3bAHQ8rywBvBms7WvfaxPrhm3_Y0';
+
+// VAPID ключи для Web Push уведомлений
+var VAPID_PUBLIC_KEY = 'BKzY2hG8ojeZSExtE8dR0HiY0yQ79c6MVIoBC-mCqulYb4vCO20mT5upQzFvfhjDjw5HRQbsOPgrQHlhfSre1Ek';
+
+// URL Cloudflare Pages Function для отправки push
+var PUSH_WORKER_URL = 'https://divo-crm.pages.dev';
 
 // ============ УРОВНИ ДОСТУПА ============
 
@@ -260,6 +266,209 @@ function divoInit() {
     divoHighlightActiveMenu();
     divoFilterMenuByLevel();
     divoInitSidebarAccordion();
+    divoInitPushStatus();
+  });
+}
+
+// ============ PUSH УВЕДОМЛЕНИЯ ============
+
+// Обновить UI статуса push
+function divoInitPushStatus() {
+  var statusEl = document.getElementById('pushStatus');
+  var btnEl = document.getElementById('pushToggleBtn');
+  if (!statusEl || !btnEl) return;
+
+  if (!divoPushSupported()) {
+    statusEl.textContent = '❌ Браузер не поддерживает push';
+    btnEl.style.display = 'none';
+    return;
+  }
+
+  // Проверяем подписку
+  divoPushIsSubscribed().then(function(subscribed) {
+    divoUpdatePushUI(subscribed);
+  });
+}
+
+// Обновить UI кнопки push
+function divoUpdatePushUI(subscribed) {
+  var statusEl = document.getElementById('pushStatus');
+  var btnEl = document.getElementById('pushToggleBtn');
+  if (!statusEl || !btnEl) return;
+
+  if (subscribed) {
+    statusEl.textContent = '✅ Уведомления включены';
+    statusEl.style.color = '#4ade80';
+    btnEl.textContent = '🔕 Выключить';
+    btnEl.style.background = '#7f1d1d';
+    btnEl.style.borderColor = '#dc2626';
+    btnEl.style.color = '#fca5a5';
+  } else {
+    statusEl.textContent = '🔕 Уведомления выключены';
+    statusEl.style.color = '#a1a1aa';
+    btnEl.textContent = '🔔 Включить';
+    btnEl.style.background = '#1e3a8a';
+    btnEl.style.borderColor = '#3b82f6';
+    btnEl.style.color = '#93c5fd';
+  }
+}
+
+// Переключатель push (кнопка в сайдбаре)
+// ===== PUSH-УВЕДОМЛЕНИЯ =====
+
+// Регистрация Service Worker при загрузке страницы
+function divoRegisterSW() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js?v=' + DIVO_VERSION)
+      .then(function(reg) {
+        console.log('SW зарегистрирован:', reg.scope);
+      })
+      .catch(function(e) {
+        console.error('Ошибка SW:', e);
+      });
+  }
+}
+
+// Проверка поддержки push
+function divoPushSupported() {
+  return ('serviceWorker' in navigator) && ('PushManager' in window);
+}
+
+// Запрос разрешения на уведомления
+function divoPushRequestPermission() {
+  return Notification.requestPermission();
+}
+
+// Конвертация VAPID ключа (base64 -> Uint8Array)
+function divoUrlBase64ToUint8Array(base64String) {
+  var padding = '='.repeat((4 - base64String.length % 4) % 4);
+  var base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+  var raw = atob(base64);
+  var arr = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) {
+    arr[i] = raw.charCodeAt(i);
+  }
+  return arr;
+}
+
+// Проверка: подписан ли пользователь?
+function divoPushIsSubscribed() {
+  if (!divoPushSupported()) return Promise.resolve(false);
+  return navigator.serviceWorker.ready
+    .then(function(reg) { return reg.pushManager.getSubscription(); })
+    .then(function(sub) { return sub !== null; });
+}
+
+// Подписка на push
+function divoPushSubscribe(username) {
+  return navigator.serviceWorker.ready
+    .then(function(reg) {
+      var opts = {
+        userVisibleOnly: true,
+        applicationServerKey: divoUrlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      };
+      return reg.pushManager.subscribe(opts);
+    })
+    .then(function(sub) {
+      // Сохраняем подписку в Supabase
+      var subJson = sub.toJSON();
+      return fetch(SUPABASE_URL + '/rest/v1/push_subscriptions', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+          user_email: username,
+          endpoint: subJson.endpoint,
+          p256dh: subJson.keys.p256dh,
+          auth: subJson.keys.auth
+        })
+      });
+    })
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+    });
+}
+
+// Отписка от push
+function divoPushUnsubscribe() {
+  return navigator.serviceWorker.ready
+    .then(function(reg) { return reg.pushManager.getSubscription(); })
+    .then(function(sub) {
+      if (sub) {
+        // Удаляем из БД
+        var endpoint = sub.endpoint;
+        return fetch(SUPABASE_URL + '/rest/v1/push_subscriptions?endpoint=eq.' + encodeURIComponent(endpoint), {
+          method: 'DELETE',
+          headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+        }).then(function() { return sub.unsubscribe(); });
+      }
+    });
+}
+
+// ОТПРАВКА уведомления ВСЕМ подписчикам
+// Вызывается из админки: divoSendPushToAll('Заголовок', 'Текст', '/tasks.html')
+function divoSendPushToAll(title, body, url) {
+  return fetch(PUSH_WORKER_URL + '/send-push', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      title: title,
+      body: body,
+      url: url || '/tasks.html',
+      secret: 'divo-push-2026-secret'
+    })
+  })
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    });
+}
+
+// Авто-регистрация SW при загрузке
+if (typeof window !== 'undefined') {
+  divoRegisterSW();
+}
+
+function divoPushToggle() {
+  if (!divoPushSupported()) {
+    alert('Ваш браузер не поддерживает push-уведомления');
+    return;
+  }
+
+  divoPushIsSubscribed().then(function(subscribed) {
+    if (subscribed) {
+      // Отписаться
+      divoPushUnsubscribe().then(function() {
+        divoUpdatePushUI(false);
+      });
+    } else {
+      // Подписаться
+      divoPushRequestPermission().then(function(permission) {
+        if (permission !== 'granted') {
+          var statusEl = document.getElementById('pushStatus');
+          if (statusEl) {
+            statusEl.textContent = '❌ Разрешение отклонено';
+            statusEl.style.color = '#fca5a5';
+          }
+          return;
+        }
+        var user = divoGetUser();
+        var username = user ? user.username : 'unknown';
+        divoPushSubscribe(username).then(function() {
+          divoUpdatePushUI(true);
+        }).catch(function(e) {
+          var statusEl = document.getElementById('pushStatus');
+          if (statusEl) {
+            statusEl.textContent = '❌ Ошибка: ' + e.message;
+            statusEl.style.color = '#fca5a5';
+          }
+        });
+      });
+    }
   });
 }
 

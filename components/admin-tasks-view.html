@@ -50,6 +50,13 @@
   <div class="dt-list" id="dtList">
     <div class="dt-loading">Загрузка задач...</div>
   </div>
+
+  <!-- Кнопка уведомить всех -->
+  <div class="dt-notify-bar">
+    <button class="dt-notify-btn" id="dtNotifyBtn" onclick="window.dtNotifyAll()">
+      🔔 Уведомить всех о задачах на этот день
+    </button>
+  </div>
 </div>
 
 <style>
@@ -143,6 +150,28 @@
   .dt-stat { flex: 1; }
   .dt-date-input { max-width: none; }
 }
+
+/* Кнопка уведомления */
+.dt-notify-bar { margin-top: 20px; }
+.dt-notify-btn {
+  width: 100%; padding: 14px 16px;
+  background: linear-gradient(135deg, #6d28d9, #4f46e5);
+  border: 1.5px solid #818cf8;
+  color: #fafafa;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.dt-notify-btn:hover { background: linear-gradient(135deg, #7c3aed, #6366f1); box-shadow: 0 0 16px rgba(99,102,241,0.3); }
+.dt-notify-btn:active { transform: scale(0.98); }
+.dt-notify-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>
 
 <script>
@@ -411,12 +440,44 @@
     loadTasks();
   }
 
+  // === УВЕДОМЛЕНИЕ ВСЕХ ===
+  function notifyAll() {
+    if (!tasks.length) {
+      showStatus('Сначала добавьте задачи!', 'error');
+      setTimeout(hideStatus, 2000);
+      return;
+    }
+    var dateStr = formatDateRu(currentDate);
+    var notDone = 0;
+    for (var i = 0; i < tasks.length; i++) { if (!tasks[i].is_done) notDone++; }
+    var body = tasks.length + ' задач на ' + dateStr;
+    if (notDone > 0) body += ' · невыполнено: ' + notDone;
+
+    if (!confirm('Отправить уведомление всем сотрудникам?\n\n' + body)) return;
+
+    var btn = $('dtNotifyBtn');
+    if (btn) { btn.disabled = true; btn.textContent = '🔔 Отправляем...'; }
+    showStatus('Отправляем уведомление...', 'loading');
+
+    divoSendPushToAll('📝 Задачи на ' + dateStr, body, '/tasks.html')
+      .then(function(result) {
+        showStatus('✅ Уведомление отправлено! (' + (result.sent || 0) + ' получателей)', 'success');
+        if (btn) { btn.disabled = false; btn.textContent = '🔔 Уведомить всех о задачах на этот день'; }
+        setTimeout(hideStatus, 3000);
+      })
+      .catch(function(e) {
+        showStatus('❌ Ошибка: ' + e.message, 'error');
+        if (btn) { btn.disabled = false; btn.textContent = '🔔 Уведомить всех о задачах на этот день'; }
+      });
+  }
+
   window.dtToggle = toggleTask;
   window.dtDelete = deleteTask;
   window.dtStartEdit = startEdit;
   window.dtSaveEdit = saveEdit;
   window.dtCancelEdit = cancelEdit;
   window.dtMove = moveTask;
+  window.dtNotifyAll = notifyAll;
 
   $('dtDate').value = currentDate;
   updateSubtitle();
