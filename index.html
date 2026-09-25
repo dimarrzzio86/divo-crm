@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — CRM</title>
-<link rel="stylesheet" href="/assets/style.css?v=74">
-<link rel="stylesheet" href="/assets/dashboard.css?v=74">
-<link rel="stylesheet" href="/assets/auth.css?v=74">
+<link rel="stylesheet" href="/assets/style.css?v=75">
+<link rel="stylesheet" href="/assets/dashboard.css?v=75">
+<link rel="stylesheet" href="/assets/auth.css?v=75">
 </head>
 <body>
 
@@ -38,6 +38,25 @@
             <div class="divo-dashboard-placeholder">
               <span class="divo-dashboard-placeholder-icon">📝</span>
               <span>Загрузка задач...</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="divo-dashboard-card" data-level="3" onclick="location.href='schedule.html'" style="cursor:pointer;">
+          <div class="divo-dashboard-head">
+            <div class="divo-dashboard-title-block">
+              <span class="divo-dashboard-icon">📅</span>
+              <div>
+                <div class="divo-dashboard-title">График записей</div>
+                <div class="divo-dashboard-desc">Посты и автомобили в студии</div>
+              </div>
+            </div>
+            <span class="divo-soon-badge" style="background:#fbbf24;color:#0a0a0a;">СКОРО</span>
+          </div>
+          <div class="divo-dashboard-body">
+            <div class="divo-dashboard-placeholder">
+              <span class="divo-dashboard-placeholder-icon">🚗</span>
+              <span>4 поста · календарь записей</span>
             </div>
           </div>
         </div>
@@ -123,7 +142,7 @@
 
 </div>
 
-<script src="/components/components.js?v=74"></script>
+<script src="/components/components.js?v=75"></script>
 <script>
 function divoCheckAuthAndInit() {
   var user = divoGetUser();
@@ -132,7 +151,7 @@ function divoCheckAuthAndInit() {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
 
-    fetch('/components/auth-form.html?v=66')
+    fetch('/components/auth-form.html?v=75')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');

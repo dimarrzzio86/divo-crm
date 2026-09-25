@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Диво Детейлинг — График записей (тест)</title>
-<link rel="manifest" href="/manifest.json?v=100">
-<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png?v=100">
+<title>Диво Детейлинг — График записей</title>
+<link rel="manifest" href="/manifest.json?v=75">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png?v=75">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Диво CRM">
 <meta name="theme-color" content="#0a0a0a">
-<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png?v=100">
-<link rel="stylesheet" href="/assets/style.css?v=100">
-<link rel="stylesheet" href="/assets/auth.css?v=100">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png?v=75">
+<link rel="stylesheet" href="/assets/style.css?v=75">
+<link rel="stylesheet" href="/assets/auth.css?v=75">
 <style>
-/* === СВОИ СТИЛИ ГРАФИКА === */
+/* === СВОИ СТИЛИ СТРАНИЦЫ ГРАФИКА === */
 .sch-page { padding: 0; }
 .sch-header {
   display: flex; justify-content: space-between; align-items: flex-start;
@@ -274,7 +274,7 @@
 }
 .sch-popup-close:hover { background: #3f3f46; color: #fafafa; }
 
-/* === БЕЙДЖ "СКОРо" ВЕСЬ РАЗДЕЛ === */
+/* === БЕЙДЖ "СКОРО" === */
 .sch-dev-banner {
   background: #1a1410; border: 1.5px solid #fbbf24; border-radius: 12px;
   padding: 12px 16px; margin-bottom: 16px;
@@ -291,17 +291,21 @@
 </head>
 <body>
 
-<div class="divo-layout">
+<div id="divoAuthContainer"></div>
+
+<div class="divo-layout" id="divoMainLayout" style="display:none;">
 
   <header class="divo-header" id="divo-header"></header>
 
   <div class="divo-body">
-    <main class="divo-content sch-page">
+    <aside class="divo-sidebar" id="divo-sidebar"></aside>
+
+    <main class="divo-content sch-page" id="divoContent">
 
       <!-- Баннер: в разработке -->
       <div class="sch-dev-banner">
         <span>🚧</span>
-        <span><b>ТЕСТОВЫЙ ВИД</b> · График записей в разработке · это превью для оценки визуала</span>
+        <span><b>РАЗДЕЛ В РАЗРАБОТКЕ</b> · это тестовое превью для оценки визуала</span>
         <span class="sch-soon" style="margin-left:auto;">СКОРО</span>
       </div>
 
@@ -365,8 +369,50 @@
   </div>
 </div>
 
+<script src="/components/components.js?v=75"></script>
+<script src="/components/access-config.js?v=75"></script>
 <script>
-// === ТЕСТОВЫЕ ДАННЫЕ ===
+function divoInitSchedule() {
+  var user = divoGetUser();
+  if (!user) {
+    var mainLayout = document.getElementById('divoMainLayout');
+    if (mainLayout) mainLayout.style.display = 'none';
+    fetch('/components/auth-form.html?v=75')
+      .then(function(r) { return r.text(); })
+      .then(function(html) {
+        var c = document.getElementById('divoAuthContainer');
+        if (c) {
+          c.innerHTML = html;
+          var btn = document.getElementById('divoAuthBtn');
+          if (btn) btn.addEventListener('click', divoDoLogin);
+          var pass = document.getElementById('divoAuthPassword');
+          if (pass) pass.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') divoDoLogin();
+          });
+        }
+      });
+    return;
+  }
+
+  // Загружаем конфиг доступов, потом проверяем
+  divoLoadAccessConfig(function(config) {
+    if (!divoHasAccessToSection('schedule')) {
+      location.href = 'index.html';
+      return;
+    }
+
+    // Доступ есть — показываем страницу
+    var mainLayout = document.getElementById('divoMainLayout');
+    if (mainLayout) mainLayout.style.display = 'flex';
+    var authContainer = document.getElementById('divoAuthContainer');
+    if (authContainer) authContainer.innerHTML = '';
+
+    divoInit();
+    initScheduleCalendar();
+  });
+}
+
+// === ТЕСТОВЫЕ ДАННЫЕ (пока нет заказ-нарядов) ===
 var CARS = [
   { id:1, name:'Honda Civic',  client:'Алексей П.',  color:'#3b82f6', start:'2026-09-22', end:'2026-09-26', post:1,
     services:[
@@ -410,6 +456,42 @@ function carOnPost(car, dateStr){
 var currentDate = new Date(2026, 8, 24); // 24 сентября 2026
 var currentView = 'month';
 
+function initScheduleCalendar(){
+  renderView();
+
+  document.querySelectorAll('.sch-view-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.sch-view-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      currentView = btn.dataset.view;
+      renderView();
+    });
+  });
+
+  document.getElementById('prevPeriod').addEventListener('click', function(){
+    if(currentView==='week') currentDate.setDate(currentDate.getDate()-7);
+    else if(currentView==='biweek') currentDate.setDate(currentDate.getDate()-14);
+    else if(currentView==='day') currentDate.setDate(currentDate.getDate()-1);
+    else if(currentView==='month') currentDate.setMonth(currentDate.getMonth()-1);
+    renderView();
+  });
+  document.getElementById('nextPeriod').addEventListener('click', function(){
+    if(currentView==='week') currentDate.setDate(currentDate.getDate()+7);
+    else if(currentView==='biweek') currentDate.setDate(currentDate.getDate()+14);
+    else if(currentView==='day') currentDate.setDate(currentDate.getDate()+1);
+    else if(currentView==='month') currentDate.setMonth(currentDate.getMonth()+1);
+    renderView();
+  });
+  document.getElementById('todayBtn').addEventListener('click', function(){
+    currentDate = new Date(2026, 8, 24);
+    renderView();
+  });
+
+  document.getElementById('schPopup').addEventListener('click', function(e){
+    if(e.target===this) closePopup();
+  });
+}
+
 // === РЕНДЕР: МЕСЯЦ ===
 function renderMonth(){
   var y=currentDate.getFullYear(), m=currentDate.getMonth();
@@ -421,15 +503,12 @@ function renderMonth(){
   var prevMonthDays = new Date(y, m, 0).getDate();
 
   var cells = [];
-  // пред. месяц
   for(var i=startDow-1; i>=0; i--){
     cells.push({day: prevMonthDays-i, off:true, dateStr: fmtDate(y, m-1, prevMonthDays-i)});
   }
-  // тек. месяц
   for(var d=1; d<=daysInMonth; d++){
     cells.push({day:d, off:false, dateStr: fmtDate(y,m,d)});
   }
-  // след. месяц до 42 ячеек
   var next=1;
   while(cells.length<42){
     cells.push({day:next, off:true, dateStr: fmtDate(y,m+1,next)});
@@ -460,7 +539,6 @@ function renderMonth(){
       });
       bars += '</div>';
     } else if(!c.off){
-      var freeCount = 4 - cars.length;
       bars = '<div class="sch-day-bars"><div class="sch-free-slot">свободно</div></div>';
     }
 
@@ -473,10 +551,9 @@ function renderMonth(){
   document.getElementById('schViewContainer').innerHTML = html;
 }
 
-// === РЕНДЕР: ГАНТ (неделя / 2 недели) ===
+// === РЕНДЕР: ГАНТ ===
 function renderGantt(days){
   var start = new Date(currentDate);
-  // Отматываем на Пн
   var dow = start.getDay();
   var diff = dow===0 ? -6 : (1-dow);
   start.setDate(start.getDate()+diff);
@@ -492,7 +569,6 @@ function renderGantt(days){
                   ' '+dayList[days-1].getFullYear();
   document.getElementById('periodLabel').textContent = periodTxt;
 
-  // Заголовок дней
   var headerCells = '';
   dayList.forEach(function(d){
     var dow=d.getDay();
@@ -502,7 +578,6 @@ function renderGantt(days){
     headerCells += '<div class="sch-gantt-dow'+wk+hl+'">'+DOW_SHORT[dow]+' '+d.getDate()+'</div>';
   });
 
-  // Посты
   var rows = '';
   for(var post=1; post<=4; post++){
     var cells = '';
@@ -519,9 +594,7 @@ function renderGantt(days){
         var isEnd = dateStr===car.end;
         if(isStart) cls+=' start';
         if(isEnd) cls+=' end';
-        // если это не первый день — продолжение
         if(!isStart) cls+=' continue';
-        else cls+=' occupied';
         cls += ' occupied';
         var label = isStart ? car.name : '↳';
         cells += '<div class="'+cls+'" style="--car-color:'+car.color+'" onclick="openPopup(\''+dateStr+'\')">'+label+'</div>';
@@ -592,7 +665,6 @@ function renderDay(){
   document.getElementById('schViewContainer').innerHTML = html;
 }
 
-// === РЕНДЕР ВСЕГО ===
 function renderView(){
   if(currentView==='month') renderMonth();
   else if(currentView==='week') renderGantt(7);
@@ -614,7 +686,6 @@ function openPopup(dateStr){
   ];
 
   var html = '';
-  // Задачи
   html += '<div class="sch-popup-section-title">Задачи (daily_tasks)</div>';
   tasks.forEach(function(t){
     html += '<div class="sch-popup-task'+(t.done?' done':'')+'">'+
@@ -623,7 +694,6 @@ function openPopup(dateStr){
             '</div>';
   });
 
-  // Авто на постах
   if(cars.length){
     html += '<div class="sch-popup-section-title">Авто на постах</div>';
     cars.forEach(function(car){
@@ -644,46 +714,11 @@ function closePopup(){
   document.getElementById('schPopup').classList.remove('open');
 }
 
-// === ОБРАБОТЧИКИ ===
-document.querySelectorAll('.sch-view-btn').forEach(function(btn){
-  btn.addEventListener('click', function(){
-    document.querySelectorAll('.sch-view-btn').forEach(function(b){ b.classList.remove('active'); });
-    btn.classList.add('active');
-    currentView = btn.dataset.view;
-    renderView();
-  });
-});
-
-document.getElementById('prevPeriod').addEventListener('click', function(){
-  if(currentView==='month' || currentView==='day') currentDate.setDate(currentDate.getDate()-1);
-  if(currentView==='month') currentDate.setDate(1);
-  if(currentView==='week') currentDate.setDate(currentDate.getDate()-7);
-  if(currentView==='biweek') currentDate.setDate(currentDate.getDate()-14);
-  renderView();
-});
-document.getElementById('nextPeriod').addEventListener('click', function(){
-  if(currentView==='week') currentDate.setDate(currentDate.getDate()+7);
-  else if(currentView==='biweek') currentDate.setDate(currentDate.getDate()+14);
-  else if(currentView==='day') currentDate.setDate(currentDate.getDate()+1);
-  else if(currentView==='month') currentDate.setMonth(currentDate.getMonth()+1);
-  renderView();
-});
-document.getElementById('todayBtn').addEventListener('click', function(){
-  currentDate = new Date(2026, 8, 24);
-  renderView();
-});
-
-document.getElementById('schPopup').addEventListener('click', function(e){
-  if(e.target===this) closePopup();
-});
-
-// === ХЕДЕР ===
-fetch('/components/header.html?v=100').then(function(r){return r.text();}).then(function(html){
-  document.getElementById('divo-header').innerHTML = html;
-});
-
-// СТАРТ
-renderView();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', divoInitSchedule);
+} else {
+  divoInitSchedule();
+}
 </script>
 </body>
 </html>
