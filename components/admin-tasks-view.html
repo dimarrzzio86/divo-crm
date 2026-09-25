@@ -165,6 +165,11 @@
   border-radius: 8px; color: #fafafa; font-size: 14px; font-family: inherit; outline: none; transition: all 0.15s;
 }
 .dt-edit-input:focus { box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
+.dt-edit-select {
+  padding: 10px 12px; background: #0a0a0a; border: 1.5px solid #6366f1; border-radius: 8px;
+  color: #fafafa; font-size: 14px; font-family: inherit; outline: none; cursor: pointer;
+}
+.dt-edit-select option { background: #18181b; }
 .dt-edit-time {
   padding: 10px 12px; background: #0a0a0a; border: 1.5px solid #6366f1; border-radius: 8px;
   color: #fafafa; font-size: 14px; font-family: inherit; outline: none; width: 100px;
@@ -268,16 +273,30 @@
       var time = t.task_time || '';
       var timeClass = time ? '' : ' hidden';
 
-      html += '<div class="dt-item' + doneClass + '" data-id="' + t.id + '">';
-      html += '  <div class="dt-check" onclick="window.dtToggle(' + t.id + ')"><span class="dt-check-mark">\u2713</span></div>';
+      var imp = t.importance || 0;
+      var impClass = imp > 0 ? ' importance-' + imp : '';
+      var impBadge = '';
+      if (imp === 1) impBadge = '<div class="dt-item-importance importance-1">⚠️ Важно</div>';
+      if (imp === 2) impBadge = '<div class="dt-item-importance importance-2">🔴 Очень важно</div>';
+      var canMoveUp = i > 0;
+      var canMoveDown = i < tasks.length - 1;
+
+      html += '<div class="dt-item' + doneClass + impClass + '" data-id="' + t.id + '">';
+      html += '  <div class="dt-check" onclick="window.dtToggle(' + t.id + ')"><span class="dt-check-mark">✓</span></div>';
       html += '  <div class="dt-item-body">';
       html += '    <div class="dt-item-text">' + escapeHtml(t.task_text) + '</div>';
-      html += '    <div class="dt-item-time' + timeClass + '">\ud83d\udd50 ' + escapeHtml(time) + '</div>';
+      html += '    <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:4px;">';
+      html += '      <div class="dt-item-time' + timeClass + '">🕐 ' + escapeHtml(time) + '</div>';
+      html += '      ' + impBadge;
+      html += '    </div>';
       html += '  </div>';
-      html += '  <button class="dt-item-edit" onclick="window.dtStartEdit(' + t.id + ')" title="\u0420\u0435\u0434\u0430\u043a\u0442\u0438\u0440\u043e\u0432\u0430\u0442\u044c">\u270f\ufe0f</button>';
-      html += '  <button class="dt-item-delete" onclick="window.dtDelete(' + t.id + ')" title="\u0423\u0434\u0430\u043b\u0438\u0442\u044c">\ud83d\uddd1\ufe0f</button>';
+      html += '  <div style="display:flex;flex-direction:column;gap:2px;margin-right:4px;">';
+      html += '    <button class="dt-item-move" onclick="window.dtMove(' + t.id + ', -1)"' + (canMoveUp ? '' : ' disabled') + ' title="Вверх">▲</button>';
+      html += '    <button class="dt-item-move" onclick="window.dtMove(' + t.id + ', 1)"' + (canMoveDown ? '' : ' disabled') + ' title="Вниз">▼</button>';
+      html += '  </div>';
+      html += '  <button class="dt-item-edit" onclick="window.dtStartEdit(' + t.id + ')" title="Редактировать">✏️</button>';
+      html += '  <button class="dt-item-delete" onclick="window.dtDelete(' + t.id + ')" title="Удалить">🗑️</button>';
       html += '</div>';
-    }
     list.innerHTML = html;
   }
 
@@ -362,9 +381,15 @@
     var text = escapeHtml(task.task_text || '');
     var time = task.task_time || '';
     var html = '';
+    var imp = task.importance || 0;
     html += '<div class="dt-edit-row">';
     html += '  <input type="text" class="dt-edit-input" id="dtEditText" value="' + text.replace(/"/g, '&quot;') + '" placeholder="Текст задачи...">';
     html += '  <input type="time" class="dt-edit-time" id="dtEditTime" value="' + escapeHtml(time) + '">';
+    html += '  <select class="dt-edit-select" id="dtEditImportance" title="Важность">';
+    html += '    <option value="0"' + (imp === 0 ? ' selected' : '') + '>Обычная</option>';
+    html += '    <option value="1"' + (imp === 1 ? ' selected' : '') + '>⚠️ Важно</option>';
+    html += '    <option value="2"' + (imp === 2 ? ' selected' : '') + '>🔴 Очень важно</option>';
+    html += '  </select>';
     html += '  <button class="dt-edit-save" onclick="window.dtSaveEdit(' + id + ')" title="Сохранить (Enter)">✓</button>';
     html += '  <button class="dt-edit-cancel" onclick="window.dtCancelEdit()" title="Отмена (Esc)">✕</button>';
     html += '</div>';
@@ -376,11 +401,13 @@
   function saveEdit(id) {
     var textInput = document.getElementById('dtEditText');
     var timeInput = document.getElementById('dtEditTime');
+    var impInput = document.getElementById('dtEditImportance');
     if (!textInput) return;
     var newText = textInput.value.trim();
     if (!newText) { textInput.focus(); return; }
     var newTime = timeInput ? (timeInput.value || null) : null;
-    var payload = { task_text: newText, task_time: newTime };
+    var newImp = impInput ? parseInt(impInput.value, 10) : 0;
+    var payload = { task_text: newText, task_time: newTime, importance: newImp };
     showStatus('Сохраняем...', 'loading');
     fetch(SUPABASE_URL + '/rest/v1/daily_tasks?id=eq.' + id, {
       method: 'PATCH',
@@ -400,6 +427,55 @@
   function cancelEdit() {
     editingId = null;
     renderList();
+  }
+
+  // === РУЧНАЯ СОРТИРОВКА ===
+  function moveTask(id, delta) {
+    var idx = -1;
+    for (var i = 0; i < tasks.length; i++) { if (tasks[i].id === id) { idx = i; break; } }
+    if (idx === -1) return;
+    var newIdx = idx + delta;
+    if (newIdx < 0 || newIdx >= tasks.length) return;
+
+    // Меняем местами sort_order
+    var a = tasks[idx];
+    var b = tasks[newIdx];
+    var aSort = a.sort_order !== undefined ? a.sort_order : idx;
+    var bSort = b.sort_order !== undefined ? b.sort_order : newIdx;
+
+    // PATCH a
+    fetch(SUPABASE_URL + '/rest/v1/daily_tasks?id=eq.' + a.id, {
+      method: 'PATCH',
+      headers: getHeaders({'Content-Type':'application/json','Prefer':'return=minimal'}),
+      body: JSON.stringify({ sort_order: bSort })
+    }).then(function() {
+      // PATCH b
+      return fetch(SUPABASE_URL + '/rest/v1/daily_tasks?id=eq.' + b.id, {
+        method: 'PATCH',
+        headers: getHeaders({'Content-Type':'application/json','Prefer':'return=minimal'}),
+        body: JSON.stringify({ sort_order: aSort })
+      });
+    }).then(function() {
+      loadTasks();
+    }).catch(function(e) { showStatus('Ошибка сортировки: ' + e.message, 'error'); });
+  }
+
+  // === ВАЖНОСТЬ (быстрое переключение кликом по бейджу) ===
+  function cycleImportance(id) {
+    var task = null;
+    for (var i = 0; i < tasks.length; i++) { if (tasks[i].id === id) { task = tasks[i]; break; } }
+    if (!task) return;
+    var cur = task.importance || 0;
+    var next = cur >= 2 ? 0 : cur + 1;
+    fetch(SUPABASE_URL + '/rest/v1/daily_tasks?id=eq.' + id, {
+      method: 'PATCH',
+      headers: getHeaders({'Content-Type':'application/json','Prefer':'return=minimal'}),
+      body: JSON.stringify({ importance: next })
+    }).then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      task.importance = next;
+      renderList();
+    }).catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); });
   }
 
   function changeDate(delta) {
@@ -424,6 +500,8 @@
   window.dtStartEdit = startEdit;
   window.dtSaveEdit = saveEdit;
   window.dtCancelEdit = cancelEdit;
+  window.dtMove = moveTask;
+  window.dtCycleImportance = cycleImportance;
 
   // Инициализация
   $('dtDate').value = currentDate;

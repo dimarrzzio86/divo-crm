@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — CRM</title>
-<link rel="stylesheet" href="/assets/style.css?v=68">
-<link rel="stylesheet" href="/assets/dashboard.css?v=68">
-<link rel="stylesheet" href="/assets/auth.css?v=68">
+<link rel="stylesheet" href="/assets/style.css?v=69">
+<link rel="stylesheet" href="/assets/dashboard.css?v=69">
+<link rel="stylesheet" href="/assets/auth.css?v=69">
 </head>
 <body>
 
@@ -123,7 +123,7 @@
 
 </div>
 
-<script src="/components/components.js?v=68"></script>
+<script src="/components/components.js?v=69"></script>
 <script>
 function divoCheckAuthAndInit() {
   var user = divoGetUser();
@@ -248,8 +248,10 @@ function divoLoadTasksPreview() {
     for (var i = 0; i < tasks.length; i++) {
       var t = tasks[i];
       var doneClass = t.is_done ? ' done' : '';
+      var imp = t.importance || 0;
+      var impClass = imp > 0 ? ' importance-' + imp : '';
       var time = t.task_time ? '<span class="dash-task-time">🕐 ' + escapeHtmlSimple(t.task_time) + '</span>' : '';
-      html += '<div class="dash-task-item' + doneClass + '">';
+      html += '<div class="dash-task-item' + doneClass + impClass + '">';
       html += '<div class="dash-task-text">' + escapeHtmlSimple(t.task_text) + '</div>';
       html += time;
       html += '</div>';

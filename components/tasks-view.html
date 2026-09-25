@@ -89,6 +89,19 @@
 .tv-item.done .tv-item-text { text-decoration: line-through; color: #52525b; }
 .tv-item.done .tv-item-time { background: #18181b; color: #52525b; }
 
+/* Подсветка важности */
+.tv-item.importance-1 { border-left: 4px solid #f59e0b; background: #1a1505; }
+.tv-item.importance-1:hover { background: #241c08; border-color: #f59e0b; }
+.tv-item.importance-2 { border-left: 4px solid #ef4444; background: #1a0a0a; }
+.tv-item.importance-2:hover { background: #2a0e0e; border-color: #ef4444; }
+
+.tv-item-importance {
+  display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700;
+  padding: 4px 10px; border-radius: 6px; margin-top: 6px; margin-left: 6px; width: fit-content;
+}
+.tv-item-importance.importance-1 { background: #78350f; color: #fbbf24; border: 1px solid #f59e0b; }
+.tv-item-importance.importance-2 { background: #7f1d1d; color: #fca5a5; border: 1px solid #ef4444; }
+
 .tv-item-body { flex: 1; min-width: 0; }
 .tv-item-text { font-size: 18px; color: #fafafa; font-weight: 600; word-wrap: break-word; line-height: 1.4; }
 .tv-item.done .tv-item-text { font-weight: 500; }
@@ -185,13 +198,21 @@
       var time = t.task_time || '';
       var timeClass = time ? '' : ' hidden';
 
-      html += '<div class="tv-item' + doneClass + '" data-id="' + t.id + '" onclick="window.tvToggle(' + t.id + ')">';
+      var imp = t.importance || 0;
+      var impClass = imp > 0 ? ' importance-' + imp : '';
+      var impBadge = '';
+      if (imp === 1) impBadge = '<div class="tv-item-importance importance-1">⚠️ Важно</div>';
+      if (imp === 2) impBadge = '<div class="tv-item-importance importance-2">🔴 Очень важно</div>';
+
+      html += '<div class="tv-item' + doneClass + impClass + '" data-id="' + t.id + '" onclick="window.tvToggle(' + t.id + ')">';
       html += '  <div class="tv-item-body">';
       html += '    <div class="tv-item-text">' + escapeHtml(t.task_text) + '</div>';
-      html += '    <div class="tv-item-time' + timeClass + '">🕐 ' + escapeHtml(time) + '</div>';
+      html += '    <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:6px;">';
+      html += '      <div class="tv-item-time' + timeClass + '">🕐 ' + escapeHtml(time) + '</div>';
+      html += '      ' + impBadge;
+      html += '    </div>';
       html += '  </div>';
       html += '</div>';
-    }
     list.innerHTML = html;
   }
 
