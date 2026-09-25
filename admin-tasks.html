@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — Задачи на сегодня (адм)</title>
-<link rel="stylesheet" href="/assets/style.css?v=70">
-<link rel="stylesheet" href="/assets/auth.css?v=70">
-<link rel="stylesheet" href="/assets/cash.css?v=70">
+<link rel="stylesheet" href="/assets/style.css?v=71">
+<link rel="stylesheet" href="/assets/auth.css?v=71">
+<link rel="stylesheet" href="/assets/cash.css?v=71">
 </head>
 <body>
 
@@ -21,15 +21,15 @@
   <div class="divo-footer">© Диво Детейлинг • 2026</div>
 </div>
 
-<script src="/components/components.js?v=70"></script>
-<script src="/components/access-config.js?v=70"></script>
+<script src="/components/components.js?v=71"></script>
+<script src="/components/access-config.js?v=71"></script>
 <script>
-function divoCheckAuthAndInit() {
+function divoInitAdminTasks() {
   var user = divoGetUser();
   if (!user) {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=70')
+    fetch('/components/auth-form.html?v=71')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
@@ -45,31 +45,45 @@ function divoCheckAuthAndInit() {
       });
     return;
   }
-  if (!divoCheckSectionAccess('admin-tasks')) return;
-  var mainLayout = document.getElementById('divoMainLayout');
-  if (mainLayout) mainLayout.style.display = 'flex';
-  var authContainer = document.getElementById('divoAuthContainer');
-  if (authContainer) authContainer.innerHTML = '';
-  divoInit();
-  fetch('/components/admin-tasks-view.html?v=70')
-    .then(function(r) { return r.text(); })
-    .then(function(html) {
-      var content = document.getElementById('divoContent');
-      if (content) {
-        content.innerHTML = html;
-        var scripts = content.querySelectorAll('script');
-        for (var i = 0; i < scripts.length; i++) {
-          var s = document.createElement('script');
-          s.textContent = scripts[i].textContent;
-          content.appendChild(s);
+
+  // СНАЧАЛА грузим конфиг доступов, ПОТОМ проверяем доступ
+  divoLoadAccessConfig(function(config) {
+    if (!divoHasAccessToSection('admin-tasks')) {
+      location.href = 'index.html';
+      return;
+    }
+
+    // Доступ есть — показываем страницу
+    var mainLayout = document.getElementById('divoMainLayout');
+    if (mainLayout) mainLayout.style.display = 'flex';
+    var authContainer = document.getElementById('divoAuthContainer');
+    if (authContainer) authContainer.innerHTML = '';
+
+    divoInit();
+
+    // Грузим компонент с задачами
+    fetch('/components/admin-tasks-view.html?v=71')
+      .then(function(r) { return r.text(); })
+      .then(function(html) {
+        var content = document.getElementById('divoContent');
+        if (content) {
+          content.innerHTML = html;
+          // Выполняем скрипты из компонента
+          var scripts = content.querySelectorAll('script');
+          for (var i = 0; i < scripts.length; i++) {
+            var s = document.createElement('script');
+            s.textContent = scripts[i].textContent;
+            content.appendChild(s);
+          }
         }
-      }
-    });
+      });
+  });
 }
+
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', divoCheckAuthAndInit);
+  document.addEventListener('DOMContentLoaded', divoInitAdminTasks);
 } else {
-  divoCheckAuthAndInit();
+  divoInitAdminTasks();
 }
 </script>
 </body>
