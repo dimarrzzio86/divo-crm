@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Диво Детейлинг — График записей (тест)</title>
+<link rel="manifest" href="/manifest.json?v=100">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png?v=100">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Диво CRM">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png?v=100">
+<link rel="stylesheet" href="/assets/style.css?v=100">
+<link rel="stylesheet" href="/assets/auth.css?v=100">
+<style>
+/* === СВОИ СТИЛИ ГРАФИКА === */
+.sch-page { padding: 0; }
+.sch-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 16px; flex-wrap: wrap; margin-bottom: 20px;
+}
+.sch-title-block {}
+.sch-title {
+  font-size: 22px; font-weight: 800; color: #fafafa; display: flex; align-items: center; gap: 10px;
+}
+.sch-soon {
+  background: #22c55e; color: #0a0a0a; font-size: 10px; font-weight: 800;
+  padding: 3px 10px; border-radius: 6px; letter-spacing: 0.5px;
+}
+.sch-subtitle { font-size: 13px; color: #a1a1aa; margin-top: 4px; }
+
+/* Переключатель видов */
+.sch-views {
+  display: flex; gap: 6px; background: #18181b;
+  border: 1.5px solid #27272a; border-radius: 12px; padding: 4px;
+}
+.sch-view-btn {
+  padding: 8px 16px; background: transparent; color: #a1a1aa;
+  border: none; border-radius: 8px; font-size: 13px; font-weight: 600;
+  font-family: inherit; cursor: pointer; transition: all .15s;
+}
+.sch-view-btn:hover { background: #27272a; color: #fafafa; }
+.sch-view-btn.active {
+  background: #22c55e; color: #0a0a0a; font-weight: 700;
+}
+
+/* Навигация по периоду */
+.sch-nav {
+  display: flex; align-items: center; gap: 8px;
+  background: #18181b; border: 1.5px solid #27272a;
+  border-radius: 12px; padding: 6px; margin-bottom: 16px; flex-wrap: wrap;
+}
+.sch-nav-btn {
+  padding: 8px 12px; background: #27272a; color: #a1a1aa;
+  border: none; border-radius: 8px; font-size: 14px; font-family: inherit;
+  cursor: pointer; transition: all .15s;
+}
+.sch-nav-btn:hover { background: #3f3f46; color: #fafafa; }
+.sch-nav-label { color: #fafafa; font-weight: 600; font-size: 14px; padding: 0 8px; }
+.sch-nav-spacer { flex: 1; }
+
+/* === ЛЕГЕНДА === */
+.sch-legend {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  margin-bottom: 16px; padding: 12px 16px;
+  background: #18181b; border: 1.5px solid #27272a; border-radius: 12px;
+}
+.sch-legend-item {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: #a1a1aa;
+}
+.sch-legend-dot {
+  width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0;
+}
+.sch-legend-free {
+  width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0;
+  background: transparent; border: 1.5px dashed #3f3f46;
+}
+
+/* === ВИД: МЕСЯЦ === */
+.sch-month {
+  background: #18181b; border: 1.5px solid #27272a; border-radius: 12px;
+  padding: 8px; overflow-x: auto;
+}
+.sch-month-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+  min-width: 700px;
+}
+.sch-dow {
+  text-align: center; font-size: 11px; font-weight: 700;
+  color: #71717a; text-transform: uppercase; letter-spacing: 1px;
+  padding: 8px 4px;
+}
+.sch-dow.weekend { color: #fbbf24; }
+.sch-day {
+  background: #0a0a0a; border: 1.5px solid #27272a; border-radius: 8px;
+  padding: 6px; min-height: 80px; display: flex; flex-direction: column; gap: 4px;
+  cursor: pointer; transition: border-color .15s;
+}
+.sch-day:hover { border-color: #3f3f46; }
+.sch-day.weekend { background: #1a1410; border-color: #3f2d1a; }
+.sch-day.off { opacity: 0.4; }
+.sch-day.holiday {
+  background: #2a1010; border-color: #7f1d1d;
+}
+.sch-day-num {
+  font-size: 13px; font-weight: 700; color: #fafafa;
+}
+.sch-day.weekend .sch-day-num { color: #fbbf24; }
+.sch-day-bars { display: flex; flex-direction: column; gap: 3px; margin-top: 2px; }
+.sch-bar {
+  height: 10px; border-radius: 4px; font-size: 9px; color: #0a0a0a;
+  font-weight: 700; padding: 0 4px; line-height: 10px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sch-free-slot {
+  height: 10px; border-radius: 4px; border: 1px dashed #3f3f46;
+  font-size: 8px; color: #52525b; text-align: center; line-height: 8px;
+}
+
+/* === ВИД: ГАНТ (неделя / 2 недели) === */
+.sch-gantt {
+  background: #18181b; border: 1.5px solid #27272a; border-radius: 12px;
+  padding: 8px; overflow-x: auto;
+}
+.sch-gantt-grid {
+  display: grid; gap: 4px; min-width: 800px;
+}
+.sch-gantt-row {
+  display: grid; align-items: center; gap: 2px;
+  grid-template-columns: 100px 1fr;
+}
+.sch-gantt-post {
+  font-size: 13px; font-weight: 700; color: #a1a1aa;
+  padding: 8px 10px; background: #0a0a0a; border-radius: 6px;
+}
+.sch-gantt-cells {
+  display: grid; gap: 2px;
+}
+.sch-gantt-cell {
+  min-height: 44px; background: #0a0a0a; border: 1px solid #27272a;
+  border-radius: 6px; padding: 4px; position: relative;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; color: #52525b; cursor: pointer;
+  transition: border-color .15s;
+}
+.sch-gantt-cell:hover { border-color: #3f3f46; }
+.sch-gantt-cell.weekend { background: #1a1410; border-color: #3f2d1a; }
+.sch-gantt-cell.holiday { background: #2a1010; border-color: #7f1d1d; }
+.sch-gantt-cell.free {
+  border-style: dashed; color: #52525b;
+}
+.sch-gantt-cell.occupied {
+  background: var(--car-color, #3b82f6);
+  border-color: var(--car-color, #3b82f6);
+  color: #0a0a0a; font-weight: 700;
+}
+.sch-gantt-cell.continue {
+  background: var(--car-color, #3b82f6);
+  border-color: var(--car-color, #3b82f6);
+  opacity: 0.55;
+}
+.sch-gantt-cell.start {
+  border-left: 4px solid #fafafa;
+}
+.sch-gantt-cell.end {
+  border-right: 4px solid #fafafa;
+}
+.sch-gantt-dow {
+  font-size: 11px; font-weight: 700; color: #71717a;
+  text-transform: uppercase; text-align: center; padding: 6px;
+  border-radius: 6px;
+}
+.sch-gantt-dow.weekend { color: #fbbf24; }
+.sch-gantt-header-row {
+  display: grid; grid-template-columns: 100px 1fr; gap: 2px; margin-bottom: 4px;
+}
+
+/* === ВИД: ДЕНЬ === */
+.sch-day-view {
+  background: #18181b; border: 1.5px solid #27272a; border-radius: 12px;
+  padding: 20px;
+}
+.sch-day-title {
+  font-size: 18px; font-weight: 800; color: #fafafa; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sch-posts-list { display: flex; flex-direction: column; gap: 12px; }
+.sch-post-card {
+  background: #0a0a0a; border: 1.5px solid #27272a; border-radius: 10px;
+  padding: 14px; display: flex; gap: 14px; align-items: flex-start;
+}
+.sch-post-card.free { border-style: dashed; }
+.sch-post-num {
+  width: 48px; height: 48px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 800;
+  background: var(--car-color, #27272a); color: #0a0a0a;
+}
+.sch-post-card.free .sch-post-num {
+  background: transparent; border: 2px dashed #3f3f46; color: #52525b;
+}
+.sch-post-info { flex: 1; }
+.sch-post-car {
+  font-size: 16px; font-weight: 700; color: #fafafa;
+}
+.sch-post-free-label {
+  font-size: 16px; font-weight: 700; color: #52525b;
+}
+.sch-post-meta {
+  font-size: 12px; color: #a1a1aa; margin-top: 2px;
+}
+.sch-services {
+  margin-top: 10px; display: flex; flex-direction: column; gap: 4px;
+}
+.sch-svc {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: #d4d4d8;
+  padding: 6px 10px; background: #18181b; border-radius: 6px;
+}
+.sch-svc.outsource {
+  background: #1a1410; border: 1px solid #fbbf24; color: #fbbf24;
+}
+.sch-svc-bullet {
+  width: 8px; height: 8px; border-radius: 50%; background: #22c55e; flex-shrink: 0;
+}
+.sch-svc.outsource .sch-svc-bullet { background: #fbbf24; }
+.sch-svc-name { flex: 1; }
+.sch-svc-price { font-weight: 700; }
+
+/* === POPUP === */
+.sch-popup-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  display: none; align-items: center; justify-content: center;
+  z-index: 100; padding: 16px;
+}
+.sch-popup-overlay.open { display: flex; }
+.sch-popup {
+  background: #18181b; border: 1.5px solid #27272a; border-radius: 16px;
+  padding: 24px; max-width: 480px; width: 100%; max-height: 80vh; overflow-y: auto;
+}
+.sch-popup-title {
+  font-size: 18px; font-weight: 800; color: #fafafa; margin-bottom: 4px;
+}
+.sch-popup-sub { font-size: 13px; color: #a1a1aa; margin-bottom: 16px; }
+.sch-popup-section-title {
+  font-size: 11px; font-weight: 700; color: #71717a;
+  text-transform: uppercase; letter-spacing: 1.5px;
+  margin: 16px 0 8px;
+}
+.sch-popup-task {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; background: #0a0a0a; border: 1px solid #27272a;
+  border-radius: 8px; margin-bottom: 6px; font-size: 14px; color: #d4d4d8;
+}
+.sch-popup-task-check {
+  width: 18px; height: 18px; border: 2px solid #3f3f46; border-radius: 4px;
+  cursor: pointer; flex-shrink: 0;
+}
+.sch-popup-task-check.done {
+  background: #22c55e; border-color: #22c55e; position: relative;
+}
+.sch-popup-task-check.done::after {
+  content: '✓'; color: #0a0a0a; font-size: 12px; font-weight: 800;
+  position: absolute; top: -2px; left: 2px;
+}
+.sch-popup-task.done { opacity: 0.5; text-decoration: line-through; }
+.sch-popup-close {
+  margin-top: 16px; width: 100%; padding: 10px;
+  background: #27272a; color: #a1a1aa; border: 1.5px solid #3f3f46;
+  border-radius: 10px; font-size: 14px; font-weight: 600;
+  font-family: inherit; cursor: pointer;
+}
+.sch-popup-close:hover { background: #3f3f46; color: #fafafa; }
+
+/* === БЕЙДЖ "СКОРо" ВЕСЬ РАЗДЕЛ === */
+.sch-dev-banner {
+  background: #1a1410; border: 1.5px solid #fbbf24; border-radius: 12px;
+  padding: 12px 16px; margin-bottom: 16px;
+  font-size: 13px; color: #fbbf24; display: flex; align-items: center; gap: 8px;
+}
+
+@media (max-width: 700px) {
+  .sch-header { flex-direction: column; }
+  .sch-gantt-row { grid-template-columns: 60px 1fr; }
+  .sch-gantt-header-row { grid-template-columns: 60px 1fr; }
+  .sch-gantt-post { font-size: 11px; padding: 4px 6px; }
+}
+</style>
+</head>
+<body>
+
+<div class="divo-layout">
+
+  <header class="divo-header" id="divo-header"></header>
+
+  <div class="divo-body">
+    <main class="divo-content sch-page">
+
+      <!-- Баннер: в разработке -->
+      <div class="sch-dev-banner">
+        <span>🚧</span>
+        <span><b>ТЕСТОВЫЙ ВИД</b> · График записей в разработке · это превью для оценки визуала</span>
+        <span class="sch-soon" style="margin-left:auto;">СКОРО</span>
+      </div>
+
+      <!-- Заголовок -->
+      <div class="sch-header">
+        <div class="sch-title-block">
+          <div class="sch-title">
+            📅 График записей
+            <span class="sch-soon">СКОРО</span>
+          </div>
+          <div class="sch-subtitle">Управление постами и автомобилями в студии</div>
+        </div>
+
+        <!-- Переключатель видов -->
+        <div class="sch-views">
+          <button class="sch-view-btn active" data-view="month">Месяц</button>
+          <button class="sch-view-btn" data-view="week">Неделя</button>
+          <button class="sch-view-btn" data-view="biweek">2 недели</button>
+          <button class="sch-view-btn" data-view="day">День</button>
+        </div>
+      </div>
+
+      <!-- Навигация -->
+      <div class="sch-nav">
+        <button class="sch-nav-btn" id="prevPeriod">←</button>
+        <span class="sch-nav-label" id="periodLabel">Сентябрь 2026</span>
+        <button class="sch-nav-btn" id="nextPeriod">→</button>
+        <button class="sch-nav-btn" id="todayBtn">Сегодня</button>
+        <div class="sch-nav-spacer"></div>
+        <span style="font-size:12px;color:#71717a;">4 поста · Пн и Вс — выходные</span>
+      </div>
+
+      <!-- Легенда -->
+      <div class="sch-legend">
+        <div class="legend-item-cars" style="display:flex;gap:10px;flex-wrap:wrap;">
+          <div class="sch-legend-item"><div class="sch-legend-dot" style="background:#3b82f6"></div>Honda Civic</div>
+          <div class="sch-legend-item"><div class="sch-legend-dot" style="background:#22c55e"></div>Mazda CX-5</div>
+          <div class="sch-legend-item"><div class="sch-legend-dot" style="background:#f97316"></div>BMW X5</div>
+          <div class="sch-legend-item"><div class="sch-legend-dot" style="background:#a855f7"></div>Toyota Camry</div>
+          <div class="sch-legend-item"><div class="sch-legend-free"></div>Свободно</div>
+          <div class="sch-legend-item"><div class="sch-legend-dot" style="background:#fbbf24"></div>Аутсорс</div>
+        </div>
+      </div>
+
+      <!-- Контейнер для видов -->
+      <div id="schViewContainer"></div>
+
+    </main>
+  </div>
+
+  <div class="divo-footer">© Диво Детейлинг • 2026</div>
+</div>
+
+<!-- Popup -->
+<div class="sch-popup-overlay" id="schPopup">
+  <div class="sch-popup">
+    <div class="sch-popup-title" id="popupTitle">Список задач</div>
+    <div class="sch-popup-sub" id="popupSub"></div>
+    <div id="popupContent"></div>
+    <button class="sch-popup-close" onclick="closePopup()">Закрыть</button>
+  </div>
+</div>
+
+<script>
+// === ТЕСТОВЫЕ ДАННЫЕ ===
+var CARS = [
+  { id:1, name:'Honda Civic',  client:'Алексей П.',  color:'#3b82f6', start:'2026-09-22', end:'2026-09-26', post:1,
+    services:[
+      {name:'Полировка кузова', price:'45 000 ₽', outsource:false},
+      {name:'Керамика 9H',     price:'30 000 ₽', outsource:false},
+      {name:'Шумоизоляция',     price:'60 000 ₽', outsource:true, contractor:'ИП Звуков'}
+    ]},
+  { id:2, name:'Mazda CX-5',   client:'Мария К.',   color:'#22c55e', start:'2026-09-23', end:'2026-09-25', post:2,
+    services:[
+      {name:'Оклейка плёнкой', price:'120 000 ₽', outsource:false}
+    ]},
+  { id:3, name:'BMW X5',       client:'Дмитрий С.', color:'#f97316', start:'2026-09-24', end:'2026-09-28', post:3,
+    services:[
+      {name:'Полировка + керамика', price:'75 000 ₽', outsource:false},
+      {name:'Антидождь',            price:'8 000 ₽',  outsource:false}
+    ]},
+  { id:4, name:'Toyota Camry', client:'Игорь В.',   color:'#a855f7', start:'2026-09-28', end:'2026-10-02', post:1,
+    services:[
+      {name:'Химчистка салона', price:'35 000 ₽', outsource:true, contractor:'ЧистоСервис'}
+    ]}
+];
+
+var HOLIDAYS = { '2026-09-30': true }; // среда — выставка, выходной
+
+// === УТИЛИТЫ ===
+var MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+var DOW_SHORT = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+
+function pad(n){ return n<10 ? '0'+n : ''+n; }
+function fmtDate(y,m,d){ return y+'-'+pad(m+1)+'-'+pad(d); }
+function parseDate(s){ var p=s.split('-'); return new Date(p[0],p[1]-1,p[2]); }
+function isWeekend(dow){ return dow===0 || dow===1; } // Вс или Пн
+function isHoliday(dateStr){ return !!HOLIDAYS[dateStr]; }
+
+function carOnPost(car, dateStr){
+  var s=parseDate(car.start), e=parseDate(car.end), d=parseDate(dateStr);
+  return d>=s && d<=e;
+}
+
+// === ТЕКУЩАЯ ДАТА ===
+var currentDate = new Date(2026, 8, 24); // 24 сентября 2026
+var currentView = 'month';
+
+// === РЕНДЕР: МЕСЯЦ ===
+function renderMonth(){
+  var y=currentDate.getFullYear(), m=currentDate.getMonth();
+  document.getElementById('periodLabel').textContent = MONTHS[m]+' '+y;
+
+  var firstDay = new Date(y, m, 1);
+  var startDow = firstDay.getDay();
+  var daysInMonth = new Date(y, m+1, 0).getDate();
+  var prevMonthDays = new Date(y, m, 0).getDate();
+
+  var cells = [];
+  // пред. месяц
+  for(var i=startDow-1; i>=0; i--){
+    cells.push({day: prevMonthDays-i, off:true, dateStr: fmtDate(y, m-1, prevMonthDays-i)});
+  }
+  // тек. месяц
+  for(var d=1; d<=daysInMonth; d++){
+    cells.push({day:d, off:false, dateStr: fmtDate(y,m,d)});
+  }
+  // след. месяц до 42 ячеек
+  var next=1;
+  while(cells.length<42){
+    cells.push({day:next, off:true, dateStr: fmtDate(y,m+1,next)});
+    next++;
+  }
+
+  var dowRow = '';
+  ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].forEach(function(d, i){
+    var wk = (i===6 || i===0) ? ' weekend' : '';
+    dowRow += '<div class="sch-dow'+wk+'">'+d+'</div>';
+  });
+
+  var html = '<div class="sch-month"><div class="sch-month-grid">'+dowRow;
+  cells.forEach(function(c){
+    var d = parseDate(c.dateStr);
+    var dow = d.getDay();
+    var cls = 'sch-day';
+    if(c.off) cls+=' off';
+    if(isWeekend(dow)) cls+=' weekend';
+    if(isHoliday(c.dateStr)) cls='sch-day holiday';
+
+    var cars = CARS.filter(function(car){ return carOnPost(car, c.dateStr); });
+    var bars = '';
+    if(cars.length){
+      bars = '<div class="sch-day-bars">';
+      cars.forEach(function(car){
+        bars += '<div class="sch-bar" style="background:'+car.color+';color:#0a0a0a;">'+car.name+'</div>';
+      });
+      bars += '</div>';
+    } else if(!c.off){
+      var freeCount = 4 - cars.length;
+      bars = '<div class="sch-day-bars"><div class="sch-free-slot">свободно</div></div>';
+    }
+
+    html += '<div class="'+cls+'" onclick="openPopup(\''+c.dateStr+'\')">'+
+              '<div class="sch-day-num">'+c.day+'</div>'+
+              bars+
+            '</div>';
+  });
+  html += '</div></div>';
+  document.getElementById('schViewContainer').innerHTML = html;
+}
+
+// === РЕНДЕР: ГАНТ (неделя / 2 недели) ===
+function renderGantt(days){
+  var start = new Date(currentDate);
+  // Отматываем на Пн
+  var dow = start.getDay();
+  var diff = dow===0 ? -6 : (1-dow);
+  start.setDate(start.getDate()+diff);
+
+  var dayList = [];
+  for(var i=0;i<days;i++){
+    var d = new Date(start); d.setDate(start.getDate()+i);
+    dayList.push(d);
+  }
+
+  var periodTxt = dayList[0].getDate()+' '+MONTHS[dayList[0].getMonth()].toLowerCase()+
+                  ' — '+dayList[days-1].getDate()+' '+MONTHS[dayList[days-1].getMonth()].toLowerCase()+
+                  ' '+dayList[days-1].getFullYear();
+  document.getElementById('periodLabel').textContent = periodTxt;
+
+  // Заголовок дней
+  var headerCells = '';
+  dayList.forEach(function(d){
+    var dow=d.getDay();
+    var wk = isWeekend(dow) ? ' weekend' : '';
+    var dateStr = fmtDate(d.getFullYear(), d.getMonth(), d.getDate());
+    var hl = isHoliday(dateStr) ? ' weekend' : '';
+    headerCells += '<div class="sch-gantt-dow'+wk+hl+'">'+DOW_SHORT[dow]+' '+d.getDate()+'</div>';
+  });
+
+  // Посты
+  var rows = '';
+  for(var post=1; post<=4; post++){
+    var cells = '';
+    dayList.forEach(function(d){
+      var dateStr = fmtDate(d.getFullYear(), d.getMonth(), d.getDate());
+      var dow=d.getDay();
+      var cls='sch-gantt-cell';
+      if(isWeekend(dow)) cls+=' weekend';
+      if(isHoliday(dateStr)) cls+=' holiday';
+
+      var car = CARS.find(function(c){ return c.post===post && carOnPost(c, dateStr); });
+      if(car){
+        var isStart = dateStr===car.start;
+        var isEnd = dateStr===car.end;
+        if(isStart) cls+=' start';
+        if(isEnd) cls+=' end';
+        // если это не первый день — продолжение
+        if(!isStart) cls+=' continue';
+        else cls+=' occupied';
+        cls += ' occupied';
+        var label = isStart ? car.name : '↳';
+        cells += '<div class="'+cls+'" style="--car-color:'+car.color+'" onclick="openPopup(\''+dateStr+'\')">'+label+'</div>';
+      } else {
+        cells += '<div class="'+cls+' free" onclick="openPopup(\''+dateStr+'\')">—</div>';
+      }
+    });
+    rows += '<div class="sch-gantt-row">'+
+              '<div class="sch-gantt-post">Пост '+post+'</div>'+
+              '<div class="sch-gantt-cells" style="grid-template-columns:repeat('+days+',1fr)">'+cells+'</div>'+
+            '</div>';
+  }
+
+  var html = '<div class="sch-gantt">'+
+    '<div class="sch-gantt-grid">'+
+      '<div class="sch-gantt-header-row">'+
+        '<div></div>'+
+        '<div class="sch-gantt-cells" style="grid-template-columns:repeat('+days+',1fr)">'+headerCells+'</div>'+
+      '</div>'+
+      rows+
+    '</div></div>';
+
+  document.getElementById('schViewContainer').innerHTML = html;
+}
+
+// === РЕНДЕР: ДЕНЬ ===
+function renderDay(){
+  var y=currentDate.getFullYear(), m=currentDate.getMonth(), d=currentDate.getDate();
+  var dateStr = fmtDate(y,m,d);
+  document.getElementById('periodLabel').textContent = d+' '+MONTHS[m]+' '+y;
+
+  var cars = CARS.filter(function(car){ return carOnPost(car, dateStr); });
+  var html = '<div class="sch-day-view">'+
+    '<div class="sch-day-title">📋 Записи на '+d+' '+MONTHS[m].toLowerCase()+' '+y+'</div>'+
+    '<div class="sch-posts-list">';
+
+  for(var post=1; post<=4; post++){
+    var car = cars.find(function(c){ return c.post===post; });
+    if(car){
+      var svcs = car.services.map(function(s){
+        var cls = s.outsource ? 'sch-svc outsource' : 'sch-svc';
+        var contractor = s.outsource ? ' · <b>'+s.contractor+'</b>' : '';
+        return '<div class="'+cls+'">'+
+                 '<div class="sch-svc-bullet"></div>'+
+                 '<div class="sch-svc-name">'+s.name+(s.outsource?' (аутсорс)':'')+contractor+'</div>'+
+                 '<div class="sch-svc-price">'+s.price+'</div>'+
+               '</div>';
+      }).join('');
+      html += '<div class="sch-post-card" style="border-color:'+car.color+'">'+
+        '<div class="sch-post-num" style="--car-color:'+car.color+'">'+post+'</div>'+
+        '<div class="sch-post-info">'+
+          '<div class="sch-post-car">'+car.name+' <span style="color:#a1a1aa;font-weight:500;font-size:13px;">· '+car.client+'</span></div>'+
+          '<div class="sch-post-meta">Заезд '+car.start+' · Выезд '+car.end+'</div>'+
+          '<div class="sch-services">'+svcs+'</div>'+
+        '</div>'+
+      '</div>';
+    } else {
+      html += '<div class="sch-post-card free">'+
+        '<div class="sch-post-num">'+post+'</div>'+
+        '<div class="sch-post-info">'+
+          '<div class="sch-post-free-label">Пост свободен</div>'+
+          '<div class="sch-post-meta">Можно записать авто</div>'+
+        '</div>'+
+      '</div>';
+    }
+  }
+  html += '</div></div>';
+  document.getElementById('schViewContainer').innerHTML = html;
+}
+
+// === РЕНДЕР ВСЕГО ===
+function renderView(){
+  if(currentView==='month') renderMonth();
+  else if(currentView==='week') renderGantt(7);
+  else if(currentView==='biweek') renderGantt(14);
+  else if(currentView==='day') renderDay();
+}
+
+// === POPUP ===
+function openPopup(dateStr){
+  var d = parseDate(dateStr);
+  document.getElementById('popupTitle').textContent = DOW_SHORT[d.getDay()]+', '+d.getDate()+' '+MONTHS[d.getMonth()].toLowerCase();
+  document.getElementById('popupSub').textContent = 'Задачи и записи на день';
+
+  var cars = CARS.filter(function(car){ return carOnPost(car, dateStr); });
+  var tasks = [
+    {text:'Заказать расходники (полироль, круги)', done:true},
+    {text:'Позвонить клиенту Алексею (Honda)', done:false},
+    {text:'Забрать плёнку со склада', done:false}
+  ];
+
+  var html = '';
+  // Задачи
+  html += '<div class="sch-popup-section-title">Задачи (daily_tasks)</div>';
+  tasks.forEach(function(t){
+    html += '<div class="sch-popup-task'+(t.done?' done':'')+'">'+
+              '<div class="sch-popup-task-check'+(t.done?' done':'')+'"></div>'+
+              '<span>'+t.text+'</span>'+
+            '</div>';
+  });
+
+  // Авто на постах
+  if(cars.length){
+    html += '<div class="sch-popup-section-title">Авто на постах</div>';
+    cars.forEach(function(car){
+      html += '<div style="padding:10px 12px;background:#0a0a0a;border-left:4px solid '+car.color+';border-radius:8px;margin-bottom:6px;">'+
+                '<div style="font-weight:700;color:#fafafa;font-size:14px;">'+car.name+' · Пост '+car.post+'</div>'+
+                '<div style="font-size:12px;color:#a1a1aa;margin-top:4px;">'+car.client+'</div>'+
+              '</div>';
+    });
+  } else {
+    html += '<div class="sch-popup-section-title">Авто на постах</div>'+
+            '<div style="color:#52525b;font-size:13px;padding:12px;">Нет записей на этот день</div>';
+  }
+
+  document.getElementById('popupContent').innerHTML = html;
+  document.getElementById('schPopup').classList.add('open');
+}
+function closePopup(){
+  document.getElementById('schPopup').classList.remove('open');
+}
+
+// === ОБРАБОТЧИКИ ===
+document.querySelectorAll('.sch-view-btn').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('.sch-view-btn').forEach(function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+    currentView = btn.dataset.view;
+    renderView();
+  });
+});
+
+document.getElementById('prevPeriod').addEventListener('click', function(){
+  if(currentView==='month' || currentView==='day') currentDate.setDate(currentDate.getDate()-1);
+  if(currentView==='month') currentDate.setDate(1);
+  if(currentView==='week') currentDate.setDate(currentDate.getDate()-7);
+  if(currentView==='biweek') currentDate.setDate(currentDate.getDate()-14);
+  renderView();
+});
+document.getElementById('nextPeriod').addEventListener('click', function(){
+  if(currentView==='week') currentDate.setDate(currentDate.getDate()+7);
+  else if(currentView==='biweek') currentDate.setDate(currentDate.getDate()+14);
+  else if(currentView==='day') currentDate.setDate(currentDate.getDate()+1);
+  else if(currentView==='month') currentDate.setMonth(currentDate.getMonth()+1);
+  renderView();
+});
+document.getElementById('todayBtn').addEventListener('click', function(){
+  currentDate = new Date(2026, 8, 24);
+  renderView();
+});
+
+document.getElementById('schPopup').addEventListener('click', function(e){
+  if(e.target===this) closePopup();
+});
+
+// === ХЕДЕР ===
+fetch('/components/header.html?v=100').then(function(r){return r.text();}).then(function(html){
+  document.getElementById('divo-header').innerHTML = html;
+});
+
+// СТАРТ
+renderView();
+</script>
+</body>
+</html>
