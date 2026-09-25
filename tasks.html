@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Диво Детейлинг — Прайсы партнёров</title>
+<title>Диво Детейлинг — Задачи на сегодня</title>
 <link rel="stylesheet" href="/assets/style.css?v=66">
 <link rel="stylesheet" href="/assets/auth.css?v=66">
 <link rel="stylesheet" href="/assets/cash.css?v=66">
@@ -29,7 +29,7 @@ function divoCheckAuthAndInit() {
   if (!user) {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=51')
+    fetch('/components/auth-form.html?v=66')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
@@ -45,13 +45,13 @@ function divoCheckAuthAndInit() {
       });
     return;
   }
-  if (!divoCheckSectionAccess('admin-partner-prices')) return;
+  if (!divoCheckSectionAccess('daily-tasks')) return;
   var mainLayout = document.getElementById('divoMainLayout');
   if (mainLayout) mainLayout.style.display = 'flex';
   var authContainer = document.getElementById('divoAuthContainer');
   if (authContainer) authContainer.innerHTML = '';
   divoInit();
-  fetch('/components/admin-partner-prices-view.html?v=51')
+  fetch('/components/tasks-view.html?v=66')
     .then(function(r) { return r.text(); })
     .then(function(html) {
       var content = document.getElementById('divoContent');

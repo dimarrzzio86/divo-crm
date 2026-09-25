@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — CRM</title>
-<link rel="stylesheet" href="/assets/style.css?v=65">
-<link rel="stylesheet" href="/assets/dashboard.css?v=65">
-<link rel="stylesheet" href="/assets/auth.css?v=65">
+<link rel="stylesheet" href="/assets/style.css?v=66">
+<link rel="stylesheet" href="/assets/dashboard.css?v=66">
+<link rel="stylesheet" href="/assets/auth.css?v=66">
 </head>
 <body>
 
@@ -22,6 +22,25 @@
 
     <main class="divo-content">
       <div class="divo-dashboard">
+
+        <!-- Блок: Задачи на сегодня (всегда левый верхний) -->
+        <div class="divo-dashboard-card divo-dashboard-tasks" data-level="2" id="divoTasksCard" onclick="location.href='tasks.html'" style="cursor:pointer;">
+          <div class="divo-dashboard-head">
+            <div class="divo-dashboard-title-block">
+              <span class="divo-dashboard-icon">📝</span>
+              <div>
+                <div class="divo-dashboard-title">Задачи на сегодня</div>
+                <div class="divo-dashboard-desc" id="divoTasksCardDesc">Загрузка...</div>
+              </div>
+            </div>
+          </div>
+          <div class="divo-dashboard-body" id="divoTasksCardBody">
+            <div class="divo-dashboard-placeholder">
+              <span class="divo-dashboard-placeholder-icon">📝</span>
+              <span>Загрузка задач...</span>
+            </div>
+          </div>
+        </div>
 
         <div class="divo-dashboard-card" data-level="3" onclick="location.href='contacts.html'" style="cursor:pointer;">
           <div class="divo-dashboard-head">
@@ -104,7 +123,7 @@
 
 </div>
 
-<script src="/components/components.js?v=65"></script>
+<script src="/components/components.js?v=66"></script>
 <script>
 function divoCheckAuthAndInit() {
   var user = divoGetUser();
@@ -113,7 +132,7 @@ function divoCheckAuthAndInit() {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
 
-    fetch('/components/auth-form.html?v=51')
+    fetch('/components/auth-form.html?v=66')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
@@ -148,12 +167,107 @@ function divoCheckAuthAndInit() {
       cards[i].style.display = 'none';
     }
   }
+
+  // Загружаем превью задач на сегодня
+  if (typeof divoLoadTasksPreview === 'function') {
+    divoLoadTasksPreview();
+  }
 }
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', divoCheckAuthAndInit);
 } else {
   divoCheckAuthAndInit();
+}
+
+// Загрузка превью задач на сегодня (до 3 штук)
+function divoLoadTasksPreview() {
+  var body = document.getElementById('divoTasksCardBody');
+  var desc = document.getElementById('divoTasksCardDesc');
+  if (!body) return;
+
+  // Проверяем доступ к разделу daily-tasks
+  if (typeof divoHasAccessToSection === 'function' && !divoHasAccessToSection('daily-tasks')) {
+    var card = document.getElementById('divoTasksCard');
+    if (card) card.style.display = 'none';
+    return;
+  }
+
+  function toLocalDateStr(d) {
+    var y = d.getFullYear();
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+  }
+
+  var today = toLocalDateStr(new Date());
+  var url = SUPABASE_URL + '/rest/v1/daily_tasks?task_date=eq.' + today + '&select=*&order=sort_order.asc,created_at.asc&limit=3';
+  var countUrl = SUPABASE_URL + '/rest/v1/daily_tasks?task_date=eq.' + today + '&select=id,is_done';
+
+  fetch(url, {
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var tasks = data || [];
+      // Загружаем общее количество
+      return fetch(countUrl, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+      })
+        .then(function(r2) { return r2.json(); })
+        .then(function(allData) {
+          var all = allData || [];
+          var total = all.length;
+          var done = 0;
+          for (var i = 0; i < all.length; i++) {
+            if (all[i] && all[i].is_done) done++;
+          }
+          renderPreview(tasks, total, done);
+        });
+    })
+    .catch(function(e) {
+      body.innerHTML = '<div class="dash-tasks-empty">Не загрузилось</div>';
+      if (desc) desc.textContent = 'Ошибка загрузки';
+    });
+
+  function renderPreview(tasks, total, done) {
+    if (desc) {
+      if (total === 0) {
+        desc.textContent = 'Задач нет';
+      } else {
+        desc.textContent = 'Всего: ' + total + ' · ✓ ' + done + ' · ⏳ ' + (total - done);
+      }
+    }
+
+    if (!tasks.length) {
+      body.innerHTML = '<div class="dash-tasks-empty">На сегодня задач нет 🎉</div>';
+      return;
+    }
+
+    var html = '<div class="dash-tasks-list">';
+    for (var i = 0; i < tasks.length; i++) {
+      var t = tasks[i];
+      var doneClass = t.is_done ? ' done' : '';
+      var time = t.task_time ? '<span class="dash-task-time">🕐 ' + escapeHtmlSimple(t.task_time) + '</span>' : '';
+      html += '<div class="dash-task-item' + doneClass + '">';
+      html += '<div class="dash-task-check"><span class="dash-task-check-mark">✓</span></div>';
+      html += '<div class="dash-task-text">' + escapeHtmlSimple(t.task_text) + '</div>';
+      html += time;
+      html += '</div>';
+    }
+    if (total > 3) {
+      html += '<div class="dash-tasks-more">+' + (total - 3) + ' ещё →</div>';
+    }
+    html += '</div>';
+    body.innerHTML = html;
+  }
+
+  function escapeHtmlSimple(t) {
+    if (t == null) return '';
+    var d = document.createElement('div');
+    d.textContent = String(t);
+    return d.innerHTML;
+  }
 }
 </script>
 </body>

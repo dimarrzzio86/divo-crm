@@ -5,7 +5,14 @@
     "tasks": {
       "level": 2,
       "name": "В работе",
-      "icon": "🔧",
+      "icon": "🛠",
+      "group": "main",
+      "url": "tasks.html"
+    },
+    "daily-tasks": {
+      "level": 2,
+      "name": "Задачи на сегодня",
+      "icon": "📝",
       "group": "main",
       "url": "tasks.html"
     },

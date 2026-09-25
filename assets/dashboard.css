@@ -76,6 +76,32 @@
   opacity: 0.4;
 }
 
+/* === Блок задач на главной === */
+.divo-dashboard-tasks { border-color: #1e3a8a; }
+.divo-dashboard-tasks:hover { border-color: #3b82f6; }
+.dash-tasks-list { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.dash-task-item {
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+  background: #0a0a0a; border: 1px solid #27272a; border-radius: 8px; transition: all 0.15s;
+}
+.dash-task-item:hover { border-color: #3f3f46; }
+.dash-task-item.done { opacity: 0.5; }
+.dash-task-item.done .dash-task-text { text-decoration: line-through; color: #71717a; }
+.dash-task-check {
+  width: 20px; height: 20px; border-radius: 6px; border: 2px solid #3f3f46;
+  background: #0a0a0a; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.dash-task-item.done .dash-task-check { background: #22c55e; border-color: #22c55e; }
+.dash-task-check-mark { color: #0a0a0a; font-size: 12px; font-weight: 900; display: none; }
+.dash-task-item.done .dash-task-check-mark { display: block; }
+.dash-task-text { flex: 1; font-size: 13px; color: #fafafa; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-task-time { font-size: 11px; color: #3b82f6; background: #1e3a8a; padding: 2px 6px; border-radius: 4px; flex-shrink: 0; }
+.dash-tasks-more {
+  text-align: center; padding: 8px; font-size: 13px; color: #3b82f6; font-weight: 600; cursor: pointer;
+}
+.dash-tasks-empty { text-align: center; color: #52525b; font-size: 13px; padding: 20px; }
+.dash-tasks-loading { text-align: center; color: #71717a; font-size: 13px; padding: 20px; }
+
 /* Адаптив */
 @media (max-width: 700px) {
   .divo-dashboard {
