@@ -39,6 +39,11 @@
     <div class="dt-add-row">
       <input type="text" id="dtInput" class="dt-add-input" placeholder="Введите текст задачи и нажмите Enter или ➕..." autocomplete="off">
       <input type="time" id="dtTime" class="dt-add-time" title="Время (опционально)">
+      <select id="dtImportance" class="dt-add-select" title="Важность">
+        <option value="0">Обычная</option>
+        <option value="1">⚠️ Важно</option>
+        <option value="2">🔴 Очень важно</option>
+      </select>
       <button class="dt-add-btn" id="dtAddBtn" title="Добавить задачу">➕</button>
     </div>
     <div class="dt-add-hint">Enter или ➕ — добавить · Esc — очистить</div>
@@ -140,6 +145,25 @@
   background: #1e3a8a; padding: 3px 8px; border-radius: 6px; margin-top: 4px; width: fit-content;
 }
 .dt-item-time.hidden { display: none; }
+
+/* Бейдж важности */
+.dt-item-importance {
+  display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700;
+  padding: 4px 10px; border-radius: 6px; margin-top: 4px; margin-left: 6px; width: fit-content;
+}
+.dt-item-importance.importance-1 { background: #78350f; color: #fbbf24; border: 1px solid #f59e0b; }
+.dt-item-importance.importance-2 { background: #7f1d1d; color: #fca5a5; border: 1px solid #ef4444; }
+.dt-item-importance.hidden { display: none; }
+
+/* Кнопки сортировки */
+.dt-item-move {
+  background: transparent; border: 1px solid #27272a; color: #71717a; cursor: pointer;
+  font-size: 14px; padding: 6px 8px; border-radius: 6px; transition: all 0.15s; flex-shrink: 0;
+  min-width: 32px; min-height: 32px; display: flex; align-items: center; justify-content: center; line-height: 1;
+}
+.dt-item-move:hover { background: #1e3a8a; border-color: #3b82f6; color: #93c5fd; }
+.dt-item-move:active { transform: scale(0.9); }
+.dt-item-move:disabled { opacity: 0.3; cursor: not-allowed; }
 
 .dt-item-delete {
   background: transparent; border: 1px solid #27272a; color: #71717a; cursor: pointer;
@@ -304,6 +328,7 @@
     var text = $('dtInput').value.trim();
     if (!text) { $('dtInput').focus(); return; }
     var time = $('dtTime').value || null;
+    var importance = parseInt($('dtImportance').value, 10) || 0;
 
     showStatus('Добавляем...', 'loading');
     fetch(SUPABASE_URL + '/rest/v1/daily_tasks', {
@@ -314,6 +339,7 @@
         task_text: text,
         task_time: time,
         is_done: false,
+        importance: importance,
         sort_order: tasks.length
       })
     })
@@ -321,6 +347,7 @@
         if (!r.ok) throw new Error('HTTP ' + r.status);
         $('dtInput').value = '';
         $('dtTime').value = '';
+        $('dtImportance').value = '0';
         loadTasks();
         showStatus('✅ Задача добавлена', 'success');
         setTimeout(hideStatus, 1500);
