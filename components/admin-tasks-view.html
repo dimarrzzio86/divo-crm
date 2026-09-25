@@ -154,7 +154,14 @@
 <script>
 (function() {
   var tasks = [];
-  var currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  // Локальная дата в формате YYYY-MM-DD (без проблем с часовым поясом)
+  function toLocalDateStr(d) {
+    var year = d.getFullYear();
+    var month = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return year + '-' + month + '-' + day;
+  }
+  var currentDate = toLocalDateStr(new Date());
 
   function $(id) { return document.getElementById(id); }
   function showStatus(msg, type) { var s = $('dtStatus'); s.textContent = msg; s.className = 'dt-status show ' + type; }
@@ -306,14 +313,14 @@
   function changeDate(delta) {
     var d = new Date(currentDate + 'T00:00:00');
     d.setDate(d.getDate() + delta);
-    currentDate = d.toISOString().split('T')[0];
+    currentDate = toLocalDateStr(d);
     $('dtDate').value = currentDate;
     updateSubtitle();
     loadTasks();
   }
 
   function goToday() {
-    currentDate = new Date().toISOString().split('T')[0];
+    currentDate = toLocalDateStr(new Date());
     $('dtDate').value = currentDate;
     updateSubtitle();
     loadTasks();
@@ -337,7 +344,7 @@
   $('dtNextDay').addEventListener('click', function() { changeDate(1); });
   $('dtTodayBtn').addEventListener('click', goToday);
   $('dtDate').addEventListener('change', function() {
-    currentDate = $('dtDate').value || new Date().toISOString().split('T')[0];
+    currentDate = $('dtDate').value || toLocalDateStr(new Date());
     updateSubtitle();
     loadTasks();
   });
