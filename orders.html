@@ -4,242 +4,92 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — Заказ-наряды</title>
-<link rel="stylesheet" href="/assets/style.css?v=87">
-<link rel="stylesheet" href="/assets/auth.css?v=87">
+<link rel="stylesheet" href="/assets/style.css?v=88">
+<link rel="stylesheet" href="/assets/auth.css?v=88">
 <style>
 /* === СТИЛИ СТРАНИЦЫ ЗАКАЗ-НАРЯДОВ === */
 .ord-page { padding: 0; }
-
-/* Шапка */
-.ord-top {
-  display: flex; justify-content: space-between; align-items: flex-start;
-  gap: 16px; flex-wrap: wrap; margin-bottom: 20px;
-}
-.ord-title {
-  font-size: 24px; font-weight: 800; color: #fafafa;
-  display: flex; align-items: center; gap: 10px;
-}
-.ord-title-count {
-  background: #27272a; color: #a1a1aa; font-size: 13px; font-weight: 700;
-  padding: 4px 10px; border-radius: 6px;
-}
+.ord-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+.ord-title { font-size: 24px; font-weight: 800; color: #fafafa; display: flex; align-items: center; gap: 10px; }
+.ord-title-count { background: #27272a; color: #a1a1aa; font-size: 13px; font-weight: 700; padding: 4px 10px; border-radius: 6px; }
 .ord-subtitle { font-size: 13px; color: #a1a1aa; margin-top: 4px; }
-.ord-btn-create {
-  background: #22c55e; color: #0a0a0a; border: none;
-  padding: 12px 22px; border-radius: 10px; font-weight: 700;
-  cursor: pointer; font-size: 14px; font-family: inherit;
-  transition: all .15s; display: flex; align-items: center; gap: 8px;
-}
+.ord-btn-create { background: #22c55e; color: #0a0a0a; border: none; padding: 12px 22px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 14px; font-family: inherit; transition: all .15s; display: flex; align-items: center; gap: 8px; }
 .ord-btn-create:hover { background: #16a34a; transform: translateY(-1px); }
-
-/* Фильтры */
-.ord-toolbar {
-  display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center;
-}
-.ord-filters {
-  display: flex; gap: 4px; background: #18181b;
-  border: 1.5px solid #27272a; border-radius: 12px; padding: 4px;
-}
-.ord-filter-btn {
-  padding: 8px 16px; background: transparent; color: #a1a1aa;
-  border: none; border-radius: 8px; font-size: 13px; font-weight: 600;
-  font-family: inherit; cursor: pointer; transition: all .15s;
-}
+.ord-toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+.ord-filters { display: flex; gap: 4px; background: #18181b; border: 1.5px solid #27272a; border-radius: 12px; padding: 4px; }
+.ord-filter-btn { padding: 8px 16px; background: transparent; color: #a1a1aa; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all .15s; }
 .ord-filter-btn:hover { background: #27272a; color: #fafafa; }
 .ord-filter-btn.active { background: #3b82f6; color: #fafafa; font-weight: 700; }
-.ord-filter-btn .badge {
-  background: rgba(0,0,0,0.2); padding: 1px 6px; border-radius: 4px;
-  font-size: 11px; margin-left: 4px;
-}
-.ord-search {
-  flex: 1; min-width: 200px; position: relative;
-}
-.ord-search input {
-  width: 100%; padding: 10px 14px 10px 38px;
-  background: #18181b; border: 1.5px solid #27272a; border-radius: 10px;
-  color: #fafafa; font-size: 14px; font-family: inherit;
-}
+.ord-filter-btn .badge { background: rgba(0,0,0,0.2); padding: 1px 6px; border-radius: 4px; font-size: 11px; margin-left: 4px; }
+.ord-search { flex: 1; min-width: 200px; position: relative; }
+.ord-search input { width: 100%; padding: 10px 14px 10px 38px; background: #18181b; border: 1.5px solid #27272a; border-radius: 10px; color: #fafafa; font-size: 14px; font-family: inherit; }
 .ord-search input:focus { outline: none; border-color: #3b82f6; }
 .ord-search input::placeholder { color: #52525b; }
-.ord-search-icon {
-  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
-  font-size: 14px; color: #52525b; pointer-events: none;
-}
-
-/* Список заказ-нарядов */
+.ord-search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; color: #52525b; pointer-events: none; }
 .ord-list { display: flex; flex-direction: column; gap: 10px; }
-
-.ord-card {
-  background: #18181b; border: 1.5px solid #27272a; border-radius: 12px;
-  padding: 16px 18px; cursor: pointer; transition: all .15s;
-  display: flex; gap: 16px; align-items: flex-start;
-}
+.ord-card { background: #18181b; border: 1.5px solid #27272a; border-radius: 12px; padding: 16px 18px; cursor: pointer; transition: all .15s; display: flex; gap: 16px; align-items: flex-start; }
 .ord-card:hover { border-color: #3f3f46; transform: translateY(-1px); }
-.ord-card-status-bar {
-  width: 4px; align-self: stretch; border-radius: 2px; flex-shrink: 0;
-}
+.ord-card-status-bar { width: 4px; align-self: stretch; border-radius: 2px; flex-shrink: 0; }
 .ord-card-status-bar.new { background: #71717a; }
 .ord-card-status-bar.in_progress { background: #fbbf24; }
 .ord-card-status-bar.done { background: #22c55e; }
 .ord-card-status-bar.issued { background: #3b82f6; }
-
 .ord-card-main { flex: 1; min-width: 0; }
-.ord-card-header {
-  display: flex; gap: 12px; align-items: center; margin-bottom: 8px; flex-wrap: wrap;
-}
-.ord-card-num {
-  font-size: 15px; font-weight: 800; color: #fafafa;
-}
-.ord-card-car-color {
-  width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0;
-  border: 1px solid rgba(255,255,255,0.15);
-}
-.ord-card-car {
-  font-size: 14px; font-weight: 600; color: #d4d4d8;
-  display: flex; align-items: center; gap: 6px;
-}
-.ord-card-plate {
-  background: #0a0a0a; border: 1px solid #3f3f46; color: #fafafa;
-  padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 700;
-  font-family: monospace; letter-spacing: 1px;
-}
-.ord-card-status {
-  font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px;
-  text-transform: uppercase; letter-spacing: 0.5px;
-}
+.ord-card-header { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+.ord-card-num { font-size: 15px; font-weight: 800; color: #fafafa; }
+.ord-card-car-color { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.15); }
+.ord-card-car { font-size: 14px; font-weight: 600; color: #d4d4d8; display: flex; align-items: center; gap: 6px; }
+.ord-card-plate { background: #0a0a0a; border: 1px solid #3f3f46; color: #fafafa; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 700; font-family: monospace; letter-spacing: 1px; }
+.ord-card-status { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
 .ord-card-status.new { background: #27272a; color: #a1a1aa; }
 .ord-card-status.in_progress { background: #422006; color: #fbbf24; }
 .ord-card-status.done { background: #14241a; color: #4ade80; }
 .ord-card-status.issued { background: #1e293b; color: #93c5fd; }
-
-.ord-card-info {
-  display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: #a1a1aa;
-  margin-bottom: 8px;
-}
+.ord-card-info { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: #a1a1aa; margin-bottom: 8px; }
 .ord-card-info-item { display: flex; align-items: center; gap: 6px; }
 .ord-card-info-item b { color: #fafafa; font-weight: 600; }
-
-.ord-card-services {
-  font-size: 13px; color: #d4d4d8; line-height: 1.5;
-}
+.ord-card-services { font-size: 13px; color: #d4d4d8; line-height: 1.5; }
 .ord-card-services-label { color: #71717a; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 6px; }
-.ord-card-service-tag {
-  display: inline-block; background: #0a0a0a; border: 1px solid #27272a;
-  padding: 2px 8px; border-radius: 4px; margin: 2px 4px 2px 0; font-size: 12px;
-}
-
-/* Пусто */
-.ord-empty {
-  text-align: center; padding: 60px 20px; color: #52525b;
-}
+.ord-card-service-tag { display: inline-block; background: #0a0a0a; border: 1px solid #27272a; padding: 2px 8px; border-radius: 4px; margin: 2px 4px 2px 0; font-size: 12px; }
+.ord-empty { text-align: center; padding: 60px 20px; color: #52525b; }
 .ord-empty-icon { font-size: 48px; margin-bottom: 12px; }
 .ord-empty-text { font-size: 15px; margin-bottom: 16px; }
-
-/* === МОДАЛКА === */
-.ord-modal-overlay {
-  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-  z-index: 1000; align-items: flex-start; justify-content: center;
-  padding: 20px; overflow-y: auto;
-}
+.ord-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: flex-start; justify-content: center; padding: 20px; overflow-y: auto; }
 .ord-modal-overlay.show { display: flex; }
-.ord-modal {
-  background: #0a0a0a; border: 1.5px solid #27272a; border-radius: 16px;
-  max-width: 640px; width: 100%; padding: 24px; margin: 20px auto;
-}
-.ord-modal-header {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1.5px solid #27272a;
-}
+.ord-modal { background: #0a0a0a; border: 1.5px solid #27272a; border-radius: 16px; max-width: 640px; width: 100%; padding: 24px; margin: 20px auto; }
+.ord-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1.5px solid #27272a; }
 .ord-modal-title { font-size: 20px; font-weight: 800; color: #fafafa; }
-.ord-modal-close {
-  background: #27272a; border: none; color: #a1a1aa;
-  width: 32px; height: 32px; border-radius: 8px; cursor: pointer;
-  font-size: 18px; font-family: inherit;
-}
+.ord-modal-close { background: #27272a; border: none; color: #a1a1aa; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 18px; font-family: inherit; }
 .ord-modal-close:hover { background: #3f3f46; color: #fafafa; }
-
-.ord-form-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
-}
+.ord-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .ord-form-group { display: flex; flex-direction: column; gap: 6px; }
 .ord-form-group.full { grid-column: 1 / -1; }
-.ord-form-label {
-  font-size: 12px; font-weight: 700; color: #71717a;
-  text-transform: uppercase; letter-spacing: 0.5px;
-}
-.ord-form-input, .ord-form-select, .ord-form-textarea {
-  background: #18181b; border: 1.5px solid #27272a; border-radius: 8px;
-  padding: 10px 12px; color: #fafafa; font-size: 14px; font-family: inherit;
-  width: 100%; box-sizing: border-box;
-}
-.ord-form-input:focus, .ord-form-select:focus, .ord-form-textarea:focus {
-  outline: none; border-color: #3b82f6;
-}
+.ord-form-label { font-size: 12px; font-weight: 700; color: #71717a; text-transform: uppercase; letter-spacing: 0.5px; }
+.ord-form-input, .ord-form-select, .ord-form-textarea { background: #18181b; border: 1.5px solid #27272a; border-radius: 8px; padding: 10px 12px; color: #fafafa; font-size: 14px; font-family: inherit; width: 100%; box-sizing: border-box; }
+.ord-form-input:focus, .ord-form-select:focus, .ord-form-textarea:focus { outline: none; border-color: #3b82f6; }
 .ord-form-textarea { resize: vertical; min-height: 60px; }
 .ord-form-hint { font-size: 11px; color: #52525b; }
-
-/* Палитра цветов */
-.ord-color-palette {
-  display: flex; gap: 6px; flex-wrap: wrap;
-}
-.ord-color-swatch {
-  width: 32px; height: 32px; border-radius: 6px; cursor: pointer;
-  border: 2px solid transparent; transition: all .15s;
-}
+.ord-color-palette { display: flex; gap: 6px; flex-wrap: wrap; }
+.ord-color-swatch { width: 32px; height: 32px; border-radius: 6px; cursor: pointer; border: 2px solid transparent; transition: all .15s; }
 .ord-color-swatch:hover { transform: scale(1.1); }
 .ord-color-swatch.active { border-color: #fafafa; box-shadow: 0 0 0 2px #0a0a0a; }
-
-/* Услуги */
-.ord-services-row {
-  display: flex; gap: 6px; margin-bottom: 6px;
-}
+.ord-services-row { display: flex; gap: 6px; margin-bottom: 6px; }
 .ord-services-row input { flex: 1; }
-.ord-btn-add-service {
-  background: #27272a; border: 1.5px solid #3f3f46; color: #a1a1aa;
-  padding: 0 14px; border-radius: 8px; cursor: pointer; font-size: 18px;
-  font-family: inherit; flex-shrink: 0;
-}
+.ord-btn-add-service { background: #27272a; border: 1.5px solid #3f3f46; color: #a1a1aa; padding: 0 14px; border-radius: 8px; cursor: pointer; font-size: 18px; font-family: inherit; flex-shrink: 0; }
 .ord-btn-add-service:hover { background: #3f3f46; color: #fafafa; }
-.ord-services-list {
-  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
-}
-.ord-service-chip {
-  display: inline-flex; align-items: center; gap: 6px;
-  background: #18181b; border: 1px solid #27272a; color: #d4d4d8;
-  padding: 4px 10px; border-radius: 6px; font-size: 13px;
-}
-.ord-service-chip-remove {
-  cursor: pointer; color: #71717a; font-size: 16px; line-height: 1;
-}
+.ord-services-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.ord-service-chip { display: inline-flex; align-items: center; gap: 6px; background: #18181b; border: 1px solid #27272a; color: #d4d4d8; padding: 4px 10px; border-radius: 6px; font-size: 13px; }
+.ord-service-chip-remove { cursor: pointer; color: #71717a; font-size: 16px; line-height: 1; }
 .ord-service-chip-remove:hover { color: #ef4444; }
-
-/* Кнопки модалки */
-.ord-modal-actions {
-  display: flex; gap: 10px; justify-content: flex-end;
-  margin-top: 24px; padding-top: 16px; border-top: 1.5px solid #27272a;
-}
-.ord-btn-cancel {
-  background: #27272a; color: #d4d4d8; border: 1.5px solid #3f3f46;
-  padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer;
-  font-size: 14px; font-family: inherit;
-}
+.ord-modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; padding-top: 16px; border-top: 1.5px solid #27272a; }
+.ord-btn-cancel { background: #27272a; color: #d4d4d8; border: 1.5px solid #3f3f46; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; font-family: inherit; }
 .ord-btn-cancel:hover { background: #3f3f46; }
-.ord-btn-save {
-  background: #22c55e; color: #0a0a0a; border: none;
-  padding: 10px 22px; border-radius: 8px; font-weight: 700; cursor: pointer;
-  font-size: 14px; font-family: inherit;
-}
+.ord-btn-save { background: #22c55e; color: #0a0a0a; border: none; padding: 10px 22px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 14px; font-family: inherit; }
 .ord-btn-save:hover { background: #16a34a; }
-.ord-btn-delete {
-  background: transparent; color: #ef4444; border: 1.5px solid #7f1d1d;
-  padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer;
-  font-size: 14px; font-family: inherit; margin-right: auto;
-}
+.ord-btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
+.ord-btn-delete { background: transparent; color: #ef4444; border: 1.5px solid #7f1d1d; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; font-family: inherit; margin-right: auto; }
 .ord-btn-delete:hover { background: #7f1d1d; color: #fca5a5; }
-
-@media (max-width: 600px) {
-  .ord-form-grid { grid-template-columns: 1fr; }
-}
+@media (max-width: 600px) { .ord-form-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -254,15 +104,10 @@
       <div class="ord-page">
         <div class="ord-top">
           <div>
-            <div class="ord-title">
-              📋 Заказ-наряды
-              <span class="ord-title-count" id="ordCount">0</span>
-            </div>
+            <div class="ord-title">📋 Заказ-наряды <span class="ord-title-count" id="ordCount">0</span></div>
             <div class="ord-subtitle">Записи клиентов · посты · услуги</div>
           </div>
-          <button class="ord-btn-create" onclick="ordOpenModal()">
-            ➕ Создать заказ-наряд
-          </button>
+          <button class="ord-btn-create" onclick="ordOpenModal()">➕ Создать заказ-наряд</button>
         </div>
 
         <div class="ord-toolbar">
@@ -280,22 +125,16 @@
         </div>
 
         <div class="ord-list" id="ordList">
-          <div class="ord-empty">
-            <div class="ord-empty-icon">📋</div>
-            <div class="ord-empty-text">Пока нет заказ-нарядов</div>
-            <button class="ord-btn-create" onclick="ordOpenModal()">➕ Создать первый</button>
-          </div>
+          <div class="ord-empty"><div class="ord-empty-icon">⏳</div><div class="ord-empty-text">Загрузка...</div></div>
         </div>
       </div>
 
-      <!-- Модалка создания/редактирования -->
       <div class="ord-modal-overlay" id="ordModal">
         <div class="ord-modal">
           <div class="ord-modal-header">
             <div class="ord-modal-title" id="ordModalTitle">Новый заказ-наряд</div>
             <button class="ord-modal-close" onclick="ordCloseModal()">✕</button>
           </div>
-
           <div class="ord-form-grid">
             <div class="ord-form-group">
               <label class="ord-form-label">Номер заказ-наряда *</label>
@@ -303,15 +142,16 @@
               <div class="ord-form-hint">Из внешней CRM</div>
             </div>
             <div class="ord-form-group">
-              <label class="ord-form-label">Пост *</label>
+              <label class="ord-form-label">Пост</label>
               <select class="ord-form-select" id="ordField-post">
+                <option value="auto">Авто (свободный)</option>
                 <option value="1">Пост 1</option>
                 <option value="2">Пост 2</option>
                 <option value="3">Пост 3</option>
                 <option value="4">Пост 4</option>
               </select>
+              <div class="ord-form-hint">Если не выбрать — назначится свободный</div>
             </div>
-
             <div class="ord-form-group">
               <label class="ord-form-label">Марка / модель *</label>
               <input type="text" class="ord-form-input" id="ordField-carBrand" placeholder="Toyota Camry">
@@ -320,12 +160,10 @@
               <label class="ord-form-label">Госномер</label>
               <input type="text" class="ord-form-input" id="ordField-carPlate" placeholder="А123ВС 77" style="text-transform:uppercase;">
             </div>
-
             <div class="ord-form-group full">
               <label class="ord-form-label">Цвет авто (для графика)</label>
               <div class="ord-color-palette" id="ordColorPalette"></div>
             </div>
-
             <div class="ord-form-group">
               <label class="ord-form-label">Дата заезда *</label>
               <input type="date" class="ord-form-input" id="ordField-dateIn">
@@ -334,7 +172,6 @@
               <label class="ord-form-label">Дата выезда *</label>
               <input type="date" class="ord-form-input" id="ordField-dateOut">
             </div>
-
             <div class="ord-form-group full">
               <label class="ord-form-label">Статус</label>
               <select class="ord-form-select" id="ordField-status">
@@ -344,7 +181,6 @@
                 <option value="issued">🔵 Выдано</option>
               </select>
             </div>
-
             <div class="ord-form-group full">
               <label class="ord-form-label">Услуги</label>
               <div class="ord-services-row">
@@ -353,13 +189,11 @@
               </div>
               <div class="ord-services-list" id="ordServicesList"></div>
             </div>
-
             <div class="ord-form-group full">
               <label class="ord-form-label">Комментарий</label>
               <textarea class="ord-form-textarea" id="ordField-note" placeholder="Доп. инфо..."></textarea>
             </div>
           </div>
-
           <div class="ord-modal-actions">
             <button class="ord-btn-delete" id="ordDeleteBtn" onclick="ordDelete()" style="display:none;">🗑 Удалить</button>
             <button class="ord-btn-cancel" onclick="ordCloseModal()">Отмена</button>
@@ -372,52 +206,100 @@
   <div class="divo-footer">© Диво Детейлинг • 2026</div>
 </div>
 
-<script src="/components/components.js?v=87"></script>
-<script src="/components/access-config.js?v=87"></script>
+<script src="/components/components.js?v=88"></script>
+<script src="/components/access-config.js?v=88"></script>
 <script>
 // ============================================
-// ЛОКАЛЬНОЕ ХРАНИЛИЩЕ (временно, до Supabase)
+// ЗАКАЗ-НАРЯДЫ — SUPABASE
 // ============================================
-var ORDERS_KEY = 'divo_orders';
+
 var ORD_EDITING_ID = null;
 var ORD_SERVICES = [];
 var ORD_FILTER = 'all';
+var ORD_CACHE = null;
+
 var ORD_CAR_COLORS = [
-  {hex:'#ef4444', name:'Красный'},
-  {hex:'#3b82f6', name:'Синий'},
-  {hex:'#22c55e', name:'Зелёный'},
-  {hex:'#fbbf24', name:'Жёлтый'},
-  {hex:'#f97316', name:'Оранжевый'},
-  {hex:'#a78bfa', name:'Фиолетовый'},
-  {hex:'#ec4899', name:'Розовый'},
-  {hex:'#fafafa', name:'Белый'},
-  {hex:'#525252', name:'Чёрный'},
-  {hex:'#71717a', name:'Серый'}
+  {hex:'#ef4444', name:'Красный'},   {hex:'#3b82f6', name:'Синий'},
+  {hex:'#22c55e', name:'Зелёный'},   {hex:'#fbbf24', name:'Жёлтый'},
+  {hex:'#f97316', name:'Оранжевый'}, {hex:'#a78bfa', name:'Фиолетовый'},
+  {hex:'#ec4899', name:'Розовый'},   {hex:'#fafafa', name:'Белый'},
+  {hex:'#525252', name:'Чёрный'},    {hex:'#71717a', name:'Серый'}
 ];
+
 var ORD_STATUS_NAMES = {
-  new: 'Новый',
-  in_progress: 'В работе',
-  done: 'Готово',
-  issued: 'Выдано'
+  new: 'Новый', in_progress: 'В работе', done: 'Готово', issued: 'Выдано'
 };
 
-function ordGetAll() {
-  try {
-    var data = localStorage.getItem(ORDERS_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch(e) { return []; }
+var ORD_SUPABASE_URL = (typeof SUPABASE_URL !== 'undefined') ? SUPABASE_URL : 'https://jnbqzngsglnjzzpsvvgn.supabase.co';
+var ORD_SUPABASE_KEY = (typeof SUPABASE_KEY !== 'undefined') ? SUPABASE_KEY : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuYnF6bmdzZ2xuanp6cHN2dmduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyMzIwOTEsImV4cCI6MjEwNDgwODA5MX0.uHVMUKBtO0326KB3bAHQ8rywBvBms7WvfaxPrhm3_Y0';
+
+// Конвертация: строка БД → наш формат
+function ordFromDb(row) {
+  return {
+    id: row.id,
+    number: row.number || '',
+    carBrand: row.car_brand || '',
+    carPlate: row.car_plate || '',
+    carColor: row.car_color || '#525252',
+    dateIn: row.date_in || '',
+    dateOut: row.date_out || '',
+    status: row.status || 'new',
+    post: String(row.post || '1'),
+    note: row.note || '',
+    services: row.services || [],
+    createdAt: row.created_at ? new Date(row.created_at).getTime() : 0
+  };
 }
 
-function ordSaveAll(orders) {
-  try { localStorage.setItem(ORDERS_KEY, JSON.stringify(orders)); } catch(e) {}
+// Загрузить все заказы с сервера (с кэшем)
+function ordGetAll(callback) {
+  if (ORD_CACHE) { if (callback) callback(ORD_CACHE); return; }
+  fetch(ORD_SUPABASE_URL + '/rest/v1/orders?select=*&order=created_at.desc', {
+    headers: {
+      'apikey': ORD_SUPABASE_KEY,
+      'Authorization': 'Bearer ' + ORD_SUPABASE_KEY
+    }
+  })
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(rows) {
+      ORD_CACHE = rows.map(ordFromDb);
+      if (callback) callback(ORD_CACHE);
+    })
+    .catch(function(e) {
+      console.error('Ошибка загрузки заказов:', e);
+      if (callback) callback([]);
+    });
+}
+
+function ordInvalidateCache() { ORD_CACHE = null; }
+
+// Поиск свободного поста
+function ordFindFreePost(dateIn, dateOut, excludeId, orders) {
+  if (!dateIn || !dateOut) return 1;
+  for (var post = 1; post <= 4; post++) {
+    var isFree = true;
+    for (var i = 0; i < orders.length; i++) {
+      var o = orders[i];
+      if (excludeId && o.id === excludeId) continue;
+      if (String(o.post) !== String(post)) continue;
+      if (!o.dateIn || !o.dateOut) continue;
+      if (dateIn <= o.dateOut && dateOut >= o.dateIn) { isFree = false; break; }
+    }
+    if (isFree) return post;
+  }
+  return 1;
 }
 
 // === РЕНДЕР СПИСКА ===
 function ordRender() {
-  var orders = ordGetAll();
+  var listEl = document.getElementById('ordList');
+  if (listEl) listEl.innerHTML = '<div class="ord-empty"><div class="ord-empty-icon">⏳</div><div class="ord-empty-text">Загрузка...</div></div>';
+  ordGetAll(function(orders) { ordRenderList(orders); });
+}
+
+function ordRenderList(orders) {
   var search = (document.getElementById('ordSearch').value || '').toLowerCase().trim();
 
-  // Считаем счётчики
   var counts = { all: orders.length, new: 0, in_progress: 0, done: 0, issued: 0 };
   for (var i = 0; i < orders.length; i++) {
     counts[orders[i].status] = (counts[orders[i].status] || 0) + 1;
@@ -428,7 +310,6 @@ function ordRender() {
   }
   document.getElementById('ordCount').textContent = orders.length;
 
-  // Фильтруем
   var filtered = [];
   for (var i = 0; i < orders.length; i++) {
     var o = orders[i];
@@ -440,10 +321,7 @@ function ordRender() {
     filtered.push(o);
   }
 
-  // Сортировка: новые по дате создания (обратный порядок)
-  filtered.sort(function(a, b) {
-    return (b.createdAt || 0) - (a.createdAt || 0);
-  });
+  filtered.sort(function(a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
 
   var listEl = document.getElementById('ordList');
   if (filtered.length === 0) {
@@ -462,7 +340,6 @@ function ordRender() {
       }
       servicesHtml += '</div>';
     }
-
     html += '<div class="ord-card" onclick="ordOpenModal(\'' + o.id + '\')">';
     html += '  <div class="ord-card-status-bar ' + o.status + '"></div>';
     html += '  <div class="ord-card-main">';
@@ -492,12 +369,17 @@ function ordFormatDate(d) {
 // === МОДАЛКА ===
 function ordOpenModal(id) {
   ORD_EDITING_ID = id || null;
-  var orders = ordGetAll();
-  var o = id ? orders.find(function(x){return x.id === id;}) : null;
+  if (!id) { ordFillModal(null); return; }
+  ordGetAll(function(orders) {
+    var o = orders.find(function(x){return x.id === id;});
+    ordFillModal(o);
+  });
+}
 
-  document.getElementById('ordModalTitle').textContent = id ? 'Заказ-наряд #' + (o.number || o.id) : 'Новый заказ-наряд';
+function ordFillModal(o) {
+  var id = ORD_EDITING_ID;
+  document.getElementById('ordModalTitle').textContent = id ? 'Заказ-наряд #' + (o ? o.number : id) : 'Новый заказ-наряд';
   document.getElementById('ordDeleteBtn').style.display = id ? 'block' : 'none';
-
   document.getElementById('ordField-number').value = o ? (o.number || '') : '';
   document.getElementById('ordField-carBrand').value = o ? (o.carBrand || '') : '';
   document.getElementById('ordField-carPlate').value = o ? (o.carPlate || '') : '';
@@ -506,11 +388,9 @@ function ordOpenModal(id) {
   document.getElementById('ordField-status').value = o ? (o.status || 'new') : 'new';
   document.getElementById('ordField-note').value = o ? (o.note || '') : '';
   document.getElementById('ordField-post').value = o ? (o.post || 'auto') : 'auto';
-
   ORD_SERVICES = o && o.services ? o.services.slice() : [];
   ordRenderServices();
   ordRenderColorPalette(o ? o.carColor : null);
-
   document.getElementById('ordModal').classList.add('show');
 }
 
@@ -533,9 +413,7 @@ function ordRenderColorPalette(activeColor) {
 
 function ordSelectColor(hex) {
   var swatches = document.querySelectorAll('.ord-color-swatch');
-  for (var i = 0; i < swatches.length; i++) {
-    swatches[i].classList.remove('active');
-  }
+  for (var i = 0; i < swatches.length; i++) swatches[i].classList.remove('active');
   event.target.classList.add('active');
 }
 
@@ -544,7 +422,6 @@ function ordGetSelectedColor() {
   return active ? active.style.backgroundColor : '#525252';
 }
 
-// Услуги
 function ordAddService() {
   var input = document.getElementById('ordServiceInput');
   var val = input.value.trim();
@@ -583,56 +460,82 @@ function ordSave() {
 
   if (!number) { alert('Укажите номер заказ-наряда'); return; }
   if (!carBrand) { alert('Укажите марку/модель авто'); return; }
+  if (!carPlate) { alert('⚠️ Без госномера сохранение невозможно.\n\nУкажите госномер авто.'); return; }
   if (!dateIn) { alert('Укажите дату заезда'); return; }
   if (!dateOut) { alert('Укажите дату выезда'); return; }
 
-  var orders = ordGetAll();
-  if (ORD_EDITING_ID) {
-    for (var i = 0; i < orders.length; i++) {
-      if (orders[i].id === ORD_EDITING_ID) {
-        orders[i].number = number;
-        orders[i].carBrand = carBrand;
-        orders[i].carPlate = carPlate;
-        orders[i].carColor = carColor;
-        orders[i].dateIn = dateIn;
-        orders[i].dateOut = dateOut;
-        orders[i].status = status;
-        orders[i].post = post;
-        orders[i].note = note;
-        orders[i].services = ORD_SERVICES.slice();
-        break;
-      }
-    }
+  if (post === 'auto') {
+    ordGetAll(function(orders) {
+      post = String(ordFindFreePost(dateIn, dateOut, ORD_EDITING_ID, orders));
+      ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, status, post, note);
+    });
   } else {
-    var newOrder = {
-      id: 'ord_' + Date.now() + '_' + Math.floor(Math.random()*1000),
-      number: number,
-      carBrand: carBrand,
-      carPlate: carPlate,
-      carColor: carColor,
-      dateIn: dateIn,
-      dateOut: dateOut,
-      status: status,
-      post: post,
-      note: note,
-      services: ORD_SERVICES.slice(),
-      createdAt: Date.now()
-    };
-    orders.push(newOrder);
+    ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, status, post, note);
   }
-  ordSaveAll(orders);
-  ordCloseModal();
-  ordRender();
+}
+
+function ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, status, post, note) {
+  var data = {
+    number: number, car_brand: carBrand, car_plate: carPlate, car_color: carColor,
+    date_in: dateIn, date_out: dateOut, status: status, post: post,
+    note: note || '', services: ORD_SERVICES.slice()
+  };
+
+  var saveBtn = document.querySelector('.ord-btn-save');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '⏳ Сохранение...'; }
+
+  var url, method;
+  if (ORD_EDITING_ID) {
+    url = ORD_SUPABASE_URL + '/rest/v1/orders?id=eq.' + encodeURIComponent(ORD_EDITING_ID);
+    method = 'PATCH';
+  } else {
+    url = ORD_SUPABASE_URL + '/rest/v1/orders';
+    method = 'POST';
+  }
+
+  fetch(url, {
+    method: method,
+    headers: {
+      'apikey': ORD_SUPABASE_KEY,
+      'Authorization': 'Bearer ' + ORD_SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    },
+    body: JSON.stringify(data)
+  })
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function() {
+      ordInvalidateCache();
+      ordCloseModal();
+      ordRender();
+    })
+    .catch(function(e) {
+      console.error('Ошибка сохранения:', e);
+      alert('❌ Ошибка сохранения: ' + e.message);
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 Сохранить'; }
+    });
 }
 
 function ordDelete() {
   if (!ORD_EDITING_ID) return;
   if (!confirm('Удалить заказ-наряд?')) return;
-  var orders = ordGetAll();
-  orders = orders.filter(function(x){return x.id !== ORD_EDITING_ID;});
-  ordSaveAll(orders);
-  ordCloseModal();
-  ordRender();
+  fetch(ORD_SUPABASE_URL + '/rest/v1/orders?id=eq.' + encodeURIComponent(ORD_EDITING_ID), {
+    method: 'DELETE',
+    headers: {
+      'apikey': ORD_SUPABASE_KEY,
+      'Authorization': 'Bearer ' + ORD_SUPABASE_KEY
+    }
+  })
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); })
+    .then(function() {
+      ordInvalidateCache();
+      ordCloseModal();
+      ordRender();
+    })
+    .catch(function(e) {
+      console.error('Ошибка удаления:', e);
+      alert('❌ Ошибка удаления: ' + e.message);
+    });
 }
 
 // === ФИЛЬТРЫ ===
@@ -654,7 +557,7 @@ function divoCheckAuthAndInit() {
   if (!user) {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=87')
+    fetch('/components/auth-form.html?v=88')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
@@ -671,26 +574,27 @@ function divoCheckAuthAndInit() {
     return;
   }
 
-  // Доступ к заказ-нарядам — уровень 2 (мастер)
-  if (!divoHasAccessToSection('orders')) {
-    if (typeof divoCheckSectionAccess === 'function') {
-      divoCheckSectionAccess('orders');
-    } else {
-      location.href = 'index.html';
-    }
-    return;
+  if (typeof divoLoadAccessConfig === 'function') {
+    divoLoadAccessConfig(function() {
+      if (!divoHasAccessToSection('orders')) {
+        location.href = 'index.html';
+        return;
+      }
+      ordStartPage();
+    });
+  } else {
+    ordStartPage();
   }
+}
 
+function ordStartPage() {
   var mainLayout = document.getElementById('divoMainLayout');
   if (mainLayout) mainLayout.style.display = 'flex';
   var authContainer = document.getElementById('divoAuthContainer');
   if (authContainer) authContainer.innerHTML = '';
-
   divoInit();
   ordInitFilters();
   ordRender();
-
-  // Закрытие модалки по клику вне
   document.getElementById('ordModal').addEventListener('click', function(e) {
     if (e.target === this) ordCloseModal();
   });

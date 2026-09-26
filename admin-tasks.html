@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — Задачи на сегодня (адм)</title>
-<link rel="stylesheet" href="/assets/style.css?v=87">
-<link rel="stylesheet" href="/assets/auth.css?v=87">
-<link rel="stylesheet" href="/assets/cash.css?v=87">
+<link rel="stylesheet" href="/assets/style.css?v=88">
+<link rel="stylesheet" href="/assets/auth.css?v=88">
+<link rel="stylesheet" href="/assets/cash.css?v=88">
 </head>
 <body>
 
@@ -21,15 +21,15 @@
   <div class="divo-footer">© Диво Детейлинг • 2026</div>
 </div>
 
-<script src="/components/components.js?v=87"></script>
-<script src="/components/access-config.js?v=87"></script>
+<script src="/components/components.js?v=88"></script>
+<script src="/components/access-config.js?v=88"></script>
 <script>
 function divoInitAdminTasks() {
   var user = divoGetUser();
   if (!user) {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=87')
+    fetch('/components/auth-form.html?v=88')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
@@ -62,7 +62,7 @@ function divoInitAdminTasks() {
     divoInit();
 
     // Грузим компонент с задачами
-    fetch('/components/admin-tasks-view.html?v=87')
+    fetch('/components/admin-tasks-view.html?v=88')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var content = document.getElementById('divoContent');
