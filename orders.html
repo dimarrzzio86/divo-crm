@@ -1210,7 +1210,7 @@ function ordCalcAccHTML(svc, idx, isManual) {
 function ordCalcOnPriceInput(input) {
   var compId = input.dataset.comp;
   var accId = input.dataset.acc;
-  var val = parseFloat(input.value) || 0;
+  var val = Math.round((parseFloat(input.value) || 0) * 100) / 100;
   ORD_CALC_COSTS[compId] = val;
   ORD_CALC_DIRTY = true;
   ordCalcRecalcAccordion(accId);
@@ -1225,7 +1225,7 @@ function ordCalcRecalcAll() {
   var o = ORD_CALC_ORDER;
   if (!o) return;
   var services = o.services || [];
-  var orderTotal = Number(o.price) || 0;
+  var orderTotal = Math.round((Number(o.price) || 0) * 100) / 100;
   var totalSpent = 0;
   for (var i = 0; i < services.length; i++) {
     var sid = services[i].serviceId;
@@ -1234,7 +1234,8 @@ function ordCalcRecalcAll() {
       totalSpent += (ORD_CALC_COSTS[components[j].id] || 0);
     }
   }
-  var profit = orderTotal - totalSpent;
+  totalSpent = Math.round(totalSpent * 100) / 100;
+  var profit = Math.round((orderTotal - totalSpent) * 100) / 100;
   var totalEl = document.getElementById('ordCalcBotTotal');
   var spentEl = document.getElementById('ordCalcBotSpent');
   var profitEl = document.getElementById('ordCalcBotProfit');
@@ -1254,9 +1255,10 @@ function ordCalcRecalcAccordion(accId) {
   for (var i = 0; i < inputs.length; i++) {
     spent += (parseFloat(inputs[i].value) || 0);
   }
+  spent = Math.round(spent * 100) / 100;
   var svc = ordCalcFindSvcByAccId(accId);
-  var price = svc ? (Number(svc.price) || 0) : 0;
-  var rest = price - spent;
+  var price = Math.round((svc ? (Number(svc.price) || 0) : 0) * 100) / 100;
+  var rest = Math.round((price - spent) * 100) / 100;
   var spentEl = document.getElementById(accId + '_spent');
   var restEl = document.getElementById(accId + '_rest');
   if (spentEl) spentEl.textContent = ordFormatPrice(spent) + ' ₽';
