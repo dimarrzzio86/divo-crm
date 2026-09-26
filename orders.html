@@ -106,6 +106,11 @@
 .ord-btn-add-row:hover { background: #1e3a8a; color: #fafafa; }
 .ord-row-total { font-size: 15px; font-weight: 800; color: #4ade80; }
 .ord-row-total span { font-size: 17px; }
+.ord-row-check { display: flex; align-items: center; justify-content: center; }
+.ord-row-check input { width: 16px; height: 16px; cursor: pointer; }
+.ord-row-check input:checked + label { color: #fbbf24; }
+.ord-row-check label { font-size: 9px; color: #52525b; text-align: center; line-height: 1.1; cursor: pointer; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
+.ord-row-check label:hover { color: #fbbf24; }
 .ord-row input.ord-manual-name { color: #fbbf24; font-weight: 600; }
 .ord-row input.ord-manual-name:focus { color: #fafafa; }
 .ord-empty-row { text-align: center; color: #52525b; padding: 20px; font-size: 13px; grid-column: 1 / -1; }
@@ -202,13 +207,10 @@
           <div class="ord-services-block">
             <div class="ord-services-block-head">
               <label class="ord-form-label">Услуги и цены</label>
-              <label class="ord-manual-toggle">
-                <input type="checkbox" id="ordManualMode" onchange="ordToggleManualMode()">
-                <span>✍ Ручной ввод</span>
-              </label>
             </div>
             <div class="ord-rows-table" id="ordRowsTable">
               <div class="ord-row ord-row-head" id="ordRowHead">
+                <div style="width:24px"></div>
                 <div>Категория</div>
                 <div>Подкатегория</div>
                 <div>Услуга</div>
@@ -654,27 +656,19 @@ function ordRemoveRow(idx) {
 }
 
 
-function ordToggleManualMode() {
-  ORD_MANUAL_MODE = document.getElementById('ordManualMode').checked;
-  // При переключении режима сбрасываем выбор услуг, но сохраняем цены и названия
-  for (var i = 0; i < ORD_ROWS.length; i++) {
-    if (ORD_MANUAL_MODE) {
-      // Переходим в ручной режим — сохраняем svcName если есть
-      ORD_ROWS[i].manual = true;
-      ORD_ROWS[i].catId = '';
-      ORD_ROWS[i].subcatId = '';
-      ORD_ROWS[i].svcId = '';
-    } else {
-      // Возвращаемся к прайсу — сбрасываем выбор
-      ORD_ROWS[i].manual = false;
-      ORD_ROWS[i].catId = '';
-      ORD_ROWS[i].subcatId = '';
-      ORD_ROWS[i].svcId = '';
-    }
+function ordOnRowManualToggle(idx, isManual) {
+  var r = ORD_ROWS[idx];
+  r.manual = isManual;
+  if (isManual) {
+    // Переходим в ручной режим — сохраняем svcName если было выбрано
+    if (!r.svcName) r.svcName = '';
+    r.catId = '';
+    r.subcatId = '';
+    r.svcId = '';
+  } else {
+    // Возвращаемся к прайсу — сбрасываем ручное название
+    r.svcName = '';
   }
-  // Скрываем/показываем заголовок таблицы
-  var head = document.getElementById('ordRowHead');
-  if (head) head.style.display = ORD_MANUAL_MODE ? 'none' : 'grid';
   ordRenderRows();
   ordRecalcTotal();
 }
@@ -689,7 +683,11 @@ function ordRenderRows() {
   for (var i = 0; i < ORD_ROWS.length; i++) {
     var r = ORD_ROWS[i];
     html += '<div class="ord-row" data-idx="' + i + '">';
-    if (ORD_MANUAL_MODE || r.manual) {
+    // Чекбокс "Ручной ввод" — отдельный для каждой строки
+    var checked = r.manual ? ' checked' : '';
+    html += '<div class="ord-row-check"><input type="checkbox" id="ordRowManual' + i + '"' + checked + ' onchange="ordOnRowManualToggle(' + i + ', this.checked)"><label for="ordRowManual' + i + '">руч.</label></div>';
+    // Содержимое строки зависит от режима
+    if (r.manual) {
       // Ручной режим: одно текстовое поле на 3 колонки
       html += '<input type="text" class="ord-manual-name" value="' + ordEscape(r.svcName) + '" placeholder="Название услуги..." oninput="ordOnRowManualName(' + i + ', this.value)" style="grid-column: span 3;">';
     } else {
