@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — Услуги партнёров</title>
-<link rel="stylesheet" href="/assets/style.css?v=107">
-<link rel="stylesheet" href="/assets/auth.css?v=107">
-<link rel="stylesheet" href="/assets/cash.css?v=107">
+<link rel="stylesheet" href="/assets/style.css?v=108">
+<link rel="stylesheet" href="/assets/auth.css?v=108">
+<link rel="stylesheet" href="/assets/cash.css?v=108">
 </head>
 <body>
 
@@ -21,15 +21,15 @@
   <div class="divo-footer">© Диво Детейлинг • 2026</div>
 </div>
 
-<script src="/components/components.js?v=107"></script>
-<script src="/components/access-config.js?v=107"></script>
+<script src="/components/components.js?v=108"></script>
+<script src="/components/access-config.js?v=108"></script>
 <script>
 function divoCheckAuthAndInit() {
   var user = divoGetUser();
   if (!user) {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=107')
+    fetch('/components/auth-form.html?v=108')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
@@ -51,7 +51,7 @@ function divoCheckAuthAndInit() {
   var authContainer = document.getElementById('divoAuthContainer');
   if (authContainer) authContainer.innerHTML = '';
   divoInit();
-  fetch('/components/admin-partner-services-view.html?v=107')
+  fetch('/components/admin-partner-services-view.html?v=108')
     .then(function(r) { return r.text(); })
     .then(function(html) {
       var content = document.getElementById('divoContent');

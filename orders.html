@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — Заказ-наряды</title>
-<link rel="stylesheet" href="/assets/style.css?v=107">
-<link rel="stylesheet" href="/assets/auth.css?v=107">
+<link rel="stylesheet" href="/assets/style.css?v=108">
+<link rel="stylesheet" href="/assets/auth.css?v=108">
 <style>
 /* === СТИЛИ СТРАНИЦЫ ЗАКАЗ-НАРЯДОВ === */
 .ord-page { padding: 0; }
@@ -322,8 +322,8 @@
   <div class="divo-footer">© Диво Детейлинг • 2026</div>
 </div>
 
-<script src="/components/components.js?v=107"></script>
-<script src="/components/access-config.js?v=107"></script>
+<script src="/components/components.js?v=108"></script>
+<script src="/components/access-config.js?v=108"></script>
 <script>
 // ============================================
 // ЗАКАЗ-НАРЯДЫ — SUPABASE
@@ -589,7 +589,7 @@ function ordRenderList(orders) {
     html += '<div class="ord-card" onclick="ordOpenForm(\'' + o.id + '\')">';
     html += '<div class="ord-card-status-bar ' + o.status + '"></div>';
     html += '<div class="ord-card-main">' + parts.join('') + '</div>';
-    html += '<button type="button" class="ord-card-calc-btn" onclick="event.stopPropagation(); ordOpenCalc(\'' + o.id + '\')">🧮 Рассчитать</button>';
+    html += '<button type="button" class="ord-card-calc-btn" onclick="event.stopPropagation();ordOpenCalc(' + JSON.stringify(o.id) + ')">🧮 Рассчитать</button>';
     html += '</div>';
   }
   var listElFinal = document.getElementById('ordList');
@@ -988,7 +988,7 @@ function divoCheckAuthAndInit() {
   if (!user) {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=107')
+    fetch('/components/auth-form.html?v=108')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
