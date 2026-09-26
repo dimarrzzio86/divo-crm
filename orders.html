@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — Заказ-наряды</title>
-<link rel="stylesheet" href="/assets/style.css?v=114">
-<link rel="stylesheet" href="/assets/auth.css?v=114">
+<link rel="stylesheet" href="/assets/style.css?v=115">
+<link rel="stylesheet" href="/assets/auth.css?v=115">
 <style>
 /* === СТИЛИ СТРАНИЦЫ ЗАКАЗ-НАРЯДОВ === */
 .ord-page { padding: 0; }
@@ -109,6 +109,23 @@
 .ord-calc-sum-rest.neg { color: #ef4444; font-weight: 800; }
 .ord-calc-comp-empty { text-align: center; color: #52525b; padding: 12px; font-size: 13px; }
 .ord-calc-loading { text-align: center; color: #71717a; padding: 40px 20px; font-size: 14px; }
+.ord-calc-top { display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #052e16, #064e3b); border: 1.5px solid #166534; border-radius: 12px; padding: 14px 20px; margin-bottom: 16px; }
+.ord-calc-top-label { font-size: 13px; font-weight: 700; color: #86efac; text-transform: uppercase; letter-spacing: 0.5px; }
+.ord-calc-top-value { font-size: 26px; font-weight: 800; color: #4ade80; }
+.ord-calc-bottom { background: #18181b; border: 1.5px solid #27272a; border-radius: 12px; padding: 16px; margin-top: 16px; position: sticky; bottom: 0; }
+.ord-calc-bot-title { font-size: 14px; font-weight: 800; color: #fafafa; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+.ord-calc-bot-total { color: #4ade80; font-weight: 800; }
+.ord-calc-bot-spent { color: #fbbf24; font-weight: 800; }
+.ord-calc-bot-profit.pos { color: #4ade80; font-weight: 800; }
+.ord-calc-bot-profit.zero { color: #71717a; font-weight: 800; }
+.ord-calc-bot-profit.neg { color: #ef4444; font-weight: 800; }
+.ord-calc-save-wrap { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px dashed #27272a; }
+.ord-calc-save-btn { background: #1e3a8a; border: 1.5px solid #3b82f6; color: #93c5fd; padding: 10px 24px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 14px; font-family: inherit; }
+.ord-calc-save-btn:hover { background: #1e40af; color: #fafafa; }
+.ord-calc-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.ord-calc-save-btn.dirty { background: #92400e; border-color: #f59e0b; color: #fbbf24; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+.ord-calc-dirty-hint { font-size: 11px; color: #f59e0b; font-style: italic; }
 .ord-calc-nosvc { text-align: center; color: #71717a; padding: 30px 20px; font-size: 14px; }
 @media (max-width: 600px) { .ord-card-calc-btn { font-size: 11px; padding: 5px 10px; } .ord-calc-modal { padding: 16px; } }
 
@@ -330,8 +347,8 @@
   <div class="divo-footer">© Диво Детейлинг • 2026</div>
 </div>
 
-<script src="/components/components.js?v=114"></script>
-<script src="/components/access-config.js?v=114"></script>
+<script src="/components/components.js?v=115"></script>
+<script src="/components/access-config.js?v=115"></script>
 <script>
 // ============================================
 // ЗАКАЗ-НАРЯДЫ — SUPABASE
@@ -1020,25 +1037,29 @@ function ordDelete() {
 var ORD_CALC_ORDER = null;
 var ORD_CALC_COMPONENTS = {};
 var ORD_CALC_COSTS = {};
-var ORD_CALC_SAVE_TIMER = null;
+var ORD_CALC_DIRTY = false; // были ли несохранённые изменения
 
 function ordOpenCalc(orderId) {
   ordGetAll(function(orders) {
     var o = orders.find(function(x) { return x.id === orderId; });
     if (!o) { alert('Заказ не найден'); return; }
     ORD_CALC_ORDER = o;
-    document.getElementById('ordCalcTitle').textContent = '\u{1F9EE} Расчёт — #' + (o.number || o.id);
     document.getElementById('ordCalcModal').classList.add('show');
     document.getElementById('ordCalcBody').innerHTML = '<div class="ord-calc-loading">Загрузка...</div>';
+    ORD_CALC_DIRTY = false;
     ordCalcRender();
   });
 }
 
 function ordCloseCalc() {
+  if (ORD_CALC_DIRTY) {
+    if (!confirm('Есть несохранённые изменения. Закрыть без сохранения?')) return;
+  }
   document.getElementById('ordCalcModal').classList.remove('show');
   ORD_CALC_ORDER = null;
   ORD_CALC_COMPONENTS = {};
   ORD_CALC_COSTS = {};
+  ORD_CALC_DIRTY = false;
 }
 
 function ordCalcRender() {
@@ -1055,11 +1076,13 @@ function ordCalcRender() {
     if (sid && svcIds.indexOf(sid) === -1) svcIds.push(sid);
   }
   if (svcIds.length === 0) {
-    var html = '';
+    var html = ordCalcTopHTML(o) + '<div class="ord-calc-nosvc">Услуги без состава (ручные)</div>';
     for (var i = 0; i < services.length; i++) {
       html += ordCalcAccHTML(services[i], i, true);
     }
+    html += ordCalcBottomHTML();
     document.getElementById('ordCalcBody').innerHTML = html;
+    ordCalcRecalcAll();
     return;
   }
   var compUrl = ORD_SUPABASE_URL + '/rest/v1/service_components?select=*&service_id=in.(' + svcIds.join(',') + ')&order=service_id.asc,sort_order.asc,name.asc';
@@ -1080,15 +1103,40 @@ function ordCalcRender() {
     for (var j = 0; j < costs.length; j++) {
       ORD_CALC_COSTS[costs[j].component_id] = Number(costs[j].price) || 0;
     }
-    var html = '';
+    var html = ordCalcTopHTML(o);
     for (var i = 0; i < services.length; i++) {
       html += ordCalcAccHTML(services[i], i, false);
     }
+    html += ordCalcBottomHTML();
     document.getElementById('ordCalcBody').innerHTML = html;
+    ordCalcRecalcAll();
   }).catch(function(e) {
     console.error('Ошибка загрузки:', e);
     document.getElementById('ordCalcBody').innerHTML = '<div class="ord-calc-nosvc">Ошибка загрузки данных</div>';
   });
+}
+
+function ordCalcTopHTML(o) {
+  var orderTotal = Number(o.price) || 0;
+  var html = '<div class="ord-calc-top">';
+  html += '<div class="ord-calc-top-label">Сумма заказ-наряда</div>';
+  html += '<div class="ord-calc-top-value" id="ordCalcTopValue">' + ordFormatPrice(orderTotal) + ' ₽</div>';
+  html += '</div>';
+  return html;
+}
+
+function ordCalcBottomHTML() {
+  var html = '<div class="ord-calc-bottom">';
+  html += '<div class="ord-calc-bot-title">📋 Отчёт</div>';
+  html += '<div class="ord-calc-sum-row"><span>Сумма заказ-наряда:</span><span class="ord-calc-bot-total" id="ordCalcBotTotal">—</span></div>';
+  html += '<div class="ord-calc-sum-row"><span>Всего затрат:</span><span class="ord-calc-bot-spent" id="ordCalcBotSpent">—</span></div>';
+  html += '<div class="ord-calc-sum-row total"><span>Прибыль:</span><span class="ord-calc-bot-profit" id="ordCalcBotProfit">—</span></div>';
+  html += '<div class="ord-calc-save-wrap">';
+  html += '<button type="button" class="ord-calc-save-btn" id="ordCalcSaveBtn" onclick="ordCalcSaveAll()">💾 Сохранить</button>';
+  html += '<span class="ord-calc-dirty-hint" id="ordCalcDirtyHint" style="display:none;">несохранённые изменения</span>';
+  html += '</div>';
+  html += '</div>';
+  return html;
 }
 
 function ordCalcAccHTML(svc, idx, isManual) {
@@ -1138,8 +1186,38 @@ function ordCalcOnPriceInput(input) {
   var accId = input.dataset.acc;
   var val = parseFloat(input.value) || 0;
   ORD_CALC_COSTS[compId] = val;
+  ORD_CALC_DIRTY = true;
   ordCalcRecalcAccordion(accId);
-  ordCalcScheduleSave(compId, val);
+  ordCalcRecalcAll();
+  var hint = document.getElementById('ordCalcDirtyHint');
+  if (hint) hint.style.display = 'inline';
+  var btn = document.getElementById('ordCalcSaveBtn');
+  if (btn) btn.classList.add('dirty');
+}
+
+function ordCalcRecalcAll() {
+  var o = ORD_CALC_ORDER;
+  if (!o) return;
+  var services = o.services || [];
+  var orderTotal = Number(o.price) || 0;
+  var totalSpent = 0;
+  for (var i = 0; i < services.length; i++) {
+    var sid = services[i].serviceId;
+    var components = (sid && ORD_CALC_COMPONENTS[sid]) || [];
+    for (var j = 0; j < components.length; j++) {
+      totalSpent += (ORD_CALC_COSTS[components[j].id] || 0);
+    }
+  }
+  var profit = orderTotal - totalSpent;
+  var totalEl = document.getElementById('ordCalcBotTotal');
+  var spentEl = document.getElementById('ordCalcBotSpent');
+  var profitEl = document.getElementById('ordCalcBotProfit');
+  if (totalEl) totalEl.textContent = ordFormatPrice(orderTotal) + ' ₽';
+  if (spentEl) spentEl.textContent = ordFormatPrice(totalSpent) + ' ₽';
+  if (profitEl) {
+    profitEl.textContent = (profit < 0 ? '−' + ordFormatPrice(Math.abs(profit)) : ordFormatPrice(profit)) + ' ₽';
+    profitEl.className = 'ord-calc-bot-profit ' + (profit < 0 ? 'neg' : (profit === 0 ? 'zero' : 'pos'));
+  }
 }
 
 function ordCalcRecalcAccordion(accId) {
@@ -1168,17 +1246,42 @@ function ordCalcFindSvcByAccId(accId) {
   return services[idx] || null;
 }
 
-function ordCalcScheduleSave(compId, price) {
-  if (ORD_CALC_SAVE_TIMER) clearTimeout(ORD_CALC_SAVE_TIMER);
-  ORD_CALC_SAVE_TIMER = setTimeout(function() {
-    ordCalcSavePrice(compId, price);
-  }, 800);
+function ordCalcSaveAll() {
+  if (!ORD_CALC_ORDER) return;
+  var btn = document.getElementById('ordCalcSaveBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Сохранение...'; }
+  var order_id = ORD_CALC_ORDER.id;
+  var services = ORD_CALC_ORDER.services || [];
+  var tasks = [];
+  for (var i = 0; i < services.length; i++) {
+    var sid = services[i].serviceId;
+    var components = (sid && ORD_CALC_COMPONENTS[sid]) || [];
+    for (var j = 0; j < components.length; j++) {
+      var compId = components[j].id;
+      var price = ORD_CALC_COSTS[compId] || 0;
+      tasks.push(ordCalcSaveOne(order_id, compId, price));
+    }
+  }
+  if (tasks.length === 0) {
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Сохранить'; }
+    ORD_CALC_DIRTY = false;
+    return;
+  }
+  Promise.all(tasks).then(function() {
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Сохранить'; btn.classList.remove('dirty'); }
+    var hint = document.getElementById('ordCalcDirtyHint');
+    if (hint) hint.style.display = 'none';
+    ORD_CALC_DIRTY = false;
+  }).catch(function(e) {
+    console.error('Ошибка сохранения:', e);
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Сохранить'; }
+    alert('❌ Ошибка сохранения: ' + e.message);
+  });
 }
 
-function ordCalcSavePrice(compId, price) {
-  if (!ORD_CALC_ORDER) return;
-  var url = ORD_SUPABASE_URL + '/rest/v1/order_component_costs?order_id=eq.' + encodeURIComponent(ORD_CALC_ORDER.id) + '&component_id=eq.' + encodeURIComponent(compId);
-  fetch(url, {
+function ordCalcSaveOne(order_id, compId, price) {
+  var url = ORD_SUPABASE_URL + '/rest/v1/order_component_costs?order_id=eq.' + encodeURIComponent(order_id) + '&component_id=eq.' + encodeURIComponent(compId);
+  return fetch(url, {
     method: 'POST',
     headers: {
       'apikey': ORD_SUPABASE_KEY,
@@ -1187,13 +1290,14 @@ function ordCalcSavePrice(compId, price) {
       'Prefer': 'resolution=merge-duplicates'
     },
     body: JSON.stringify({
-      order_id: ORD_CALC_ORDER.id,
+      order_id: order_id,
       component_id: compId,
       price: Number(price) || 0,
       updated_at: new Date().toISOString()
     })
-  }).catch(function(e) {
-    console.error('Ошибка сохранения цены:', e);
+  }).then(function(r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
   });
 }
 
@@ -1202,7 +1306,7 @@ function ordCalcToggle(accId) {
   if (el) el.classList.toggle('open');
 }
 
-// === ФИЛЬТРЫ ===// === ФИЛЬТРЫ ===
+// === ФИЛЬТРЫ ===// === ФИЛЬТРЫ ===// === ФИЛЬТРЫ ===
 function ordInitFilters() {
   var btns = document.querySelectorAll('.ord-filter-btn');
   for (var i = 0; i < btns.length; i++) {
@@ -1221,7 +1325,7 @@ function divoCheckAuthAndInit() {
   if (!user) {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=114')
+    fetch('/components/auth-form.html?v=115')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
