@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — Заказ-наряды</title>
-<link rel="stylesheet" href="/assets/style.css?v=117">
-<link rel="stylesheet" href="/assets/auth.css?v=117">
+<link rel="stylesheet" href="/assets/style.css?v=118">
+<link rel="stylesheet" href="/assets/auth.css?v=118">
 <style>
 /* === СТИЛИ СТРАНИЦЫ ЗАКАЗ-НАРЯДОВ === */
 .ord-page { padding: 0; }
@@ -349,8 +349,8 @@
   <div class="divo-footer">© Диво Детейлинг • 2026</div>
 </div>
 
-<script src="/components/components.js?v=117"></script>
-<script src="/components/access-config.js?v=117"></script>
+<script src="/components/components.js?v=118"></script>
+<script src="/components/access-config.js?v=118"></script>
 <script>
 // ============================================
 // ЗАКАЗ-НАРЯДЫ — SUPABASE
@@ -1135,6 +1135,10 @@ function ordCalcRender() {
     }
     html += ordCalcBottomHTML();
     document.getElementById('ordCalcBody').innerHTML = html;
+    // Пересчитываем каждый аккордеон (сумма/остаток) + нижний отчёт
+    for (var k = 0; k < services.length; k++) {
+      ordCalcRecalcAccordion('ordCalcAcc' + k);
+    }
     ordCalcRecalcAll();
   }).catch(function(e) {
     console.error('Ошибка загрузки:', e);
@@ -1226,13 +1230,11 @@ function ordCalcRecalcAll() {
   if (!o) return;
   var services = o.services || [];
   var orderTotal = Math.round((Number(o.price) || 0) * 100) / 100;
+  // Берём суммы из DOM (как ordCalcRecalcAccordion) — надёжнее
   var totalSpent = 0;
-  for (var i = 0; i < services.length; i++) {
-    var sid = services[i].serviceId;
-    var components = (sid && ORD_CALC_COMPONENTS[sid]) || [];
-    for (var j = 0; j < components.length; j++) {
-      totalSpent += (ORD_CALC_COSTS[components[j].id] || 0);
-    }
+  var allInputs = document.querySelectorAll('.ord-calc-comp-input');
+  for (var i = 0; i < allInputs.length; i++) {
+    totalSpent += (parseFloat(allInputs[i].value) || 0);
   }
   totalSpent = Math.round(totalSpent * 100) / 100;
   var profit = Math.round((orderTotal - totalSpent) * 100) / 100;
@@ -1308,7 +1310,8 @@ function ordCalcSaveAll() {
 }
 
 function ordCalcSaveOne(order_id, compId, price) {
-  var url = ORD_SUPABASE_URL + '/rest/v1/order_component_costs?order_id=eq.' + encodeURIComponent(order_id) + '&component_id=eq.' + encodeURIComponent(compId);
+  // on_conflict указывает PostgREST делать UPSERT по (order_id, component_id)
+  var url = ORD_SUPABASE_URL + '/rest/v1/order_component_costs?on_conflict=order_id,component_id';
   return fetch(url, {
     method: 'POST',
     headers: {
@@ -1325,7 +1328,8 @@ function ordCalcSaveOne(order_id, compId, price) {
     })
   }).then(function(r) {
     if (!r.ok) throw new Error('HTTP ' + r.status);
-    return r.json();
+    // тело может быть пустым — не парсим
+    return r.text();
   });
 }
 
@@ -1353,7 +1357,7 @@ function divoCheckAuthAndInit() {
   if (!user) {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=117')
+    fetch('/components/auth-form.html?v=118')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
