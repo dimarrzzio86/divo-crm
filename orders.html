@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — Заказ-наряды</title>
-<link rel="stylesheet" href="/assets/style.css?v=106">
-<link rel="stylesheet" href="/assets/auth.css?v=106">
+<link rel="stylesheet" href="/assets/style.css?v=107">
+<link rel="stylesheet" href="/assets/auth.css?v=107">
 <style>
 /* === СТИЛИ СТРАНИЦЫ ЗАКАЗ-НАРЯДОВ === */
 .ord-page { padding: 0; }
@@ -322,8 +322,8 @@
   <div class="divo-footer">© Диво Детейлинг • 2026</div>
 </div>
 
-<script src="/components/components.js?v=106"></script>
-<script src="/components/access-config.js?v=106"></script>
+<script src="/components/components.js?v=107"></script>
+<script src="/components/access-config.js?v=107"></script>
 <script>
 // ============================================
 // ЗАКАЗ-НАРЯДЫ — SUPABASE
@@ -586,10 +586,10 @@ function ordRenderList(orders) {
       parts.push('<span class="ord-card-price">💰 ' + ordFormatPrice(o.price) + ' ₽</span>');
     }
     parts.push('<span class="ord-card-status ' + o.status + '">' + ORD_STATUS_NAMES[o.status] + '</span>');
-    html += `<div class="ord-card" onclick="ordOpenForm('${o.id}')">`;
-    html += `<div class="ord-card-status-bar ${o.status}"></div>`;
-    html += `<div class="ord-card-main">${parts.join('')}</div>`;
-    html += `<button type="button" class="ord-card-calc-btn" onclick="event.stopPropagation(); ordOpenCalc('${o.id}')">🧮 Рассчитать</button>`;
+    html += '<div class="ord-card" onclick="ordOpenForm(\'' + o.id + '\')">';
+    html += '<div class="ord-card-status-bar ' + o.status + '"></div>';
+    html += '<div class="ord-card-main">' + parts.join('') + '</div>';
+    html += '<button type="button" class="ord-card-calc-btn" onclick="event.stopPropagation(); ordOpenCalc(\'' + o.id + '\')">🧮 Рассчитать</button>';
     html += '</div>';
   }
   el.innerHTML = html;
@@ -987,7 +987,7 @@ function divoCheckAuthAndInit() {
   if (!user) {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=106')
+    fetch('/components/auth-form.html?v=107')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
