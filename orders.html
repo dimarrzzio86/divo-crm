@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — Заказ-наряды</title>
-<link rel="stylesheet" href="/assets/style.css?v=94">
-<link rel="stylesheet" href="/assets/auth.css?v=94">
+<link rel="stylesheet" href="/assets/style.css?v=95">
+<link rel="stylesheet" href="/assets/auth.css?v=95">
 <style>
 /* === СТИЛИ СТРАНИЦЫ ЗАКАЗ-НАРЯДОВ === */
 .ord-page { padding: 0; }
@@ -196,46 +196,20 @@
               </select>
             </div>
             <div class="ord-form-group full">
-              <div class="ord-services-header">
-                <label class="ord-form-label">Услуги</label>
-                <label class="ord-manual-toggle">
-                  <input type="checkbox" id="ordManualService" onchange="ordToggleManualService()">
-                  <span>✍ Ручной ввод</span>
-                </label>
-              </div>
-
-              <!-- Режим выбора из прайса -->
-              <div class="ord-price-picker" id="ordPricePicker">
-                <select class="ord-form-select" id="ordCatSelect" onchange="ordOnCatChange()"></select>
-                <select class="ord-form-select" id="ordSubcatSelect" onchange="ordOnSubcatChange()" disabled></select>
-                <select class="ord-form-select" id="ordSvcSelect" disabled></select>
-                <button type="button" class="ord-btn-add-service" onclick="ordAddService()">+</button>
-              </div>
-
-              <!-- Режим ручного ввода -->
-              <div class="ord-manual-input" id="ordManualInput" style="display:none">
-                <input type="text" class="ord-form-input" id="ordServiceInput" placeholder="Название услуги..." onkeydown="if(event.key==='Enter'){event.preventDefault();ordAddService();}">
-                <button type="button" class="ord-btn-add-service" onclick="ordAddService()">+</button>
-              </div>
-
-              <div class="ord-services-table-wrap">
-                <table class="ord-services-table">
-                  <thead>
-                    <tr>
-                      <th>Услуга</th>
-                      <th style="width:130px">Цена, ₽</th>
-                      <th style="width:40px"></th>
-                    </tr>
-                  </thead>
-                  <tbody id="ordServicesList"></tbody>
-                  <tfoot>
-                    <tr>
-                      <td style="text-align:right;font-weight:700;color:#fafafa;">ИТОГО:</td>
-                      <td style="text-align:right;font-weight:800;color:#4ade80;font-size:15px;" id="ordTotalPrice">0</td>
-                      <td></td>
-                    </tr>
-                  </tfoot>
-                </table>
+              <label class="ord-form-label">Услуги и цены</label>
+              <div class="ord-rows-table" id="ordRowsTable">
+                <div class="ord-row ord-row-head">
+                  <div>Категория</div>
+                  <div>Подкатегория</div>
+                  <div>Услуга</div>
+                  <div>Цена, ₽</div>
+                  <div style="width:32px"></div>
+                </div>
+                <div class="ord-row-body" id="ordRowsBody"></div>
+                <div class="ord-row-foot">
+                  <button type="button" class="ord-btn-add-row" onclick="ordAddRow()">＋ Добавить строку</button>
+                  <div class="ord-row-total">ИТОГО: <span id="ordTotalPrice">0</span> ₽</div>
+                </div>
               </div>
             </div>
             <div class="ord-form-group full">
@@ -255,8 +229,8 @@
   <div class="divo-footer">© Диво Детейлинг • 2026</div>
 </div>
 
-<script src="/components/components.js?v=94"></script>
-<script src="/components/access-config.js?v=94"></script>
+<script src="/components/components.js?v=95"></script>
+<script src="/components/access-config.js?v=95"></script>
 <script>
 // ============================================
 // ЗАКАЗ-НАРЯДЫ — SUPABASE
@@ -264,6 +238,7 @@
 
 var ORD_EDITING_ID = null;
 var ORD_SERVICES = [];
+var ORD_ROWS = [];
 var ORD_FILTER = 'all';
 var ORD_CACHE = null;
 var ORD_PRICE_CATS = null;
@@ -427,8 +402,11 @@ function ordFormatPrice(p) {
 function ordOpenModal(id) {
   ORD_EDITING_ID = id || null;
   ordLoadPrices(function() {
-    ordRenderCatSelect();
-    if (!id) { ordFillModal(null); return; }
+    if (!id) {
+      ordResetRows();
+      ordFillModal(null);
+      return;
+    }
     ordGetAll(function(orders) {
       var o = orders.find(function(x){return x.id === id;});
       ordFillModal(o);
@@ -448,20 +426,13 @@ function ordFillModal(o) {
   document.getElementById('ordField-status').value = o ? (o.status || 'new') : 'new';
   document.getElementById('ordField-note').value = o ? (o.note || '') : '';
   document.getElementById('ordField-post').value = o ? (o.post || 'auto') : 'auto';
-  // Нормализуем услуги: строки → объекты
-  ORD_SERVICES = [];
+  // Загружаем услуги в строки таблицы
   if (o && o.services && o.services.length) {
-    for (var i = 0; i < o.services.length; i++) {
-      var s = o.services[i];
-      if (typeof s === 'string') {
-        ORD_SERVICES.push({ name: s, manual: true, serviceId: null, price: 0 });
-      } else if (s && s.name) {
-        ORD_SERVICES.push({ name: s.name, manual: !!s.manual, serviceId: s.serviceId || null, price: Number(s.price) || 0 });
-      }
-    }
+    ordServicesToRows(o.services);
+  } else {
+    ordResetRows();
   }
-  ordResetPricePicker();
-  ordRenderServices();
+  ordRenderRows();
   ordRecalcTotal();
   ordRenderColorPalette(o ? o.carColor : null);
   document.getElementById('ordModal').classList.add('show');
@@ -495,73 +466,127 @@ function ordGetSelectedColor() {
   return active ? active.style.backgroundColor : '#525252';
 }
 
-function ordAddService() {
-  var manual = document.getElementById('ordManualService').checked;
-  var name, serviceId = null, price = 0;
+function ordAddRow() {
+  ORD_ROWS.push({ catId: '', subcatId: '', svcId: '', svcName: '', price: 0 });
+  ordRenderRows();
+}
 
-  if (manual) {
-    var input = document.getElementById('ordServiceInput');
-    name = input.value.trim();
-    if (!name) return;
-    input.value = '';
+function ordRemoveRow(idx) {
+  ORD_ROWS.splice(idx, 1);
+  ordRenderRows();
+  ordRecalcTotal();
+}
+
+function ordRenderRows() {
+  var el = document.getElementById('ordRowsBody');
+  if (ORD_ROWS.length === 0) {
+    el.innerHTML = '<div class="ord-empty-row">Нажмите «Добавить строку», чтобы выбрать услуги</div>';
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < ORD_ROWS.length; i++) {
+    var r = ORD_ROWS[i];
+    // Селект категорий
+    html += '<div class="ord-row" data-idx="' + i + '">';
+    html += '<select onchange="ordOnRowCat(' + i + ', this.value)">' + ordCatOptions(r.catId) + '</select>';
+    // Селект подкатегорий
+    if (r.catId) {
+      html += '<select onchange="ordOnRowSubcat(' + i + ', this.value)">' + ordSubcatOptions(r.catId, r.subcatId) + '</select>';
+    } else {
+      html += '<select disabled><option>—</option></select>';
+    }
+    // Селект услуг
+    if (r.catId) {
+      html += '<select onchange="ordOnRowSvc(' + i + ', this.value, this.options[this.selectedIndex])">' + ordSvcOptions(r.catId, r.subcatId, r.svcId) + '</select>';
+    } else {
+      html += '<select disabled><option>—</option></select>';
+    }
+    // Поле цены
+    html += '<input type="number" class="ord-price" value="' + (r.price || 0) + '" placeholder="0" min="0" step="100" oninput="ordOnRowPrice(' + i + ', this.value)">';
+    // Кнопка удаления
+    html += '<button type="button" class="ord-row-del" onclick="ordRemoveRow(' + i + ')">✕</button>';
+    html += '</div>';
+  }
+  el.innerHTML = html;
+}
+
+function ordCatOptions(selected) {
+  var html = '<option value="">— Категория —</option>';
+  for (var i = 0; i < ORD_PRICE_CATS.length; i++) {
+    var c = ORD_PRICE_CATS[i];
+    var sel = (String(c.id) === String(selected)) ? ' selected' : '';
+    html += '<option value="' + c.id + '"' + sel + '>' + c.name + '</option>';
+  }
+  return html;
+}
+
+function ordSubcatOptions(catId, selected) {
+  var subs = ORD_PRICE_SUBCATS.filter(function(s) { return String(s.category_id) === String(catId); });
+  if (subs.length === 0) {
+    return '<option value="">(любая)</option>';
+  }
+  var html = '<option value="">— Подкатегория —</option>';
+  for (var i = 0; i < subs.length; i++) {
+    var sel = (String(subs[i].id) === String(selected)) ? ' selected' : '';
+    html += '<option value="' + subs[i].id + '"' + sel + '>' + subs[i].name + '</option>';
+  }
+  return html;
+}
+
+function ordSvcOptions(catId, subcatId, selected) {
+  var svcs;
+  if (subcatId) {
+    svcs = ORD_PRICE_SERVICES.filter(function(s) { return String(s.subcategory_id) === String(subcatId); });
   } else {
-    var svcSelect = document.getElementById('ordSvcSelect');
-    name = svcSelect.value;
-    if (!name) { alert('Выберите услугу из списка'); return; }
-    var opts = svcSelect.options[svcSelect.selectedIndex];
-    if (opts && opts.dataset.svcId) serviceId = parseInt(opts.dataset.svcId);
+    svcs = ORD_PRICE_SERVICES.filter(function(s) { return String(s.category_id) === String(catId); });
   }
-
-  for (var i = 0; i < ORD_SERVICES.length; i++) {
-    if (ORD_SERVICES[i].name === name) return;
+  if (svcs.length === 0) return '<option value="">— Нет услуг —</option>';
+  var html = '<option value="">— Услуга —</option>';
+  for (var i = 0; i < svcs.length; i++) {
+    var sel = (String(svcs[i].id) === String(selected)) ? ' selected' : '';
+    html += '<option value="' + svcs[i].id + '" data-name="' + svcs[i].name + '"' + sel + '>' + svcs[i].name + '</option>';
   }
+  return html;
+}
 
-  ORD_SERVICES.push({ name: name, manual: manual, serviceId: serviceId, price: price });
-  ordRenderServices();
+function ordOnRowCat(idx, val) {
+  var r = ORD_ROWS[idx];
+  r.catId = val;
+  r.subcatId = '';
+  r.svcId = '';
+  r.svcName = '';
+  ordRenderRows();
+}
+
+function ordOnRowSubcat(idx, val) {
+  var r = ORD_ROWS[idx];
+  r.subcatId = val;
+  r.svcId = '';
+  r.svcName = '';
+  ordRenderRows();
+}
+
+function ordOnRowSvc(idx, val, opt) {
+  var r = ORD_ROWS[idx];
+  r.svcId = val;
+  r.svcName = opt ? (opt.dataset.name || opt.text) : '';
   ordRecalcTotal();
 }
 
-function ordRemoveService(idx) {
-  ORD_SERVICES.splice(idx, 1);
-  ordRenderServices();
-  ordRecalcTotal();
-}
-
-function ordOnServicePriceInput(idx, val) {
+function ordOnRowPrice(idx, val) {
   var p = parseFloat(val) || 0;
   if (p < 0) p = 0;
-  ORD_SERVICES[idx].price = p;
+  ORD_ROWS[idx].price = p;
   ordRecalcTotal();
 }
 
 function ordRecalcTotal() {
   var total = 0;
-  for (var i = 0; i < ORD_SERVICES.length; i++) {
-    total += (ORD_SERVICES[i].price || 0);
+  for (var i = 0; i < ORD_ROWS.length; i++) {
+    total += (ORD_ROWS[i].price || 0);
   }
   var el = document.getElementById('ordTotalPrice');
   if (el) el.textContent = total.toLocaleString('ru-RU');
-}
-
-function ordRenderServices() {
-  var el = document.getElementById('ordServicesList');
-  if (ORD_SERVICES.length === 0) {
-    el.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#52525b;padding:20px;font-size:13px;">Добавьте услуги, чтобы рассчитать стоимость</td></tr>';
-    return;
-  }
-  var html = '';
-  for (var i = 0; i < ORD_SERVICES.length; i++) {
-    var s = ORD_SERVICES[i];
-    var nameClass = s.manual ? 'ord-svc-name-text manual' : 'ord-svc-name-text';
-    var badge = s.manual ? '<span class="ord-svc-name-badge" style="background:#713f12;color:#fbbf24;">ручная</span>' : '';
-    var priceVal = (s.price || 0);
-    html += '<tr>';
-    html += '<td><div class="ord-svc-name"><span class="' + nameClass + '">' + s.name + '</span>' + badge + '</div></td>';
-    html += '<td style="text-align:right;"><input type="number" class="ord-svc-price-input" value="' + priceVal + '" placeholder="0" min="0" step="100" oninput="ordOnServicePriceInput(' + i + ', this.value)"></td>';
-    html += '<td style="text-align:center;"><button type="button" class="ord-svc-remove" onclick="ordRemoveService(' + i + ')">✕</button></td>';
-    html += '</tr>';
-  }
-  el.innerHTML = html;
 }
 
 // === ЗАГРУЗКА ПРАЙСА ===
@@ -583,100 +608,53 @@ function ordLoadPrices(callback) {
   });
 }
 
-function ordRenderCatSelect() {
-  var sel = document.getElementById('ordCatSelect');
-  var html = '<option value="">— Категория —</option>';
-  for (var i = 0; i < ORD_PRICE_CATS.length; i++) {
-    var c = ORD_PRICE_CATS[i];
-    html += '<option value="' + c.id + '">' + c.name + '</option>';
-  }
-  sel.innerHTML = html;
+function ordResetRows() {
+  ORD_ROWS = [{ catId: '', subcatId: '', svcId: '', svcName: '', price: 0 }];
+  ordRenderRows();
+  ordRecalcTotal();
 }
 
-function ordOnCatChange() {
-  var catId = parseInt(document.getElementById('ordCatSelect').value) || null;
-  var subSel = document.getElementById('ordSubcatSelect');
-  var svcSel = document.getElementById('ordSvcSelect');
+// Конвертация строк таблицы ORD_ROWS → массив услуг для сохранения
+function ordRowsToServices() {
+  var services = [];
+  for (var i = 0; i < ORD_ROWS.length; i++) {
+    var r = ORD_ROWS[i];
+    if (!r.svcName) continue; // пустые строки пропускаем
+    services.push({
+      name: r.svcName,
+      serviceId: r.svcId ? parseInt(r.svcId) : null,
+      manual: false,
+      price: Number(r.price) || 0
+    });
+  }
+  return services;
+}
 
-  if (!catId) {
-    subSel.innerHTML = '<option value="">— Подкатегория —</option>';
-    subSel.disabled = true;
-    svcSel.innerHTML = '<option value="">— Услуга —</option>';
-    svcSel.disabled = true;
+// Загрузка сохранённых услуг → строки таблицы
+function ordServicesToRows(services) {
+  ORD_ROWS = [];
+  if (!services || services.length === 0) {
+    ORD_ROWS.push({ catId: '', subcatId: '', svcId: '', svcName: '', price: 0 });
     return;
   }
-
-  var subs = ORD_PRICE_SUBCATS.filter(function(s) { return s.category_id === catId; });
-  var html = '<option value="">— Подкатегория —</option>';
-  if (subs.length === 0) {
-    // Нет подкатегорий — сразу услуги этой категории
-    subSel.innerHTML = '<option value="">(любая)</option>';
-    subSel.disabled = true;
-    ordRenderSvcSelect(catId, null);
-  } else {
-    for (var i = 0; i < subs.length; i++) {
-      html += '<option value="' + subs[i].id + '">' + subs[i].name + '</option>';
+  for (var i = 0; i < services.length; i++) {
+    var s = services[i];
+    var name = (typeof s === 'string') ? s : (s.name || '');
+    var price = (typeof s === 'object' && s.price) ? Number(s.price) : 0;
+    var svcId = (typeof s === 'object' && s.serviceId) ? s.serviceId : '';
+    // Попробуем найти категорию/подкатегорию по serviceId
+    var catId = '', subcatId = '';
+    if (svcId && ORD_PRICE_SERVICES) {
+      for (var j = 0; j < ORD_PRICE_SERVICES.length; j++) {
+        if (String(ORD_PRICE_SERVICES[j].id) === String(svcId)) {
+          catId = ORD_PRICE_SERVICES[j].category_id;
+          subcatId = ORD_PRICE_SERVICES[j].subcategory_id || '';
+          break;
+        }
+      }
     }
-    subSel.innerHTML = html;
-    subSel.disabled = false;
-    svcSel.innerHTML = '<option value="">— Услуга —</option>';
-    svcSel.disabled = true;
+    ORD_ROWS.push({ catId: catId, subcatId: subcatId, svcId: svcId, svcName: name, price: price });
   }
-}
-
-function ordOnSubcatChange() {
-  var catId = parseInt(document.getElementById('ordCatSelect').value) || null;
-  var subId = parseInt(document.getElementById('ordSubcatSelect').value) || null;
-  if (!subId) {
-    ordRenderSvcSelect(catId, null);
-    return;
-  }
-  ordRenderSvcSelect(catId, subId);
-}
-
-function ordRenderSvcSelect(catId, subId) {
-  var svcSel = document.getElementById('ordSvcSelect');
-  var svcs;
-  if (subId) {
-    svcs = ORD_PRICE_SERVICES.filter(function(s) { return s.subcategory_id === subId; });
-  } else if (catId) {
-    svcs = ORD_PRICE_SERVICES.filter(function(s) { return s.category_id === catId; });
-  } else {
-    svcs = [];
-  }
-  if (svcs.length === 0) {
-    svcSel.innerHTML = '<option value="">— Нет услуг —</option>';
-    svcSel.disabled = true;
-    return;
-  }
-  var html = '<option value="">— Услуга —</option>';
-  for (var i = 0; i < svcs.length; i++) {
-    html += '<option value="' + svcs[i].name + '" data-svc-id="' + svcs[i].id + '">' + svcs[i].name + '</option>';
-  }
-  svcSel.innerHTML = html;
-  svcSel.disabled = false;
-}
-
-function ordToggleManualService() {
-  var manual = document.getElementById('ordManualService').checked;
-  document.getElementById('ordPricePicker').style.display = manual ? 'none' : 'flex';
-  document.getElementById('ordManualInput').style.display = manual ? 'flex' : 'none';
-}
-
-function ordResetPricePicker() {
-  var manual = document.getElementById('ordManualService');
-  if (manual) {
-    manual.checked = false;
-    ordToggleManualService();
-  }
-  var catSel = document.getElementById('ordCatSelect');
-  if (catSel) catSel.selectedIndex = 0;
-  var subSel = document.getElementById('ordSubcatSelect');
-  if (subSel) { subSel.innerHTML = '<option value="">— Подкатегория —</option>'; subSel.disabled = true; }
-  var svcSel = document.getElementById('ordSvcSelect');
-  if (svcSel) { svcSel.innerHTML = '<option value="">— Услуга —</option>'; svcSel.disabled = true; }
-  var inp = document.getElementById('ordServiceInput');
-  if (inp) inp.value = '';
 }
 
 // === СОХРАНЕНИЕ ===
@@ -691,10 +669,11 @@ function ordSave() {
   var note = document.getElementById('ordField-note').value.trim();
   var carColor = ordGetSelectedColor();
 
-  // Считаем итоговую цену заказа как сумму цен всех услуг
+  // Считаем итоговую цену и собираем услуги из строк таблицы
+  var services = ordRowsToServices();
   var totalPrice = 0;
-  for (var i = 0; i < ORD_SERVICES.length; i++) {
-    totalPrice += (ORD_SERVICES[i].price || 0);
+  for (var i = 0; i < services.length; i++) {
+    totalPrice += (services[i].price || 0);
   }
 
   if (!number) { alert('Укажите номер заказ-наряда'); return; }
@@ -706,18 +685,18 @@ function ordSave() {
   if (post === 'auto') {
     ordGetAll(function(orders) {
       post = String(ordFindFreePost(dateIn, dateOut, ORD_EDITING_ID, orders));
-      ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, status, post, note, totalPrice);
+      ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, status, post, note, totalPrice, services);
     });
   } else {
-    ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, status, post, note, totalPrice);
+    ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, status, post, note, totalPrice, services);
   }
 }
 
-function ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, status, post, note, price) {
+function ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, status, post, note, price, services) {
   var data = {
     number: number, car_brand: carBrand, car_plate: carPlate, car_color: carColor,
     date_in: dateIn, date_out: dateOut, status: status, post: post,
-    note: note || '', price: Number(price) || 0, services: ORD_SERVICES.slice()
+    note: note || '', price: Number(price) || 0, services: services
   };
 
   var saveBtn = document.querySelector('.ord-btn-save');
@@ -796,7 +775,7 @@ function divoCheckAuthAndInit() {
   if (!user) {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=94')
+    fetch('/components/auth-form.html?v=95')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
