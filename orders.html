@@ -75,6 +75,8 @@
 .ord-empty-text { font-size: 15px; margin-bottom: 16px; }
 .ord-card-calc-btn { background: #1e293b; border: 1.5px solid #1e3a8a; color: #93c5fd; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; flex-shrink: 0; }
 .ord-card-calc-btn:hover { background: #1e3a8a; color: #fafafa; }
+.ord-card-calc-btn.has-calc { background: #052e16; border-color: #166534; color: #4ade80; }
+.ord-card-calc-btn.has-calc:hover { background: #166534; color: #fafafa; }
 .ord-calc-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: flex-start; justify-content: center; padding: 20px; overflow-y: auto; }
 .ord-calc-overlay.show { display: flex; }
 .ord-calc-modal { background: #0a0a0a; border: 1.5px solid #27272a; border-radius: 16px; max-width: 720px; width: 100%; margin: 20px auto; padding: 24px; }
@@ -402,6 +404,24 @@ function ordFromDb(row) {
 }
 
 // Загрузить все заказы с сервера (с кэшем)
+var ORD_CALC_ORDER_IDS = {}; // { orderId: true } — у каких заказов есть расчёт
+
+function ordLoadCalcIds() {
+  fetch(ORD_SUPABASE_URL + '/rest/v1/order_component_costs?select=order_id', {
+    headers: { 'apikey': ORD_SUPABASE_KEY, 'Authorization': 'Bearer ' + ORD_SUPABASE_KEY }
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(rows) {
+      ORD_CALC_ORDER_IDS = {};
+      for (var i = 0; i < rows.length; i++) {
+        ORD_CALC_ORDER_IDS[rows[i].order_id] = true;
+      }
+      // Перерисовать список, чтобы обновить кнопки
+      ordRender();
+    })
+    .catch(function(e) { console.error('Ошибка загрузки расчётов:', e); });
+}
+
 function ordGetAll(callback) {
   if (ORD_CACHE) { if (callback) callback(ORD_CACHE); return; }
   fetch(ORD_SUPABASE_URL + '/rest/v1/orders?select=*&order=created_at.desc', {
@@ -414,6 +434,8 @@ function ordGetAll(callback) {
     .then(function(rows) {
       ORD_CACHE = rows.map(ordFromDb);
       if (callback) callback(ORD_CACHE);
+      // Параллельно грузим ID заказов с расчётом
+      ordLoadCalcIds();
     })
     .catch(function(e) {
       console.error('Ошибка загрузки заказов:', e);
@@ -614,7 +636,11 @@ function ordRenderList(orders) {
     html += '<div class="ord-card" data-oid="' + o.id + '" onclick="ordOpenForm(this.dataset.oid)">';
     html += '<div class="ord-card-status-bar ' + o.status + '"></div>';
     html += '<div class="ord-card-main">' + parts.join('') + '</div>';
-    html += '<button type="button" class="ord-card-calc-btn" data-oid="' + o.id + '" onclick="event.stopPropagation();ordOpenCalc(this.dataset.oid)">🧮 Рассчитать</button>';
+    var hasCalc = !!ORD_CALC_ORDER_IDS[o.id];
+    var calcBtnClass = hasCalc ? 'ord-card-calc-btn has-calc' : 'ord-card-calc-btn';
+    var calcBtnIcon = hasCalc ? '📊' : '🧮';
+    var calcBtnText = hasCalc ? 'Посмотреть расчёты' : 'Рассчитать';
+    html += '<button type="button" class="' + calcBtnClass + '" data-oid="' + o.id + '" onclick="event.stopPropagation();ordOpenCalc(this.dataset.oid)">' + calcBtnIcon + ' ' + calcBtnText + '</button>';
     html += '</div>';
   }
   listEl.innerHTML = html;
