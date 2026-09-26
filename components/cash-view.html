@@ -5,11 +5,11 @@
   <h1 class="cnt-page-title">💰 Расчёты</h1>
   <div class="cs-summary" id="csSummary">
     <div class="cs-summary-item">
-      <div class="cs-summary-label">Долг</div>
+      <div class="cs-summary-label">Долг (за всё время)</div>
       <div class="cs-summary-value red" id="csTotalDebt">—</div>
     </div>
     <div class="cs-summary-item">
-      <div class="cs-summary-label">Оплачено</div>
+      <div class="cs-summary-label">Оплачено (за период)</div>
       <div class="cs-summary-value green" id="csTotalPaid">—</div>
     </div>
     <div class="cs-summary-item">
@@ -50,6 +50,18 @@
 </div>
 
 <div class="cs-status" id="csStatus"></div>
+
+<div class="cs-period-wrap">
+  <span class="cs-period-label">📅 Период:</span>
+  <button class="cs-period-btn active" id="csPeriodAll" onclick="window.csSetPeriod('all')">За всё время</button>
+  <button class="cs-period-btn" id="csPeriodMonth" onclick="window.csSetPeriod('month')">Текущий месяц</button>
+  <button class="cs-period-btn" id="csPeriodCustom" onclick="window.csSetPeriod('custom')">Выбрать период</button>
+  <div class="cs-period-dates" id="csPeriodDates">
+    <input type="date" class="cs-period-date" id="csDateFrom" onchange="window.csApplyPeriod()">
+    <span class="cs-period-sep">—</span>
+    <input type="date" class="cs-period-date" id="csDateTo" onchange="window.csApplyPeriod()">
+  </div>
+</div>
 
 <div class="cs-toggle-wrap">
   <div class="cs-toggle-switch" id="csHidePaidToggle" onclick="window.csToggleHidePaid()">
@@ -269,12 +281,27 @@
 .cs-toggle-knob { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: #fafafa; border-radius: 50%; transition: transform 0.2s; }
 .cs-toggle-switch.on .cs-toggle-knob { transform: translateX(20px); }
 .cs-toggle-hint { font-size: 11px; color: #71717a; margin-left: auto; }
+
+/* Фильтр по периоду */
+.cs-period-wrap { display: flex; align-items: center; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
+.cs-period-label { font-size: 12px; color: #71717a; font-weight: 600; margin-right: 4px; }
+.cs-period-btn { padding: 5px 12px; font-size: 12px; font-weight: 600; color: #a1a1aa; background: #18181b; border: 1px solid #27272a; border-radius: 6px; cursor: pointer; transition: all 0.15s; }
+.cs-period-btn:hover { border-color: #3f3f46; color: #d4d4d8; }
+.cs-period-btn.active { background: #1e3a5f; color: #93c5fd; border-color: #3b82f6; }
+.cs-period-dates { display: none; align-items: center; gap: 6px; }
+.cs-period-dates.show { display: flex; }
+.cs-period-date { background: #0a0a0a; border: 1px solid #27272a; border-radius: 6px; padding: 5px 8px; color: #fbbf24; font-size: 12px; font-family: inherit; }
+.cs-period-date:focus { outline: none; border-color: #fbbf24; }
+.cs-period-sep { color: #52525b; font-size: 12px; }
 </style>
 
 <script>
 (function() {
   var entries = [], filtered = [], contractors = [], categoriesList = [];
   var csHidePaid = false; // скрывать оплаченные записи
+  var csPeriod = 'all'; // 'all' | 'month' | 'custom'
+  var csDateFrom = ''; // дата начала (YYYY-MM-DD)
+  var csDateTo = ''; // дата окончания (YYYY-MM-DD)
   var pendingPayId = null, pendingPayRow = null, pendingEditId = null;
 
   function $(id) { return document.getElementById(id); }
@@ -337,8 +364,18 @@
   }
 
   function updateSummary() {
-    var totalDebt = 0, totalPaid = 0;
-    for (var i = 0; i < filtered.length; i++) { var a = Number(filtered[i].amount || 0); if (filtered[i].is_checked) totalPaid += a; else totalDebt += a; }
+    // Долг = ВСЕ неоплаченные записи за ВСЁ время (независимо от фильтра периода)
+    var totalDebt = 0;
+    for (var i = 0; i < entries.length; i++) {
+      if (!entries[i].is_checked) totalDebt += Number(entries[i].amount || 0);
+    }
+    // Оплачено = оплаченные записи за выбранный период
+    var totalPaid = 0;
+    for (var j = 0; j < entries.length; j++) {
+      if (entries[j].is_checked && isInPeriod(entries[j].entry_date)) {
+        totalPaid += Number(entries[j].amount || 0);
+      }
+    }
     $('csTotalDebt').textContent = formatMoney(totalDebt);
     $('csTotalPaid').textContent = formatMoney(totalPaid);
     $('csTotalCount').textContent = filtered.length;
@@ -347,10 +384,15 @@
   function filterData(query) {
     query = (query || '').toLowerCase().trim();
     var base = entries;
-    // Если включён переключатель "Скрыть оплаченные" — фильтруем их
-    if (csHidePaid) {
-      base = entries.filter(function(e) { return !e.is_checked; });
+    // 1. Фильтр по периоду
+    if (csPeriod !== 'all') {
+      base = base.filter(function(e) { return isInPeriod(e.entry_date); });
     }
+    // 2. Если включён "Скрыть оплаченные" — фильтруем их
+    if (csHidePaid) {
+      base = base.filter(function(e) { return !e.is_checked; });
+    }
+    // 3. Поиск по тексту
     if (!query) { filtered = base.slice(); }
     else { filtered = base.filter(function(e) { return (e.name||'').toLowerCase().indexOf(query) !== -1 || String(e.amount||'').toLowerCase().indexOf(query) !== -1 || (e.comments||'').toLowerCase().indexOf(query) !== -1; }); }
     updateSummary(); render();
@@ -618,6 +660,54 @@
   }
 
   function closeHistoryModal() { $('csHistoryModal').style.display = 'none'; }
+
+  // Проверка: попадает ли дата записи в выбранный период
+  function isInPeriod(entryDate) {
+    if (csPeriod === 'all') return true;
+    if (!entryDate) return false;
+    var d = entryDate.substring(0, 10); // YYYY-MM-DD
+    if (csPeriod === 'month') {
+      var now = new Date();
+      var ym = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+      return d.substring(0, 7) === ym;
+    }
+    if (csPeriod === 'custom') {
+      if (csDateFrom && d < csDateFrom) return false;
+      if (csDateTo && d > csDateTo) return false;
+      return true;
+    }
+    return true;
+  }
+
+  window.csSetPeriod = function(period) {
+    csPeriod = period;
+    // Обновляем кнопки
+    var btns = document.querySelectorAll('.cs-period-btn');
+    for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
+    if (period === 'all') $('csPeriodAll').classList.add('active');
+    else if (period === 'month') $('csPeriodMonth').classList.add('active');
+    else if (period === 'custom') $('csPeriodCustom').classList.add('active');
+    // Показываем/скрываем date-поля
+    var datesEl = $('csPeriodDates');
+    if (period === 'custom') datesEl.classList.add('show');
+    else datesEl.classList.remove('show');
+    // Если custom и даты не заданы — ставим текущий месяц
+    if (period === 'custom' && !csDateFrom && !csDateTo) {
+      var now = new Date();
+      var firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+      $('csDateFrom').value = firstDay.toISOString().split('T')[0];
+      csDateFrom = $('csDateFrom').value;
+      $('csDateTo').value = now.toISOString().split('T')[0];
+      csDateTo = $('csDateTo').value;
+    }
+    filterData($('csSearch').value);
+  };
+
+  window.csApplyPeriod = function() {
+    csDateFrom = $('csDateFrom').value || '';
+    csDateTo = $('csDateTo').value || '';
+    filterData($('csSearch').value);
+  };
 
   window.csToggleHidePaid = function() {
     csHidePaid = !csHidePaid;
