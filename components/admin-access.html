@@ -552,13 +552,13 @@ divoLoadAccessConfig(function(config) {
   divoRenderAccessPage();
 });
 
-// Обработчик сохранения
-document.addEventListener('DOMContentLoaded', function() {
+// Обработчик сохранения (привязываем сразу — кнопка уже в DOM после fetch)
+(function() {
   var saveBtn = document.getElementById('divoSaveAccessBtn');
   if (saveBtn) {
     saveBtn.addEventListener('click', divoSaveAccessConfig);
   }
-});
+})();
 
 // Добавляем анимацию pulse
 var style = document.createElement('style');
