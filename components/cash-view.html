@@ -51,17 +51,48 @@
 
 <div class="cs-status" id="csStatus"></div>
 
-<div class="cs-table-wrap">
-  <table class="cs-table">
-    <thead>
-      <tr>
-        <th>Имя</th><th>Сумма</th><th>Комментарий</th><th>Дата</th>
-        <th style="text-align:center">Статус</th>
-        <th style="text-align:center">Действия</th>
-      </tr>
-    </thead>
-    <tbody id="csTableBody"><tr><td colspan="6" class="cs-loading">Загрузка...</td></tr></tbody>
-  </table>
+<!-- Блок: Из заказ-нарядов -->
+<div class="cs-block-header order" id="csBlockHeadOrder" onclick="window.csToggleBlock('order')">
+  <span class="cs-block-title">📋 Из заказ-нарядов</span>
+  <span class="cs-block-count" id="csBlockCountOrder">0</span>
+  <span class="cs-block-sum" id="csBlockSumOrder">—</span>
+  <span class="cs-block-arrow">▼</span>
+</div>
+<div class="cs-block-body expanded" id="csBlockBodyOrder">
+  <div class="cs-table-wrap">
+    <table class="cs-table">
+      <thead>
+        <tr>
+          <th>Имя</th><th>Сумма</th><th>Комментарий</th><th>Дата</th>
+          <th style="text-align:center">Статус</th>
+          <th style="text-align:center">Действия</th>
+        </tr>
+      </thead>
+      <tbody id="csTableBodyOrder"><tr><td colspan="6" class="cs-loading">Загрузка...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Блок: Ручные записи -->
+<div class="cs-block-header manual" id="csBlockHeadManual" onclick="window.csToggleBlock('manual')">
+  <span class="cs-block-title">✍️ Ручные записи</span>
+  <span class="cs-block-count" id="csBlockCountManual">0</span>
+  <span class="cs-block-sum" id="csBlockSumManual">—</span>
+  <span class="cs-block-arrow">▼</span>
+</div>
+<div class="cs-block-body expanded" id="csBlockBodyManual">
+  <div class="cs-table-wrap">
+    <table class="cs-table">
+      <thead>
+        <tr>
+          <th>Имя</th><th>Сумма</th><th>Комментарий</th><th>Дата</th>
+          <th style="text-align:center">Статус</th>
+          <th style="text-align:center">Действия</th>
+        </tr>
+      </thead>
+      <tbody id="csTableBodyManual"><tr><td colspan="6" class="cs-loading">Загрузка...</td></tr></tbody>
+    </table>
+  </div>
 </div>
 
 <div class="cs-modal-overlay" id="csPayModal" style="display:none;">
@@ -201,6 +232,26 @@
 .cs-order-row { background: #0d1520; }
 .cs-order-row td { border-bottom: 1px solid #1e3a5f !important; }
 .cs-order-lock { color: #52525b; font-size: 11px; cursor: help; }
+
+/* Заголовки блоков */
+.cs-block-header { display: flex; align-items: center; justify-content: space-between; margin: 24px 0 10px 0; padding: 10px 14px; border-radius: 8px; cursor: pointer; user-select: none; }
+.cs-block-header.order { background: #0d1520; border: 1px solid #1e3a5f; }
+.cs-block-header.manual { background: #1a1a1a; border: 1px solid #3f3f46; }
+.cs-block-title { font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+.cs-block-header.order .cs-block-title { color: #60a5fa; }
+.cs-block-header.manual .cs-block-title { color: #e4e4e7; }
+.cs-block-count { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 12px; }
+.cs-block-header.order .cs-block-count { background: #1e3a5f; color: #93c5fd; }
+.cs-block-header.manual .cs-block-count { background: #3f3f46; color: #d4d4d8; }
+.cs-block-sum { font-size: 13px; font-weight: 700; margin-left: auto; margin-right: 12px; }
+.cs-block-header.order .cs-block-sum { color: #60a5fa; }
+.cs-block-header.manual .cs-block-sum { color: #fbbf24; }
+.cs-block-arrow { color: #71717a; font-size: 14px; transition: transform 0.2s; }
+.cs-block-header.collapsed .cs-block-arrow { transform: rotate(-90deg); }
+.cs-block-body { transition: max-height 0.3s ease, opacity 0.2s ease; overflow: hidden; }
+.cs-block-body.collapsed { max-height: 0; opacity: 0; }
+.cs-block-body.expanded { max-height: 9999px; opacity: 1; }
+.cs-empty-block { padding: 20px; text-align: center; color: #52525b; font-size: 13px; font-style: italic; }
 </style>
 
 <script>
@@ -282,18 +333,7 @@
     updateSummary(); render();
   }
 
-  function render() {
-    var tbody = $('csTableBody');
-    if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="6" class="cs-empty">' + (entries.length ? 'Ничего не найдено' : 'Записей пока нет') + '</td></tr>'; return; }
-    var sorted = filtered.slice().sort(function(a,b) {
-      if (a.is_checked !== b.is_checked) return a.is_checked ? 1 : -1;
-      var dA = a.entry_date||'', dB = b.entry_date||'';
-      if (dA !== dB) return dA < dB ? 1 : -1;
-      return (b.id||0) - (a.id||0);
-    });
-    var html = '';
-    for (var i = 0; i < sorted.length; i++) {
-      var e = sorted[i];
+  function renderRowHtml(e) {
       var isPayment = isPaymentRecord(e.comments);
       var isOrder = isOrderRecord(e);
       var rowClass = isOrder ? 'cs-order-row' : '';
@@ -310,7 +350,7 @@
       if (isPayment) { actionsHtml = '<button class="cs-del-btn" onclick="window.csDelete(' + e.id + ')" title="Удалить">✕</button>'; }
       else if (isOrder) { actionsHtml = '<span class="cs-order-lock" title="Создано из заказ-наряда — нельзя редактировать">🔒 из заказа</span>'; }
       else { actionsHtml = '<button class="cs-edit-btn" onclick="window.csEdit(' + e.id + ')" title="Редактировать">✏️</button><button class="cs-del-btn" onclick="window.csDelete(' + e.id + ')" title="Удалить">✕</button>'; }
-      html += '<tr class="' + rowClass + '">';
+      var html = '<tr class="' + rowClass + '">';
       html += '<td class="cs-col-name">' + nameHtml + '</td>';
       html += '<td class="' + amountClass + '">' + formatMoney(e.amount) + '</td>';
       html += '<td style="color:#a1a1aa;font-size:13px">' + (e.comments ? escapeHtml(e.comments) : '<span style="color:#52525b">—</span>') + '</td>';
@@ -318,8 +358,62 @@
       html += '<td style="text-align:center">' + statusBtn + '</td>';
       html += '<td><div class="cs-action-btns">' + actionsHtml + '</div></td>';
       html += '</tr>';
+      return html;
+  }
+
+  function render() {
+    if (!filtered.length) {
+      $('csTableBodyOrder').innerHTML = '<tr><td colspan="6" class="cs-empty">' + (entries.length ? 'Ничего не найдено' : 'Записей пока нет') + '</td></tr>';
+      $('csTableBodyManual').innerHTML = '<tr><td colspan="6" class="cs-empty"></td></tr>';
+      updateBlockHeaders(0, 0, 0, 0);
+      return;
     }
-    tbody.innerHTML = html;
+    var sorted = filtered.slice().sort(function(a,b) {
+      if (a.is_checked !== b.is_checked) return a.is_checked ? 1 : -1;
+      var dA = a.entry_date||'', dB = b.entry_date||'';
+      if (dA !== dB) return dA < dB ? 1 : -1;
+      return (b.id||0) - (a.id||0);
+    });
+    // Разделяем на два массива
+    var orderRecords = [];
+    var manualRecords = [];
+    for (var i = 0; i < sorted.length; i++) {
+      if (isOrderRecord(sorted[i])) orderRecords.push(sorted[i]);
+      else manualRecords.push(sorted[i]);
+    }
+    // Рендерим блок "Из заказ-нарядов"
+    var orderHtml = '';
+    var orderSum = 0;
+    if (orderRecords.length === 0) {
+      orderHtml = '<tr><td colspan="6" class="cs-empty-block">Нет записей из заказ-нарядов</td></tr>';
+    } else {
+      for (var j = 0; j < orderRecords.length; j++) {
+        orderSum += Number(orderRecords[j].amount) || 0;
+        orderHtml += renderRowHtml(orderRecords[j]);
+      }
+    }
+    $('csTableBodyOrder').innerHTML = orderHtml;
+    // Рендерим блок "Ручные записи"
+    var manualHtml = '';
+    var manualSum = 0;
+    if (manualRecords.length === 0) {
+      manualHtml = '<tr><td colspan="6" class="cs-empty-block">Нет ручных записей</td></tr>';
+    } else {
+      for (var k = 0; k < manualRecords.length; k++) {
+        manualSum += Number(manualRecords[k].amount) || 0;
+        manualHtml += renderRowHtml(manualRecords[k]);
+      }
+    }
+    $('csTableBodyManual').innerHTML = manualHtml;
+    // Обновляем заголовки блоков
+    updateBlockHeaders(orderRecords.length, orderSum, manualRecords.length, manualSum);
+  }
+
+  function updateBlockHeaders(orderCount, orderSum, manualCount, manualSum) {
+    $('csBlockCountOrder').textContent = orderCount;
+    $('csBlockSumOrder').textContent = formatMoney(orderSum) + ' ₽';
+    $('csBlockCountManual').textContent = manualCount;
+    $('csBlockSumManual').textContent = formatMoney(manualSum) + ' ₽';
   }
 
   function addEntry() {
@@ -502,6 +596,13 @@
 
   function closeHistoryModal() { $('csHistoryModal').style.display = 'none'; }
 
+  window.csToggleBlock = function(block) {
+    var head = $('csBlockHead' + (block === 'order' ? 'Order' : 'Manual'));
+    var body = $('csBlockBody' + (block === 'order' ? 'Order' : 'Manual'));
+    head.classList.toggle('collapsed');
+    body.classList.toggle('collapsed');
+    body.classList.toggle('expanded');
+  };
   window.csOpenPay = openPayModal;
   window.csUnmark = unmark;
   window.csEdit = openEditModal;
