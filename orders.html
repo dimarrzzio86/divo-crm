@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — Заказ-наряды</title>
-<link rel="stylesheet" href="/assets/style.css?v=91">
-<link rel="stylesheet" href="/assets/auth.css?v=91">
+<link rel="stylesheet" href="/assets/style.css?v=93">
+<link rel="stylesheet" href="/assets/auth.css?v=93">
 <style>
 /* === СТИЛИ СТРАНИЦЫ ЗАКАЗ-НАРЯДОВ === */
 .ord-page { padding: 0; }
@@ -42,6 +42,8 @@
 .ord-card-meta { font-size: 13px; color: #a1a1aa; display: flex; align-items: center; gap: 4px; flex-shrink: 0; white-space: nowrap; }
 .ord-card-meta b { color: #fafafa; font-weight: 600; }
 .ord-card-sep { color: #3f3f46; font-size: 12px; flex-shrink: 0; user-select: none; }
+.ord-card-price { font-size: 13px; font-weight: 700; color: #4ade80; background: #052e16; border: 1px solid #166534; padding: 2px 8px; border-radius: 4px; flex-shrink: 0; white-space: nowrap; }
+.ord-card-price.zero { color: #71717a; background: #18181b; border-color: #27272a; }
 .ord-card-status { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0; margin-left: auto; }
 .ord-card-status.new { background: #27272a; color: #a1a1aa; }
 .ord-card-status.in_progress { background: #422006; color: #fbbf24; }
@@ -203,6 +205,11 @@
               <div class="ord-services-list" id="ordServicesList"></div>
             </div>
             <div class="ord-form-group full">
+              <label class="ord-form-label">Цена (₽)</label>
+              <input type="number" class="ord-form-input" id="ordField-price" placeholder="0" min="0" step="100" inputmode="numeric">
+              <div class="ord-form-hint">Введите стоимость заказ-наряда. Формат отображения: 5 000 ₽</div>
+            </div>
+            <div class="ord-form-group full">
               <label class="ord-form-label">Комментарий</label>
               <textarea class="ord-form-textarea" id="ordField-note" placeholder="Доп. инфо..."></textarea>
             </div>
@@ -219,8 +226,8 @@
   <div class="divo-footer">© Диво Детейлинг • 2026</div>
 </div>
 
-<script src="/components/components.js?v=91"></script>
-<script src="/components/access-config.js?v=91"></script>
+<script src="/components/components.js?v=93"></script>
+<script src="/components/access-config.js?v=93"></script>
 <script>
 // ============================================
 // ЗАКАЗ-НАРЯДЫ — SUPABASE
@@ -262,6 +269,7 @@ function ordFromDb(row) {
     status: row.status || 'new',
     post: String(row.post || '1'),
     note: row.note || '',
+    price: Number(row.price) || 0,
     services: row.services || [],
     createdAt: row.created_at ? new Date(row.created_at).getTime() : 0
   };
@@ -362,6 +370,10 @@ function ordRenderList(orders) {
       parts.push('<span class="ord-card-sep">•</span>');
       parts.push('<span class="ord-card-meta">📅 <b>' + ordFormatDate(o.dateIn) + (o.dateOut ? ' → ' + ordFormatDate(o.dateOut) : '') + '</b></span>');
     }
+    if (o.price && o.price > 0) {
+      parts.push('<span class="ord-card-sep">•</span>');
+      parts.push('<span class="ord-card-price">💰 ' + ordFormatPrice(o.price) + ' ₽</span>');
+    }
     parts.push('<span class="ord-card-status ' + o.status + '">' + ORD_STATUS_NAMES[o.status] + '</span>');
     html += '<div class="ord-card" onclick="ordOpenModal(\'' + o.id + '\')">';
     html += '<div class="ord-card-status-bar ' + o.status + '"></div>';
@@ -375,6 +387,11 @@ function ordFormatDate(d) {
   if (!d) return '';
   var parts = d.split('-');
   return parts[2] + '.' + parts[1] + '.' + parts[0];
+}
+
+function ordFormatPrice(p) {
+  var n = Number(p) || 0;
+  return n.toLocaleString('ru-RU');
 }
 
 // === МОДАЛКА ===
@@ -401,6 +418,7 @@ function ordFillModal(o) {
   document.getElementById('ordField-dateOut').value = o ? (o.dateOut || '') : '';
   document.getElementById('ordField-status').value = o ? (o.status || 'new') : 'new';
   document.getElementById('ordField-note').value = o ? (o.note || '') : '';
+  document.getElementById('ordField-price').value = o ? (o.price || 0) : 0;
   document.getElementById('ordField-post').value = o ? (o.post || 'auto') : 'auto';
   // Нормализуем услуги: строки → объекты
   ORD_SERVICES = [];
@@ -616,6 +634,7 @@ function ordSave() {
   var status = document.getElementById('ordField-status').value;
   var post = document.getElementById('ordField-post').value;
   var note = document.getElementById('ordField-note').value.trim();
+  var price = parseFloat(document.getElementById('ordField-price').value) || 0;
   var carColor = ordGetSelectedColor();
 
   if (!number) { alert('Укажите номер заказ-наряда'); return; }
@@ -627,18 +646,18 @@ function ordSave() {
   if (post === 'auto') {
     ordGetAll(function(orders) {
       post = String(ordFindFreePost(dateIn, dateOut, ORD_EDITING_ID, orders));
-      ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, status, post, note);
+      ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, status, post, note, price);
     });
   } else {
-    ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, status, post, note);
+    ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, status, post, note, price);
   }
 }
 
-function ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, status, post, note) {
+function ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, status, post, note, price) {
   var data = {
     number: number, car_brand: carBrand, car_plate: carPlate, car_color: carColor,
     date_in: dateIn, date_out: dateOut, status: status, post: post,
-    note: note || '', services: ORD_SERVICES.slice()
+    note: note || '', price: Number(price) || 0, services: ORD_SERVICES.slice()
   };
 
   var saveBtn = document.querySelector('.ord-btn-save');
@@ -717,7 +736,7 @@ function divoCheckAuthAndInit() {
   if (!user) {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=91')
+    fetch('/components/auth-form.html?v=93')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
