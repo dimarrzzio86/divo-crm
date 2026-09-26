@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — Заказ-наряды</title>
-<link rel="stylesheet" href="/assets/style.css?v=105">
-<link rel="stylesheet" href="/assets/auth.css?v=105">
+<link rel="stylesheet" href="/assets/style.css?v=106">
+<link rel="stylesheet" href="/assets/auth.css?v=106">
 <style>
 /* === СТИЛИ СТРАНИЦЫ ЗАКАЗ-НАРЯДОВ === */
 .ord-page { padding: 0; }
@@ -304,13 +304,26 @@
         </div>
       </div>
 
-      </main>
+      
+    <!-- Модалка расчёта стоимости -->
+    <div class="ord-calc-overlay" id="ordCalcModal" onclick="if(event.target===this)ordCloseCalc()">
+      <div class="ord-calc-modal">
+        <div class="ord-calc-header">
+          <div class="ord-calc-title" id="ordCalcTitle">🧮 Расчёт стоимости</div>
+          <button class="ord-calc-close" onclick="ordCloseCalc()">✕</button>
+        </div>
+        <div id="ordCalcBody">
+          <div class="ord-calc-loading">Загрузка...</div>
+        </div>
+      </div>
+    </div>
+</main>
   </div>
   <div class="divo-footer">© Диво Детейлинг • 2026</div>
 </div>
 
-<script src="/components/components.js?v=105"></script>
-<script src="/components/access-config.js?v=105"></script>
+<script src="/components/components.js?v=106"></script>
+<script src="/components/access-config.js?v=106"></script>
 <script>
 // ============================================
 // ЗАКАЗ-НАРЯДЫ — SUPABASE
@@ -573,167 +586,10 @@ function ordRenderList(orders) {
       parts.push('<span class="ord-card-price">💰 ' + ordFormatPrice(o.price) + ' ₽</span>');
     }
     parts.push('<span class="ord-card-status ' + o.status + '">' + ORD_STATUS_NAMES[o.status] + '</span>');
-    html += '<div class="ord-card" onclick="ordOpenForm(\'' + o.id + '\')">';
-    html += '<div class="ord-card-status-bar ' + o.status + '"></div>';
-    html += '<div class="ord-card-main">' + parts.join('') + '</div>';
-    html += '<button type="button" class="ord-card-calc-btn" onclick="event.stopPropagation(); ordOpenCalc(\'' + o.id + '\')">🧮 Рассчитать</button>';
-    html += '</div>';
-  }
-  listEl.innerHTML = html;
-}
-
-function ordFormatDate(d) {
-  if (!d) return '';
-  var parts = d.split('-');
-  return parts[2] + '.' + parts[1] + '.' + parts[0];
-}
-
-function ordFormatPrice(p) {
-  var n = Number(p) || 0;
-  return n.toLocaleString('ru-RU');
-}
-
-// === МОДАЛКА ===
-function ordNewOrder() {
-  // Очищаем форму для нового заказа
-  ORD_EDITING_ID = null;
-  ordLoadPrices(function() {
-    ordResetRows();
-    ordFillForm(null);
-    document.getElementById('ordFormTitle').textContent = 'Новый заказ-наряд';
-    document.getElementById('ordDeleteBtn').style.display = 'none';
-    document.getElementById('ordFormCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
-}
-
-function ordOpenForm(id) {
-  // Открываем существующий заказ на редактирование
-  ORD_EDITING_ID = id || null;
-  ordLoadPrices(function() {
-    if (!id) { ordNewOrder(); return; }
-    ordGetAll(function(orders) {
-      var o = orders.find(function(x){return x.id === id;});
-      ordFillForm(o);
-      document.getElementById('ordFormTitle').textContent = 'Заказ-наряд #' + (o ? o.number : id);
-      document.getElementById('ordDeleteBtn').style.display = 'block';
-      document.getElementById('ordFormCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-  });
-}
-
-function ordCloseForm() {
-  // Сбрасываем форму к пустому состоянию
-  ordNewOrder();
-}
-
-function ordFillForm(o) {
-  var id = ORD_EDITING_ID;
-  document.getElementById('ordFormTitle').textContent = id ? 'Заказ-наряд #' + (o ? o.number : id) : 'Новый заказ-наряд';
-  document.getElementById('ordDeleteBtn').style.display = id ? 'block' : 'none';
-  document.getElementById('ordField-number').value = o ? (o.number || '') : '';
-  document.getElementById('ordField-carBrand').value = o ? (o.carBrand || '') : '';
-  document.getElementById('ordField-carPlate').value = o ? (o.carPlate || '') : '';
-  document.getElementById('ordField-dateIn').value = o ? (o.dateIn || '') : '';
-  document.getElementById('ordField-dateOut').value = o ? (o.dateOut || '') : '';
-  document.getElementById('ordField-status').value = o ? (o.status || 'new') : 'new';
-  document.getElementById('ordField-note').value = o ? (o.note || '') : '';
-  document.getElementById('ordField-post').value = o ? (o.post || 'auto') : 'auto';
-  // Загружаем услуги в строки таблицы
-  if (o && o.services && o.services.length) {
-    ordServicesToRows(o.services);
-  } else {
-    ordResetRows();
-  }
-  ordRenderRows();
-  ordRecalcTotal();
-  ordRenderColorPalette(o ? o.carColor : null);
-}
-
-
-
-function ordRenderColorPalette(activeColor) {
-  var el = document.getElementById('ordColorPalette');
-  var html = '';
-  for (var i = 0; i < ORD_CAR_COLORS.length; i++) {
-    var c = ORD_CAR_COLORS[i];
-    var active = (activeColor === c.hex) ? 'active' : '';
-    html += '<div class="ord-color-swatch ' + active + '" style="background:' + c.hex + '" title="' + c.name + '" onclick="ordSelectColor(\'' + c.hex + '\')"></div>';
-  }
-  el.innerHTML = html;
-}
-
-function ordSelectColor(hex) {
-  var swatches = document.querySelectorAll('.ord-color-swatch');
-  for (var i = 0; i < swatches.length; i++) swatches[i].classList.remove('active');
-  event.target.classList.add('active');
-}
-
-function ordGetSelectedColor() {
-  var active = document.querySelector('.ord-color-swatch.active');
-  return active ? active.style.backgroundColor : '#525252';
-}
-
-function ordAddRow() {
-  ORD_ROWS.push({ catId: '', subcatId: '', svcId: '', svcName: '', price: 0, manual: false });
-  ordRenderRows();
-}
-
-function ordRemoveRow(idx) {
-  ORD_ROWS.splice(idx, 1);
-  ordRenderRows();
-  ordRecalcTotal();
-}
-
-
-function ordOnRowManualToggle(idx, isManual) {
-  var r = ORD_ROWS[idx];
-  r.manual = isManual;
-  if (isManual) {
-    // Переходим в ручной режим — сохраняем svcName если было выбрано
-    if (!r.svcName) r.svcName = '';
-    r.catId = '';
-    r.subcatId = '';
-    r.svcId = '';
-  } else {
-    // Возвращаемся к прайсу — сбрасываем ручное название
-    r.svcName = '';
-  }
-  ordRenderRows();
-  ordRecalcTotal();
-}
-
-function ordRenderRows() {
-  var el = document.getElementById('ordRowsBody');
-  if (ORD_ROWS.length === 0) {
-    el.innerHTML = '<div class="ord-empty-row">Нажмите «Добавить строку», чтобы выбрать услуги</div>';
-    return;
-  }
-  var html = '';
-  for (var i = 0; i < ORD_ROWS.length; i++) {
-    var r = ORD_ROWS[i];
-    html += '<div class="ord-row" data-idx="' + i + '">';
-    // Чекбокс "Ручной ввод" — отдельный для каждой строки
-    var checked = r.manual ? ' checked' : '';
-    html += '<div class="ord-row-check"><input type="checkbox" id="ordRowManual' + i + '"' + checked + ' onchange="ordOnRowManualToggle(' + i + ', this.checked)" title="Ручной ввод"></div>';
-    // Содержимое строки зависит от режима
-    if (r.manual) {
-      // Ручной режим: одно текстовое поле на 3 колонки
-      html += '<input type="text" class="ord-manual-name" value="' + ordEscape(r.svcName) + '" placeholder="Название услуги..." oninput="ordOnRowManualName(' + i + ', this.value)" style="grid-column: span 3;">';
-    } else {
-      // Режим прайса: 3 селекта
-      html += '<select onchange="ordOnRowCat(' + i + ', this.value)">' + ordCatOptions(r.catId) + '</select>';
-      if (r.catId) {
-        html += '<select onchange="ordOnRowSubcat(' + i + ', this.value)">' + ordSubcatOptions(r.catId, r.subcatId) + '</select>';
-        html += '<select onchange="ordOnRowSvc(' + i + ', this.value, this.options[this.selectedIndex])">' + ordSvcOptions(r.catId, r.subcatId, r.svcId) + '</select>';
-      } else {
-        html += '<select disabled><option>—</option></select>';
-        html += '<select disabled><option>—</option></select>';
-      }
-    }
-    // Цена
-    html += '<input type="number" class="ord-price" value="' + (r.price || 0) + '" placeholder="0" min="0" step="100" oninput="ordOnRowPrice(' + i + ', this.value)">';
-    // Удаление
-    html += '<button type="button" class="ord-row-del" onclick="ordRemoveRow(' + i + ')">✕</button>';
+    html += `<div class="ord-card" onclick="ordOpenForm('${o.id}')">`;
+    html += `<div class="ord-card-status-bar ${o.status}"></div>`;
+    html += `<div class="ord-card-main">${parts.join('')}</div>`;
+    html += `<button type="button" class="ord-card-calc-btn" onclick="event.stopPropagation(); ordOpenCalc('${o.id}')">🧮 Рассчитать</button>`;
     html += '</div>';
   }
   el.innerHTML = html;
@@ -1079,7 +935,6 @@ function ordCalcAccHTML(svc, idx, isManual) {
   var sid = svc.serviceId;
   var components = (sid && ORD_CALC_COMPONENTS[sid]) || [];
   var accId = 'ordCalcAcc' + idx;
-  var isManualClass = isManual ? ' manual' : '';
 
   var html = '<div class="ord-calc-accordion' + (idx === 0 ? ' open' : '') + '" id="' + accId + '">';
   html += '<div class="ord-calc-acc-head" onclick="ordCalcToggle(\'' + accId + '\')">';
@@ -1132,7 +987,7 @@ function divoCheckAuthAndInit() {
   if (!user) {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=105')
+    fetch('/components/auth-form.html?v=106')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');

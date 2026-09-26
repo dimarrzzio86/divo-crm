@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — Доступы разделов</title>
-<link rel="stylesheet" href="/assets/style.css?v=105">
-<link rel="stylesheet" href="/assets/auth.css?v=105">
+<link rel="stylesheet" href="/assets/style.css?v=106">
+<link rel="stylesheet" href="/assets/auth.css?v=106">
 </head>
 <body>
 
@@ -27,8 +27,8 @@
 
 </div>
 
-<script src="/components/components.js?v=105"></script>
-<script src="/components/access-config.js?v=105"></script>
+<script src="/components/components.js?v=106"></script>
+<script src="/components/access-config.js?v=106"></script>
 <script>
 function divoCheckAuthAndInit() {
   var user = divoGetUser();
@@ -37,7 +37,7 @@ function divoCheckAuthAndInit() {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
 
-    fetch('/components/auth-form.html?v=105')
+    fetch('/components/auth-form.html?v=106')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
@@ -66,7 +66,7 @@ function divoCheckAuthAndInit() {
   divoInit();
 
   // Грузим контент страницы доступов
-  fetch('/components/admin-access.html?v=105')
+  fetch('/components/admin-access.html?v=106')
     .then(function(r) { return r.text(); })
     .then(function(html) {
       var content = document.getElementById('divoContent');
