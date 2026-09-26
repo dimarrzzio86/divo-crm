@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — Заказ-наряды</title>
-<link rel="stylesheet" href="/assets/style.css?v=82">
-<link rel="stylesheet" href="/assets/auth.css?v=82">
+<link rel="stylesheet" href="/assets/style.css?v=83">
+<link rel="stylesheet" href="/assets/auth.css?v=83">
 <style>
 /* === СТИЛИ СТРАНИЦЫ ЗАКАЗ-НАРЯДОВ === */
 .ord-page { padding: 0; }
@@ -335,13 +335,7 @@
               <input type="date" class="ord-form-input" id="ordField-dateOut">
             </div>
 
-            <div class="ord-form-group">
-              <label class="ord-form-label">Мастер</label>
-              <select class="ord-form-select" id="ordField-master">
-                <option value="">— не выбран —</option>
-              </select>
-            </div>
-            <div class="ord-form-group">
+            <div class="ord-form-group full">
               <label class="ord-form-label">Статус</label>
               <select class="ord-form-select" id="ordField-status">
                 <option value="new">🆕 Новый</option>
@@ -378,8 +372,8 @@
   <div class="divo-footer">© Диво Детейлинг • 2026</div>
 </div>
 
-<script src="/components/components.js?v=82"></script>
-<script src="/components/access-config.js?v=82"></script>
+<script src="/components/components.js?v=83"></script>
+<script src="/components/access-config.js?v=83"></script>
 <script>
 // ============================================
 // ЛОКАЛЬНОЕ ХРАНИЛИЩЕ (временно, до Supabase)
@@ -481,7 +475,6 @@ function ordRender() {
     html += '    <div class="ord-card-info">';
     html += '      <span class="ord-card-info-item">📍 <b>Пост ' + (o.post || '?') + '</b></span>';
     if (o.dateIn) html += '<span class="ord-card-info-item">📅 <b>' + ordFormatDate(o.dateIn) + (o.dateOut ? ' → ' + ordFormatDate(o.dateOut) : '') + '</b></span>';
-    if (o.master) html += '<span class="ord-card-info-item">👤 <b>' + o.master + '</b></span>';
     html += '    </div>';
     html += servicesHtml;
     html += '  </div>';
@@ -510,7 +503,6 @@ function ordOpenModal(id) {
   document.getElementById('ordField-carPlate').value = o ? (o.carPlate || '') : '';
   document.getElementById('ordField-dateIn').value = o ? (o.dateIn || '') : '';
   document.getElementById('ordField-dateOut').value = o ? (o.dateOut || '') : '';
-  document.getElementById('ordField-master').value = o ? (o.master || '') : '';
   document.getElementById('ordField-status').value = o ? (o.status || 'new') : 'new';
   document.getElementById('ordField-note').value = o ? (o.note || '') : '';
   document.getElementById('ordField-post').value = o ? (o.post || '1') : '1';
@@ -584,7 +576,6 @@ function ordSave() {
   var carPlate = document.getElementById('ordField-carPlate').value.trim().toUpperCase();
   var dateIn = document.getElementById('ordField-dateIn').value;
   var dateOut = document.getElementById('ordField-dateOut').value;
-  var master = document.getElementById('ordField-master').value;
   var status = document.getElementById('ordField-status').value;
   var post = document.getElementById('ordField-post').value;
   var note = document.getElementById('ordField-note').value.trim();
@@ -605,7 +596,6 @@ function ordSave() {
         orders[i].carColor = carColor;
         orders[i].dateIn = dateIn;
         orders[i].dateOut = dateOut;
-        orders[i].master = master;
         orders[i].status = status;
         orders[i].post = post;
         orders[i].note = note;
@@ -622,7 +612,6 @@ function ordSave() {
       carColor: carColor,
       dateIn: dateIn,
       dateOut: dateOut,
-      master: master,
       status: status,
       post: post,
       note: note,
@@ -659,19 +648,7 @@ function ordInitFilters() {
   }
 }
 
-// === ИНИЦИАЛИЗАЦИЯ МАСТЕРОВ ===
-function ordInitMasters() {
-  var select = document.getElementById('ordField-master');
-  // Список пользователей из DIVO_USERS
-  if (typeof DIVO_USERS !== 'undefined') {
-    for (var i = 0; i < DIVO_USERS.length; i++) {
-      var u = DIVO_USERS[i];
-      var opt = document.createElement('option');
-      opt.value = u.username;
-      opt.textContent = (u.displayName || u.username) + ' (ур.' + u.level + ')';
-      select.appendChild(opt);
-    }
-  }
+}
 }
 
 // === АВТОРИЗАЦИЯ + ИНИЦИАЛИЗАЦИЯ ===
@@ -680,7 +657,7 @@ function divoCheckAuthAndInit() {
   if (!user) {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=82')
+    fetch('/components/auth-form.html?v=83')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
@@ -714,7 +691,6 @@ function divoCheckAuthAndInit() {
 
   divoInit();
   ordInitFilters();
-  ordInitMasters();
   ordRender();
 
   // Закрытие модалки по клику вне
