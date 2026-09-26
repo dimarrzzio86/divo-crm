@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — Заказ-наряды</title>
-<link rel="stylesheet" href="/assets/style.css?v=125">
-<link rel="stylesheet" href="/assets/auth.css?v=125">
+<link rel="stylesheet" href="/assets/style.css?v=126">
+<link rel="stylesheet" href="/assets/auth.css?v=126">
 <style>
 /* === СТИЛИ СТРАНИЦЫ ЗАКАЗ-НАРЯДОВ === */
 .ord-page { padding: 0; }
@@ -370,8 +370,8 @@
   <div class="divo-footer">© Диво Детейлинг • 2026</div>
 </div>
 
-<script src="/components/components.js?v=125"></script>
-<script src="/components/access-config.js?v=125"></script>
+<script src="/components/components.js?v=126"></script>
+<script src="/components/access-config.js?v=126"></script>
 <script>
 // ============================================
 // ЗАКАЗ-НАРЯДЫ — SUPABASE
@@ -1203,7 +1203,7 @@ function ordCalcRender() {
   });
 }
 
-function ordCalcContractorSelect(selectedId, dataKey, dataVal) {
+function ordCalcContractorSelect(selectedId, type, dataVal) {
   // Найти категорию выбранного контакта
   var selCat = '';
   if (selectedId) {
@@ -1223,7 +1223,7 @@ function ordCalcContractorSelect(selectedId, dataKey, dataVal) {
     cats[ct].push(ORD_CALC_CONTRACTORS[i]);
   }
   // 1. Select категории
-  var html = '<select class="ord-calc-cat-select" data-' + dataKey + '="' + dataVal + '" onchange="ordCalcOnCategoryChange(this, \'" + dataKey + "\'")">';
+  var html = '<select class="ord-calc-cat-select" data-type="' + type + '" data-val="' + dataVal + '" onchange="ordCalcOnCategoryChange(this)">';
   html += '<option value="">— категория —</option>';
   for (var ci = 0; ci < catOrder.length; ci++) {
     var sel = (selCat === catOrder[ci]) ? ' selected' : '';
@@ -1231,7 +1231,7 @@ function ordCalcContractorSelect(selectedId, dataKey, dataVal) {
   }
   html += '</select>';
   // 2. Select контакта (только из выбранной категории)
-  html += '<select class="ord-calc-comp-select" data-' + dataKey + '="' + dataVal + '" onchange="ordCalcOnContractorChange(this, \'" + dataKey + "\'")">';
+  html += '<select class="ord-calc-comp-select" data-type="' + type + '" data-val="' + dataVal + '" onchange="ordCalcOnContractorChange(this)">';
   html += '<option value="">— контакт —</option>';
   if (selCat && cats[selCat]) {
     var list = cats[selCat];
@@ -1245,10 +1245,20 @@ function ordCalcContractorSelect(selectedId, dataKey, dataVal) {
   return html;
 }
 
-function ordCalcOnCategoryChange(catSelect, type) {
+function ordCalcOnCategoryChange(catSelect) {
   var cat = catSelect.value;
+  var type = catSelect.dataset.type;
+  var dataVal = catSelect.dataset.val;
   var row = catSelect.parentElement;
-  var contrSelect = row.querySelector('.ord-calc-comp-select');
+  // Найти select контакта в той же строке (следующий select)
+  var allSelects = row.querySelectorAll('select');
+  var contrSelect = null;
+  for (var i = 0; i < allSelects.length; i++) {
+    if (allSelects[i] !== catSelect && allSelects[i].classList.contains('ord-calc-comp-select')) {
+      contrSelect = allSelects[i];
+      break;
+    }
+  }
   if (!contrSelect) return;
   // Очищаем select контакта
   contrSelect.innerHTML = '<option value="">— контакт —</option>';
@@ -1269,10 +1279,9 @@ function ordCalcOnCategoryChange(catSelect, type) {
   contrSelect.value = '';
   // Обновляем состояние
   if (type === 'comp') {
-    var compId = catSelect.dataset.comp;
-    ORD_CALC_COMP_CONTRACTORS[compId] = null;
+    ORD_CALC_COMP_CONTRACTORS[dataVal] = null;
   } else if (type === 'extra') {
-    var idx = parseInt(catSelect.dataset.ex, 10);
+    var idx = parseInt(dataVal, 10);
     if (!isNaN(idx) && ORD_CALC_EXTRA[idx]) {
       ORD_CALC_EXTRA[idx].contractorId = null;
     }
@@ -1284,13 +1293,14 @@ function ordCalcOnCategoryChange(catSelect, type) {
   if (btn) btn.classList.add('dirty');
 }
 
-function ordCalcOnContractorChange(select, type) {
-  var val = select.value ? parseInt(select.value, 10) : null;
+function ordCalcOnContractorChange(contrSelect) {
+  var val = contrSelect.value ? parseInt(contrSelect.value, 10) : null;
+  var type = contrSelect.dataset.type;
+  var dataVal = contrSelect.dataset.val;
   if (type === 'comp') {
-    var compId = select.dataset.comp;
-    ORD_CALC_COMP_CONTRACTORS[compId] = val;
+    ORD_CALC_COMP_CONTRACTORS[dataVal] = val;
   } else if (type === 'extra') {
-    var idx = parseInt(select.dataset.ex, 10);
+    var idx = parseInt(dataVal, 10);
     if (!isNaN(idx) && ORD_CALC_EXTRA[idx]) {
       ORD_CALC_EXTRA[idx].contractorId = val;
     }
@@ -1655,7 +1665,7 @@ function divoCheckAuthAndInit() {
   if (!user) {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=125')
+    fetch('/components/auth-form.html?v=126')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
