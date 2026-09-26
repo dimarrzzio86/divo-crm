@@ -1049,7 +1049,7 @@ function ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, status
       ordInvalidateCache();
       // Если заказ-наряд в работе — создаём/обновляем записи в "Расчётах" для контрагентов
       if (status === 'in_progress') {
-        ordPushContractorPayments(ORD_EDITING_ID, number, dateOut || dateIn, services, totalPrice);
+        ordPushContractorPayments(ORD_EDITING_ID, number, dateOut || dateIn, services, price);
       }
       ordCloseForm();
       ordRender();
