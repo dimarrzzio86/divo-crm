@@ -437,68 +437,107 @@ function divoSaveAccessConfig() {
   var saveBtn = document.getElementById('divoSaveAccessBtn');
   if (saveBtn) saveBtn.disabled = true;
 
-  divoShowSaveStatus('Сохранение...', 'saving');
+  divoShowSaveStatus('Сохранение в Supabase...', 'saving');
 
-  // Готовим данные для сохранения
+  // Готовим данные для сохранения (sections + reconciliation + levels)
   var sectionsData = {};
   for (var id in divoEditConfig) {
     sectionsData[id] = divoEditConfig[id];
   }
 
-  // TODO: Когда будет бэкенд — тут будет fetch POST к API
-  // Пока: показываем что изменилось и предлагаем скачать файл
+  var reconciliationData = {};
+  if (divoEditReconciliation) {
+    for (var rid in divoEditReconciliation) {
+      reconciliationData[rid] = divoEditReconciliation[rid];
+    }
+  }
 
   var changesList = [];
   for (var secId in divoChangedSections) {
     var s = divoEditConfig[secId];
     changesList.push(s.icon + ' ' + s.name + ' → уровень ' + s.level);
   }
+  for (var reconId in divoChangedReconciliation) {
+    var r = divoEditReconciliation[reconId];
+    changesList.push((r.icon || '📊') + ' ' + r.name + ' → уровень ' + r.level);
+  }
 
-  // Сохраняем локально (localStorage как временная мера)
-  try {
-    localStorage.setItem('divo_access_changes', JSON.stringify(sectionsData));
-    localStorage.setItem('divo_access_changes_time', new Date().toISOString());
-  } catch (e) {}
-
-  // Генерируем обновлённый JSON для скачивания
   var configToSave = {
     version: 2,
     updated: new Date().toISOString(),
     sections: sectionsData,
+    reconciliation: reconciliationData,
     levels: divoGetLevels()
   };
 
-  var blob = new Blob([JSON.stringify(configToSave, null, 2)], { type: 'application/json' });
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement('a');
-  a.href = url;
-  a.download = 'access-config.json';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  // Сохраняем в Supabase через RPC
+  divoSaveAccessConfigToSupabase(configToSave, function(result) {
+    if (saveBtn) saveBtn.disabled = false;
+    if (result.success) {
+      divoShowSaveStatus('✅ Сохранено в Supabase! Изменения:\n' + changesList.join('\n') + '\n\nНастройки доступны всем пользователям мгновенно.', 'success');
 
-  // Обновляем активный конфиг в памяти
-  if (DIVO_ACCESS_CONFIG) {
-    DIVO_ACCESS_CONFIG.sections = sectionsData;
+      // Сбрасываем пометки изменений
+      divoChangedSections = {};
+      divoChangedReconciliation = {};
+      var rows = document.querySelectorAll('.divo-section-row.changed');
+      for (var i = 0; i < rows.length; i++) {
+        rows[i].classList.remove('changed');
+      }
+      var saveBtn2 = document.getElementById('divoSaveAccessBtn');
+      if (saveBtn2) {
+        saveBtn2.textContent = '💾 Сохранить настройки';
+        saveBtn2.style.animation = '';
+      }
+    } else {
+      divoShowSaveStatus('❌ Ошибка сохранения: ' + (result.error || 'неизвестная'), 'error');
+    }
+  });
+}
+
+// Функция для сохранения в Supabase через RPC
+function divoSaveAccessConfigToSupabase(config, callback) {
+  var user = (typeof divoGetUser === 'function') ? divoGetUser() : null;
+  var username = user ? (user.username || 'admin') : 'admin';
+  var password = user ? (user.password || '') : '';
+  if (!password) {
+    try { password = localStorage.getItem('divo_password') || 'adminadmin'; } catch(e) { password = 'adminadmin'; }
   }
 
-  setTimeout(function() {
-    if (saveBtn) saveBtn.disabled = false;
-    divoShowSaveStatus('✅ Сохранено! Файл access-config.json скачан. Изменения:\n' + changesList.join('\n') + '\n\nОтправь этот файл мне, чтобы я обновил настройки на сайте.', 'success');
-
-    // Сбрасываем пометки изменений
-    divoChangedSections = {};
-    var rows = document.querySelectorAll('.divo-section-row.changed');
-    for (var i = 0; i < rows.length; i++) {
-      rows[i].classList.remove('changed');
-    }
-    var saveBtn2 = document.getElementById('divoSaveAccessBtn');
-    if (saveBtn2) {
-      saveBtn2.textContent = '💾 Сохранить настройки';
-      saveBtn2.style.animation = '';
-    }
-  }, 500);
+  fetch('https://jnbqzngsglnjzzpsvvgn.supabase.co/rest/v1/rpc/save_access_config', {
+    method: 'POST',
+    headers: {
+      'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuYnF6bmdzZ2xuanp6cHN2dmduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyMzIwOTEsImV4cCI6MjEwNDgwODA5MX0.uHVMUKBtO0326KB3bAHQ8rywBvBms7WvfaxPrhm3_Y0',
+      'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuYnF6bmdzZ2xuanp6cHN2dmduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyMzIwOTEsImV4cCI6MjEwNDgwODA5MX0.uHVMUKBtO0326KB3bAHQ8rywBvBms7WvfaxPrhm3_Y0',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      p_username: username,
+      p_password: password,
+      p_config: config
+    })
+  })
+    .then(function(r) {
+      if (!r.ok) {
+        return r.json().then(function(err) {
+          throw new Error(err.message || ('HTTP ' + r.status));
+        });
+      }
+      return r.json();
+    })
+    .then(function(result) {
+      if (result && result.success) {
+        if (typeof DIVO_ACCESS_CONFIG !== 'undefined') {
+          DIVO_ACCESS_CONFIG = config;
+        }
+        if (callback) callback({ success: true, result: result });
+      } else {
+        throw new Error('Сервер вернул: ' + JSON.stringify(result));
+      }
+    })
+    .catch(function(e) {
+      console.error('Ошибка save_access_config:', e);
+      if (callback) callback({ success: false, error: e.message });
+    });
 }
 
 function divoShowSaveStatus(msg, type) {
