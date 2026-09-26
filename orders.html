@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — Заказ-наряды</title>
-<link rel="stylesheet" href="/assets/style.css?v=121">
-<link rel="stylesheet" href="/assets/auth.css?v=121">
+<link rel="stylesheet" href="/assets/style.css?v=122">
+<link rel="stylesheet" href="/assets/auth.css?v=122">
 <style>
 /* === СТИЛИ СТРАНИЦЫ ЗАКАЗ-НАРЯДОВ === */
 .ord-page { padding: 0; }
@@ -128,7 +128,11 @@
 .ord-calc-extra-del { background: #18181b; border: 1px solid #3f3f46; color: #71717a; width: 28px; height: 28px; border-radius: 6px; cursor: pointer; font-size: 16px; font-family: inherit; flex-shrink: 0; }
 .ord-calc-extra-del:hover { background: #ef4444; border-color: #ef4444; color: #fafafa; }
 .ord-calc-extra-empty { text-align: center; color: #52525b; padding: 10px; font-size: 13px; }
-.ord-calc-comp-select, .ord-calc-extra-select { background: #0a0a0a; border: 1px solid #27272a; border-radius: 6px; padding: 5px 6px; color: #93c5fd; font-size: 12px; font-family: inherit; max-width: 160px; flex-shrink: 0; cursor: pointer; }
+.ord-calc-cat-select, .ord-calc-comp-select, .ord-calc-extra-select { background: #0a0a0a; border: 1px solid #27272a; border-radius: 6px; padding: 5px 6px; color: #93c5fd; font-size: 12px; font-family: inherit; max-width: 130px; flex-shrink: 0; cursor: pointer; }
+.ord-calc-cat-select { color: #a78bfa; max-width: 110px; border-color: #4c1d95; }
+.ord-calc-cat-select:focus { outline: none; border-color: #7c3aed; }
+.ord-calc-comp-select:focus, .ord-calc-extra-select:focus { outline: none; border-color: #3b82f6; }
+.ord-calc-comp-select option, .ord-calc-extra-select option, .ord-calc-cat-select option { background: #0a0a0a; color: #fafafa; }
 .ord-calc-comp-select:focus, .ord-calc-extra-select:focus { outline: none; border-color: #3b82f6; }
 .ord-calc-comp-select option, .ord-calc-extra-select option { background: #0a0a0a; color: #fafafa; }
 .ord-calc-comp-select optgroup, .ord-calc-extra-select optgroup { background: #18181b; color: #71717a; font-style: normal; font-weight: 700; }
@@ -366,8 +370,8 @@
   <div class="divo-footer">© Диво Детейлинг • 2026</div>
 </div>
 
-<script src="/components/components.js?v=121"></script>
-<script src="/components/access-config.js?v=121"></script>
+<script src="/components/components.js?v=122"></script>
+<script src="/components/access-config.js?v=122"></script>
 <script>
 // ============================================
 // ЗАКАЗ-НАРЯДЫ — SUPABASE
@@ -1200,9 +1204,17 @@ function ordCalcRender() {
 }
 
 function ordCalcContractorSelect(selectedId, dataKey, dataVal) {
-  var html = '<select class="ord-calc-comp-select" data-' + dataKey + '="' + dataVal + '" onchange="ordCalcOnContractorChange(this, \'' + dataKey + '\')">';
-  html += '<option value="">— контакт —</option>';
-  // Группируем по category
+  // Найти категорию выбранного контакта
+  var selCat = '';
+  if (selectedId) {
+    for (var si = 0; si < ORD_CALC_CONTRACTORS.length; si++) {
+      if (Number(ORD_CALC_CONTRACTORS[si].id) === Number(selectedId)) {
+        selCat = ORD_CALC_CONTRACTORS[si].category || 'Без категории';
+        break;
+      }
+    }
+  }
+  // Собираем категории
   var cats = {};
   var catOrder = [];
   for (var i = 0; i < ORD_CALC_CONTRACTORS.length; i++) {
@@ -1210,19 +1222,66 @@ function ordCalcContractorSelect(selectedId, dataKey, dataVal) {
     if (!cats[ct]) { cats[ct] = []; catOrder.push(ct); }
     cats[ct].push(ORD_CALC_CONTRACTORS[i]);
   }
+  // 1. Select категории
+  var html = '<select class="ord-calc-cat-select" data-' + dataKey + '="' + dataVal + '" onchange="ordCalcOnCategoryChange(this, \'" + dataKey + "\'")">';
+  html += '<option value="">— категория —</option>';
   for (var ci = 0; ci < catOrder.length; ci++) {
-    var cat = catOrder[ci];
-    html += '<optgroup label="' + ordEscape(cat) + '">';
-    var list = cats[cat];
+    var sel = (selCat === catOrder[ci]) ? ' selected' : '';
+    html += '<option value="' + ordEscape(catOrder[ci]) + '"' + sel + '>' + ordEscape(catOrder[ci]) + '</option>';
+  }
+  html += '</select>';
+  // 2. Select контакта (только из выбранной категории)
+  html += '<select class="ord-calc-comp-select" data-' + dataKey + '="' + dataVal + '" onchange="ordCalcOnContractorChange(this, \'" + dataKey + "\'")">';
+  html += '<option value="">— контакт —</option>';
+  if (selCat && cats[selCat]) {
+    var list = cats[selCat];
     for (var li = 0; li < list.length; li++) {
       var con = list[li];
       var sel = (Number(selectedId) === Number(con.id)) ? ' selected' : '';
       html += '<option value="' + con.id + '"' + sel + '>' + ordEscape(con.name) + '</option>';
     }
-    html += '</optgroup>';
   }
   html += '</select>';
   return html;
+}
+
+function ordCalcOnCategoryChange(catSelect, type) {
+  var cat = catSelect.value;
+  var row = catSelect.parentElement;
+  var contrSelect = row.querySelector('.ord-calc-comp-select');
+  if (!contrSelect) return;
+  // Очищаем select контакта
+  contrSelect.innerHTML = '<option value="">— контакт —</option>';
+  if (cat) {
+    // Добавляем контакты только из выбранной категории
+    for (var i = 0; i < ORD_CALC_CONTRACTORS.length; i++) {
+      var con = ORD_CALC_CONTRACTORS[i];
+      var conCat = con.category || 'Без категории';
+      if (conCat === cat) {
+        var opt = document.createElement('option');
+        opt.value = con.id;
+        opt.textContent = con.name;
+        contrSelect.appendChild(opt);
+      }
+    }
+  }
+  // Сбрасываем выбранный контакт
+  contrSelect.value = '';
+  // Обновляем состояние
+  if (type === 'comp') {
+    var compId = catSelect.dataset.comp;
+    ORD_CALC_COMP_CONTRACTORS[compId] = null;
+  } else if (type === 'extra') {
+    var idx = parseInt(catSelect.dataset.ex, 10);
+    if (!isNaN(idx) && ORD_CALC_EXTRA[idx]) {
+      ORD_CALC_EXTRA[idx].contractorId = null;
+    }
+  }
+  ORD_CALC_DIRTY = true;
+  var hint = document.getElementById('ordCalcDirtyHint');
+  if (hint) hint.style.display = 'inline';
+  var btn = document.getElementById('ordCalcSaveBtn');
+  if (btn) btn.classList.add('dirty');
 }
 
 function ordCalcOnContractorChange(select, type) {
@@ -1596,7 +1655,7 @@ function divoCheckAuthAndInit() {
   if (!user) {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=121')
+    fetch('/components/auth-form.html?v=122')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
