@@ -26,6 +26,16 @@
 .ord-manual-toggle input { cursor: pointer; width: 16px; height: 16px; }
 .ord-manual-toggle input:checked + span { color: #fbbf24; }
 .ord-form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; padding-top: 14px; border-top: 1.5px solid #27272a; }
+.ord-datebar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; padding: 10px 12px; background: #18181b; border: 1.5px solid #27272a; border-radius: 10px; }
+.ord-date-presets { display: flex; gap: 4px; flex-wrap: wrap; }
+.ord-date-btn { padding: 7px 12px; background: transparent; color: #a1a1aa; border: 1px solid #27272a; border-radius: 6px; font-size: 12px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all .15s; }
+.ord-date-btn:hover { background: #27272a; color: #fafafa; }
+.ord-date-btn.active { background: #3b82f6; color: #fafafa; border-color: #3b82f6; font-weight: 700; }
+.ord-date-range { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.ord-date-input { background: #0a0a0a; border: 1px solid #27272a; border-radius: 6px; padding: 7px 10px; color: #fafafa; font-size: 12px; font-family: inherit; }
+.ord-date-input:focus { outline: none; border-color: #3b82f6; }
+.ord-date-sep { color: #52525b; font-size: 13px; }
+.ord-date-info { margin-left: auto; font-size: 12px; color: #71717a; font-weight: 600; }
 .ord-toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
 .ord-filters { display: flex; gap: 4px; background: #18181b; border: 1.5px solid #27272a; border-radius: 12px; padding: 4px; }
 .ord-filter-btn { padding: 8px 16px; background: transparent; color: #a1a1aa; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all .15s; }
@@ -225,6 +235,26 @@
           </div>
         </div>
 
+        <!-- ПАНЕЛЬ ФИЛЬТРА ПО ДАТАМ -->
+        <div class="ord-datebar">
+          <div class="ord-date-presets">
+            <button class="ord-date-btn active" data-preset="month" onclick="ordSetDatePreset('month')">Этот месяц</button>
+            <button class="ord-date-btn" data-preset="today" onclick="ordSetDatePreset('today')">Сегодня</button>
+            <button class="ord-date-btn" data-preset="week" onclick="ordSetDatePreset('week')">Эта неделя</button>
+            <button class="ord-date-btn" data-preset="all" onclick="ordSetDatePreset('all')">Всё время</button>
+            <button class="ord-date-btn" data-preset="custom" onclick="ordSetDatePreset('custom')">Период…</button>
+          </div>
+          <div class="ord-date-range" id="ordDateRange" style="display:none;">
+            <input type="date" class="ord-date-input" id="ordDateFrom" onchange="ordOnDateRangeChange()">
+            <span class="ord-date-sep">→</span>
+            <input type="date" class="ord-date-input" id="ordDateTo" onchange="ordOnDateRangeChange()">
+            <span class="ord-date-single-wrap" id="ordDateSingleWrap" style="display:none;">
+              <input type="date" class="ord-date-input" id="ordDateSingle" onchange="ordOnSingleDateChange()">
+            </span>
+          </div>
+          <div class="ord-date-info" id="ordDateInfo">Показаны записи за текущий месяц</div>
+        </div>
+
         <div class="ord-toolbar">
           <div class="ord-filters" id="ordFilters">
             <button class="ord-filter-btn active" data-filter="all">Все <span class="badge" id="cnt-all">0</span></button>
@@ -265,6 +295,9 @@ var ORD_PRICE_CATS = null;
 var ORD_PRICE_SUBCATS = null;
 var ORD_PRICE_SERVICES = null;
 var ORD_MANUAL_MODE = false;
+var ORD_DATE_PRESET = 'month';
+var ORD_DATE_FROM = '';
+var ORD_DATE_TO = '';
 
 var ORD_CAR_COLORS = [
   {hex:'#ef4444', name:'Красный'},   {hex:'#3b82f6', name:'Синий'},
@@ -340,6 +373,115 @@ function ordFindFreePost(dateIn, dateOut, excludeId, orders) {
 }
 
 // === РЕНДЕР СПИСКА ===
+
+// === ФИЛЬТР ПО ДАТАМ ===
+
+function ordInitDateFilter() {
+  ordSetDatePreset('month');
+}
+
+function ordSetDatePreset(preset) {
+  ORD_DATE_PRESET = preset;
+  var today = new Date();
+  var from = '', to = '', info = '';
+
+  if (preset === 'today') {
+    var d = ordFmtDate(today);
+    from = d; to = d;
+    info = 'Записи за сегодня (' + d + ')';
+  } else if (preset === 'week') {
+    var day = today.getDay() || 7; // Вс=0 → 7
+    var monday = new Date(today);
+    monday.setDate(today.getDate() - day + 1);
+    var sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    from = ordFmtDate(monday);
+    to = ordFmtDate(sunday);
+    info = 'Записи за эту неделю (' + from + ' — ' + to + ')';
+  } else if (preset === 'month') {
+    var first = new Date(today.getFullYear(), today.getMonth(), 1);
+    var last = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    from = ordFmtDate(first);
+    to = ordFmtDate(last);
+    info = 'Записи за ' + ordMonthName(today.getMonth()) + ' ' + today.getFullYear();
+  } else if (preset === 'all') {
+    from = ''; to = '';
+    info = 'Показаны все записи';
+  } else if (preset === 'custom') {
+    // Оставляем текущие значения инпутов
+    from = document.getElementById('ordDateFrom').value || '';
+    to = document.getElementById('ordDateTo').value || '';
+    info = from && to ? 'Период: ' + from + ' — ' + to : (from ? 'С ' + from : (to ? 'До ' + to : 'Выберите даты'));
+  }
+
+  ORD_DATE_FROM = from;
+  ORD_DATE_TO = to;
+
+  // Обновляем UI
+  var btns = document.querySelectorAll('.ord-date-btn');
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].classList.toggle('active', btns[i].dataset.preset === preset);
+  }
+
+  var range = document.getElementById('ordDateRange');
+  if (range) range.style.display = (preset === 'custom') ? 'flex' : 'none';
+
+  if (preset === 'custom') {
+    var f = document.getElementById('ordDateFrom'); if (f && !f.value) f.value = from;
+    var t = document.getElementById('ordDateTo'); if (t && !t.value) t.value = to;
+  }
+
+  var infoEl = document.getElementById('ordDateInfo');
+  if (infoEl) infoEl.textContent = info;
+
+  ordRender();
+}
+
+function ordOnDateRangeChange() {
+  ORD_DATE_FROM = document.getElementById('ordDateFrom').value || '';
+  ORD_DATE_TO = document.getElementById('ordDateTo').value || '';
+  var infoEl = document.getElementById('ordDateInfo');
+  if (infoEl) {
+    if (ORD_DATE_FROM && ORD_DATE_TO) infoEl.textContent = 'Период: ' + ORD_DATE_FROM + ' — ' + ORD_DATE_TO;
+    else if (ORD_DATE_FROM) infoEl.textContent = 'С ' + ORD_DATE_FROM;
+    else if (ORD_DATE_TO) infoEl.textContent = 'До ' + ORD_DATE_TO;
+    else infoEl.textContent = 'Выберите период';
+  }
+  ordRender();
+}
+
+function ordOnSingleDateChange() {
+  var d = document.getElementById('ordDateSingle').value;
+  if (d) {
+    ORD_DATE_FROM = d;
+    ORD_DATE_TO = d;
+    var infoEl = document.getElementById('ordDateInfo');
+    if (infoEl) infoEl.textContent = 'Дата: ' + d;
+    ordRender();
+  }
+}
+
+function ordFilterByDate(order) {
+  if (!ORD_DATE_FROM && !ORD_DATE_TO) return true; // фильтр отключен
+  var d = order.dateIn || '';
+  if (!d) return false;
+  if (ORD_DATE_FROM && d < ORD_DATE_FROM) return false;
+  if (ORD_DATE_TO && d > ORD_DATE_TO) return false;
+  return true;
+}
+
+function ordFmtDate(d) {
+  var y = d.getFullYear();
+  var m = String(d.getMonth() + 1).padStart(2, '0');
+  var day = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + day;
+}
+
+function ordMonthName(m) {
+  var names = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  return names[m] || '';
+}
+
 function ordRender() {
   var listEl = document.getElementById('ordList');
   if (listEl) listEl.innerHTML = '<div class="ord-empty"><div class="ord-empty-icon">⏳</div><div class="ord-empty-text">Загрузка...</div></div>';
@@ -363,6 +505,7 @@ function ordRenderList(orders) {
   for (var i = 0; i < orders.length; i++) {
     var o = orders[i];
     if (ORD_FILTER !== 'all' && o.status !== ORD_FILTER) continue;
+    if (!ordFilterByDate(o)) continue;
     if (search) {
       var hay = (o.number + ' ' + o.carBrand + ' ' + (o.carPlate||'')).toLowerCase();
       if (hay.indexOf(search) === -1) continue;
@@ -880,6 +1023,7 @@ function ordStartPage() {
   if (authContainer) authContainer.innerHTML = '';
   divoInit();
   ordInitFilters();
+  ordInitDateFilter();
   ordRender();
 
 }
