@@ -95,6 +95,32 @@
 .ord-svc-price-input::placeholder { color: #52525b; font-weight: 400; }
 .ord-svc-remove { background: transparent; border: none; color: #71717a; cursor: pointer; font-size: 16px; padding: 4px; border-radius: 4px; }
 .ord-svc-remove:hover { color: #ef4444; background: #1c0a0a; }
+.ord-rows-table { border: 1.5px solid #27272a; border-radius: 10px; overflow: hidden; margin-top: 8px; background: #0a0a0a; }
+.ord-row { display: grid; grid-template-columns: 1fr 1fr 1.5fr 130px 32px; gap: 6px; padding: 8px; align-items: center; border-bottom: 1px solid #27272a; }
+.ord-row:last-child { border-bottom: none; }
+.ord-row-head { background: #18181b; padding: 8px 10px; font-size: 11px; font-weight: 700; color: #71717a; text-transform: uppercase; letter-spacing: 0.5px; }
+.ord-row-head div { font-size: 11px; }
+.ord-row-body { }
+.ord-row-body .ord-row { padding: 6px 8px; background: #18181b; }
+.ord-row select, .ord-row input { background: #0a0a0a; border: 1px solid #27272a; border-radius: 6px; padding: 8px 10px; color: #fafafa; font-size: 13px; font-family: inherit; width: 100%; box-sizing: border-box; min-width: 0; }
+.ord-row select:focus, .ord-row input:focus { outline: none; border-color: #3b82f6; }
+.ord-row select:disabled { opacity: 0.4; cursor: not-allowed; }
+.ord-row input.ord-price { color: #4ade80; font-weight: 700; text-align: right; }
+.ord-row input.ord-price:focus { color: #fafafa; }
+.ord-row .ord-row-del { background: transparent; border: none; color: #71717a; cursor: pointer; font-size: 16px; padding: 4px; border-radius: 4px; }
+.ord-row .ord-row-del:hover { color: #ef4444; background: #1c0a0a; }
+.ord-row-foot { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #18181b; border-top: 1.5px solid #3f3f46; gap: 10px; flex-wrap: wrap; }
+.ord-btn-add-row { background: #1e293b; border: 1.5px solid #1e3a8a; color: #93c5fd; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 700; font-family: inherit; }
+.ord-btn-add-row:hover { background: #1e3a8a; color: #fafafa; }
+.ord-row-total { font-size: 15px; font-weight: 800; color: #4ade80; }
+.ord-row-total span { font-size: 17px; }
+.ord-empty-row { text-align: center; color: #52525b; padding: 20px; font-size: 13px; grid-column: 1 / -1; }
+@media (max-width: 680px) {
+  .ord-row { grid-template-columns: 1fr 1fr; }
+  .ord-row-head { display: none; }
+  .ord-row input.ord-price { grid-column: 1 / -1; }
+  .ord-row .ord-row-del { grid-column: 1 / -1; width: fit-content; margin: 0 auto; }
+}
 .ord-modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; padding-top: 16px; border-top: 1.5px solid #27272a; }
 .ord-btn-cancel { background: #27272a; color: #d4d4d8; border: 1.5px solid #3f3f46; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; font-family: inherit; }
 .ord-btn-cancel:hover { background: #3f3f46; }
