@@ -115,7 +115,7 @@ var ACALC_COMPONENTS = [];
 var ACALC_CURRENT_SVC = null; // { id, name }
 
 function acalcHeaders() {
-  return { 'apikey': ACALC_KEY, 'Authorization': 'Bearer ' + ACALC_KEY, 'Content-Type': 'application/json' };
+  return { 'apikey': ACALC_KEY, 'Authorization': 'Bearer ' + ACALC_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
 }
 
 // === ИНИЦИАЛИЗАЦИЯ ===
