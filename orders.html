@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — Заказ-наряды</title>
-<link rel="stylesheet" href="/assets/style.css?v=93">
-<link rel="stylesheet" href="/assets/auth.css?v=93">
+<link rel="stylesheet" href="/assets/style.css?v=94">
+<link rel="stylesheet" href="/assets/auth.css?v=94">
 <style>
 /* === СТИЛИ СТРАНИЦЫ ЗАКАЗ-НАРЯДОВ === */
 .ord-page { padding: 0; }
@@ -79,6 +79,22 @@
 .ord-service-chip { display: inline-flex; align-items: center; gap: 6px; background: #18181b; border: 1px solid #27272a; color: #d4d4d8; padding: 4px 10px; border-radius: 6px; font-size: 13px; }
 .ord-service-chip-remove { cursor: pointer; color: #71717a; font-size: 16px; line-height: 1; }
 .ord-service-chip-remove:hover { color: #ef4444; }
+.ord-services-table-wrap { margin-top: 10px; overflow-x: auto; }
+.ord-services-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.ord-services-table thead th { text-align: left; padding: 8px 10px; font-size: 11px; font-weight: 700; color: #71717a; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1.5px solid #27272a; }
+.ord-services-table tbody tr { border-bottom: 1px solid #27272a; }
+.ord-services-table tbody tr:last-child { border-bottom: none; }
+.ord-services-table tbody td { padding: 6px 10px; vertical-align: middle; color: #d4d4d8; }
+.ord-services-table tfoot td { padding: 10px; border-top: 1.5px solid #3f3f46; }
+.ord-svc-name { display: flex; align-items: center; gap: 6px; }
+.ord-svc-name-text { font-weight: 600; color: #fafafa; }
+.ord-svc-name-text.manual { color: #fbbf24; }
+.ord-svc-name-badge { font-size: 10px; padding: 1px 5px; border-radius: 3px; background: #27272a; color: #a1a1aa; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.ord-svc-price-input { width: 100%; max-width: 120px; background: #18181b; border: 1px solid #27272a; border-radius: 6px; padding: 6px 8px; color: #4ade80; font-size: 14px; font-weight: 700; font-family: inherit; text-align: right; box-sizing: border-box; }
+.ord-svc-price-input:focus { outline: none; border-color: #3b82f6; color: #fafafa; }
+.ord-svc-price-input::placeholder { color: #52525b; font-weight: 400; }
+.ord-svc-remove { background: transparent; border: none; color: #71717a; cursor: pointer; font-size: 16px; padding: 4px; border-radius: 4px; }
+.ord-svc-remove:hover { color: #ef4444; background: #1c0a0a; }
 .ord-modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; padding-top: 16px; border-top: 1.5px solid #27272a; }
 .ord-btn-cancel { background: #27272a; color: #d4d4d8; border: 1.5px solid #3f3f46; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; font-family: inherit; }
 .ord-btn-cancel:hover { background: #3f3f46; }
@@ -202,12 +218,25 @@
                 <button type="button" class="ord-btn-add-service" onclick="ordAddService()">+</button>
               </div>
 
-              <div class="ord-services-list" id="ordServicesList"></div>
-            </div>
-            <div class="ord-form-group full">
-              <label class="ord-form-label">Цена (₽)</label>
-              <input type="number" class="ord-form-input" id="ordField-price" placeholder="0" min="0" step="100" inputmode="numeric">
-              <div class="ord-form-hint">Введите стоимость заказ-наряда. Формат отображения: 5 000 ₽</div>
+              <div class="ord-services-table-wrap">
+                <table class="ord-services-table">
+                  <thead>
+                    <tr>
+                      <th>Услуга</th>
+                      <th style="width:130px">Цена, ₽</th>
+                      <th style="width:40px"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="ordServicesList"></tbody>
+                  <tfoot>
+                    <tr>
+                      <td style="text-align:right;font-weight:700;color:#fafafa;">ИТОГО:</td>
+                      <td style="text-align:right;font-weight:800;color:#4ade80;font-size:15px;" id="ordTotalPrice">0</td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
             </div>
             <div class="ord-form-group full">
               <label class="ord-form-label">Комментарий</label>
@@ -226,8 +255,8 @@
   <div class="divo-footer">© Диво Детейлинг • 2026</div>
 </div>
 
-<script src="/components/components.js?v=93"></script>
-<script src="/components/access-config.js?v=93"></script>
+<script src="/components/components.js?v=94"></script>
+<script src="/components/access-config.js?v=94"></script>
 <script>
 // ============================================
 // ЗАКАЗ-НАРЯДЫ — SUPABASE
@@ -418,7 +447,6 @@ function ordFillModal(o) {
   document.getElementById('ordField-dateOut').value = o ? (o.dateOut || '') : '';
   document.getElementById('ordField-status').value = o ? (o.status || 'new') : 'new';
   document.getElementById('ordField-note').value = o ? (o.note || '') : '';
-  document.getElementById('ordField-price').value = o ? (o.price || 0) : 0;
   document.getElementById('ordField-post').value = o ? (o.post || 'auto') : 'auto';
   // Нормализуем услуги: строки → объекты
   ORD_SERVICES = [];
@@ -426,14 +454,15 @@ function ordFillModal(o) {
     for (var i = 0; i < o.services.length; i++) {
       var s = o.services[i];
       if (typeof s === 'string') {
-        ORD_SERVICES.push({ name: s, manual: true, serviceId: null });
+        ORD_SERVICES.push({ name: s, manual: true, serviceId: null, price: 0 });
       } else if (s && s.name) {
-        ORD_SERVICES.push({ name: s.name, manual: !!s.manual, serviceId: s.serviceId || null });
+        ORD_SERVICES.push({ name: s.name, manual: !!s.manual, serviceId: s.serviceId || null, price: Number(s.price) || 0 });
       }
     }
   }
   ordResetPricePicker();
   ordRenderServices();
+  ordRecalcTotal();
   ordRenderColorPalette(o ? o.carColor : null);
   document.getElementById('ordModal').classList.add('show');
 }
@@ -468,7 +497,7 @@ function ordGetSelectedColor() {
 
 function ordAddService() {
   var manual = document.getElementById('ordManualService').checked;
-  var name, serviceId = null;
+  var name, serviceId = null, price = 0;
 
   if (manual) {
     var input = document.getElementById('ordServiceInput');
@@ -483,28 +512,54 @@ function ordAddService() {
     if (opts && opts.dataset.svcId) serviceId = parseInt(opts.dataset.svcId);
   }
 
-  // Проверим дубликаты
   for (var i = 0; i < ORD_SERVICES.length; i++) {
     if (ORD_SERVICES[i].name === name) return;
   }
 
-  ORD_SERVICES.push({ name: name, manual: manual, serviceId: serviceId });
+  ORD_SERVICES.push({ name: name, manual: manual, serviceId: serviceId, price: price });
   ordRenderServices();
+  ordRecalcTotal();
 }
 
 function ordRemoveService(idx) {
   ORD_SERVICES.splice(idx, 1);
   ordRenderServices();
+  ordRecalcTotal();
+}
+
+function ordOnServicePriceInput(idx, val) {
+  var p = parseFloat(val) || 0;
+  if (p < 0) p = 0;
+  ORD_SERVICES[idx].price = p;
+  ordRecalcTotal();
+}
+
+function ordRecalcTotal() {
+  var total = 0;
+  for (var i = 0; i < ORD_SERVICES.length; i++) {
+    total += (ORD_SERVICES[i].price || 0);
+  }
+  var el = document.getElementById('ordTotalPrice');
+  if (el) el.textContent = total.toLocaleString('ru-RU');
 }
 
 function ordRenderServices() {
   var el = document.getElementById('ordServicesList');
-  if (ORD_SERVICES.length === 0) { el.innerHTML = ''; return; }
+  if (ORD_SERVICES.length === 0) {
+    el.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#52525b;padding:20px;font-size:13px;">Добавьте услуги, чтобы рассчитать стоимость</td></tr>';
+    return;
+  }
   var html = '';
   for (var i = 0; i < ORD_SERVICES.length; i++) {
     var s = ORD_SERVICES[i];
-    var cls = s.manual ? 'ord-service-chip manual' : 'ord-service-chip';
-    html += '<span class="' + cls + '">' + (s.name || s) + ' <span class="ord-service-chip-remove" onclick="ordRemoveService(' + i + ')">✕</span></span>';
+    var nameClass = s.manual ? 'ord-svc-name-text manual' : 'ord-svc-name-text';
+    var badge = s.manual ? '<span class="ord-svc-name-badge" style="background:#713f12;color:#fbbf24;">ручная</span>' : '';
+    var priceVal = (s.price || 0);
+    html += '<tr>';
+    html += '<td><div class="ord-svc-name"><span class="' + nameClass + '">' + s.name + '</span>' + badge + '</div></td>';
+    html += '<td style="text-align:right;"><input type="number" class="ord-svc-price-input" value="' + priceVal + '" placeholder="0" min="0" step="100" oninput="ordOnServicePriceInput(' + i + ', this.value)"></td>';
+    html += '<td style="text-align:center;"><button type="button" class="ord-svc-remove" onclick="ordRemoveService(' + i + ')">✕</button></td>';
+    html += '</tr>';
   }
   el.innerHTML = html;
 }
@@ -634,8 +689,13 @@ function ordSave() {
   var status = document.getElementById('ordField-status').value;
   var post = document.getElementById('ordField-post').value;
   var note = document.getElementById('ordField-note').value.trim();
-  var price = parseFloat(document.getElementById('ordField-price').value) || 0;
   var carColor = ordGetSelectedColor();
+
+  // Считаем итоговую цену заказа как сумму цен всех услуг
+  var totalPrice = 0;
+  for (var i = 0; i < ORD_SERVICES.length; i++) {
+    totalPrice += (ORD_SERVICES[i].price || 0);
+  }
 
   if (!number) { alert('Укажите номер заказ-наряда'); return; }
   if (!carBrand) { alert('Укажите марку/модель авто'); return; }
@@ -646,10 +706,10 @@ function ordSave() {
   if (post === 'auto') {
     ordGetAll(function(orders) {
       post = String(ordFindFreePost(dateIn, dateOut, ORD_EDITING_ID, orders));
-      ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, status, post, note, price);
+      ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, status, post, note, totalPrice);
     });
   } else {
-    ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, status, post, note, price);
+    ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, status, post, note, totalPrice);
   }
 }
 
@@ -736,7 +796,7 @@ function divoCheckAuthAndInit() {
   if (!user) {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=93')
+    fetch('/components/auth-form.html?v=94')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
