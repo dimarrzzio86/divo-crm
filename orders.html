@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — Заказ-наряды</title>
-<link rel="stylesheet" href="/assets/style.css?v=98">
-<link rel="stylesheet" href="/assets/auth.css?v=98">
+<link rel="stylesheet" href="/assets/style.css?v=99">
+<link rel="stylesheet" href="/assets/auth.css?v=99">
 <style>
 /* === СТИЛИ СТРАНИЦЫ ЗАКАЗ-НАРЯДОВ === */
 .ord-page { padding: 0; }
@@ -64,7 +64,7 @@
 .ord-empty-icon { font-size: 48px; margin-bottom: 12px; }
 .ord-empty-text { font-size: 15px; margin-bottom: 16px; }
 
-.ord-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.ord-form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .ord-form-group { display: flex; flex-direction: column; gap: 6px; }
 .ord-form-group.full { grid-column: 1 / -1; }
 .ord-form-label { font-size: 12px; font-weight: 700; color: #71717a; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -113,6 +113,7 @@
 .ord-btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
 .ord-btn-delete { background: transparent; color: #ef4444; border: 1.5px solid #7f1d1d; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; font-family: inherit; margin-right: auto; }
 .ord-btn-delete:hover { background: #7f1d1d; color: #fca5a5; }
+@media (max-width: 900px) { .ord-form-grid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 600px) { .ord-form-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
@@ -131,11 +132,11 @@
             <div class="ord-title">📋 Заказ-наряды <span class="ord-title-count" id="ordCount">0</span></div>
             <div class="ord-subtitle">Записи клиентов · посты · услуги</div>
           </div>
-          <button class="ord-btn-create" onclick="ordOpenForm()">➕ Создать заказ-наряд</button>
+          <button class="ord-btn-create" onclick="ordNewOrder()">➕ Создать заказ-наряд</button>
         </div>
 
         <!-- ФОРМА СОЗДАНИЯ/РЕДАКТИРОВАНИЯ (на странице, не модалка) -->
-        <div class="ord-form-card" id="ordFormCard" style="display:none;">
+        <div class="ord-form-card" id="ordFormCard">
           <div class="ord-form-card-head">
             <div class="ord-form-card-title" id="ordFormTitle">Новый заказ-наряд</div>
             <button class="ord-form-card-close" onclick="ordCloseForm()">✕ Свернуть</button>
@@ -248,8 +249,8 @@
   <div class="divo-footer">© Диво Детейлинг • 2026</div>
 </div>
 
-<script src="/components/components.js?v=98"></script>
-<script src="/components/access-config.js?v=98"></script>
+<script src="/components/components.js?v=99"></script>
+<script src="/components/access-config.js?v=99"></script>
 <script>
 // ============================================
 // ЗАКАЗ-НАРЯДЫ — SUPABASE
@@ -419,32 +420,36 @@ function ordFormatPrice(p) {
 }
 
 // === МОДАЛКА ===
+function ordNewOrder() {
+  // Очищаем форму для нового заказа
+  ORD_EDITING_ID = null;
+  ordLoadPrices(function() {
+    ordResetRows();
+    ordFillForm(null);
+    document.getElementById('ordFormTitle').textContent = 'Новый заказ-наряд';
+    document.getElementById('ordDeleteBtn').style.display = 'none';
+    document.getElementById('ordFormCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+
 function ordOpenForm(id) {
+  // Открываем существующий заказ на редактирование
   ORD_EDITING_ID = id || null;
   ordLoadPrices(function() {
-    if (!id) {
-      ordResetRows();
-      ordFillForm(null);
-      document.getElementById('ordFormTitle').textContent = 'Новый заказ-наряд';
-      document.getElementById('ordDeleteBtn').style.display = 'none';
-      document.getElementById('ordFormCard').style.display = 'block';
-      document.getElementById('ordFormCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
-      return;
-    }
+    if (!id) { ordNewOrder(); return; }
     ordGetAll(function(orders) {
       var o = orders.find(function(x){return x.id === id;});
       ordFillForm(o);
       document.getElementById('ordFormTitle').textContent = 'Заказ-наряд #' + (o ? o.number : id);
       document.getElementById('ordDeleteBtn').style.display = 'block';
-      document.getElementById('ordFormCard').style.display = 'block';
       document.getElementById('ordFormCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   });
 }
 
 function ordCloseForm() {
-  document.getElementById('ordFormCard').style.display = 'none';
-  ORD_EDITING_ID = null;
+  // Сбрасываем форму к пустому состоянию
+  ordNewOrder();
 }
 
 function ordFillForm(o) {
@@ -838,7 +843,7 @@ function divoCheckAuthAndInit() {
   if (!user) {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=98')
+    fetch('/components/auth-form.html?v=99')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
