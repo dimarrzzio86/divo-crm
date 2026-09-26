@@ -51,6 +51,14 @@
 
 <div class="cs-status" id="csStatus"></div>
 
+<div class="cs-toggle-wrap">
+  <div class="cs-toggle-switch" id="csHidePaidToggle" onclick="window.csToggleHidePaid()">
+    <div class="cs-toggle-knob"></div>
+  </div>
+  <span class="cs-toggle-label" onclick="window.csToggleHidePaid()">Скрыть оплаченные</span>
+  <span class="cs-toggle-hint" id="csToggleHint">показываются все записи</span>
+</div>
+
 <!-- Блок: Из заказ-нарядов -->
 <div class="cs-block-header order" id="csBlockHeadOrder" onclick="window.csToggleBlock('order')">
   <span class="cs-block-title">📋 Из заказ-нарядов</span>
@@ -252,11 +260,21 @@
 .cs-block-body.collapsed { max-height: 0; opacity: 0; }
 .cs-block-body.expanded { max-height: 9999px; opacity: 1; }
 .cs-empty-block { padding: 20px; text-align: center; color: #52525b; font-size: 13px; font-style: italic; }
+
+/* Переключатель "Скрыть оплаченные" */
+.cs-toggle-wrap { display: flex; align-items: center; gap: 10px; margin: 10px 0; padding: 8px 14px; background: #18181b; border: 1px solid #27272a; border-radius: 8px; }
+.cs-toggle-label { font-size: 13px; color: #a1a1aa; font-weight: 600; user-select: none; cursor: pointer; }
+.cs-toggle-switch { position: relative; width: 44px; height: 24px; background: #3f3f46; border-radius: 12px; cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
+.cs-toggle-switch.on { background: #16a34a; }
+.cs-toggle-knob { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: #fafafa; border-radius: 50%; transition: transform 0.2s; }
+.cs-toggle-switch.on .cs-toggle-knob { transform: translateX(20px); }
+.cs-toggle-hint { font-size: 11px; color: #71717a; margin-left: auto; }
 </style>
 
 <script>
 (function() {
   var entries = [], filtered = [], contractors = [], categoriesList = [];
+  var csHidePaid = false; // скрывать оплаченные записи
   var pendingPayId = null, pendingPayRow = null, pendingEditId = null;
 
   function $(id) { return document.getElementById(id); }
@@ -328,8 +346,13 @@
 
   function filterData(query) {
     query = (query || '').toLowerCase().trim();
-    if (!query) { filtered = entries.slice(); }
-    else { filtered = entries.filter(function(e) { return (e.name||'').toLowerCase().indexOf(query) !== -1 || String(e.amount||'').toLowerCase().indexOf(query) !== -1 || (e.comments||'').toLowerCase().indexOf(query) !== -1; }); }
+    var base = entries;
+    // Если включён переключатель "Скрыть оплаченные" — фильтруем их
+    if (csHidePaid) {
+      base = entries.filter(function(e) { return !e.is_checked; });
+    }
+    if (!query) { filtered = base.slice(); }
+    else { filtered = base.filter(function(e) { return (e.name||'').toLowerCase().indexOf(query) !== -1 || String(e.amount||'').toLowerCase().indexOf(query) !== -1 || (e.comments||'').toLowerCase().indexOf(query) !== -1; }); }
     updateSummary(); render();
   }
 
@@ -596,6 +619,19 @@
 
   function closeHistoryModal() { $('csHistoryModal').style.display = 'none'; }
 
+  window.csToggleHidePaid = function() {
+    csHidePaid = !csHidePaid;
+    var toggle = $('csHidePaidToggle');
+    var hint = $('csToggleHint');
+    if (csHidePaid) {
+      toggle.classList.add('on');
+      hint.textContent = 'оплаченные скрыты';
+    } else {
+      toggle.classList.remove('on');
+      hint.textContent = 'показываются все записи';
+    }
+    filterData($('csSearch').value);
+  };
   window.csToggleBlock = function(block) {
     var head = $('csBlockHead' + (block === 'order' ? 'Order' : 'Manual'));
     var body = $('csBlockBody' + (block === 'order' ? 'Order' : 'Manual'));
