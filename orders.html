@@ -592,7 +592,8 @@ function ordRenderList(orders) {
     html += '<button type="button" class="ord-card-calc-btn" onclick="event.stopPropagation(); ordOpenCalc(\'' + o.id + '\')">🧮 Рассчитать</button>';
     html += '</div>';
   }
-  el.innerHTML = html;
+  var listElFinal = document.getElementById('ordList');
+  if (listElFinal) listElFinal.innerHTML = html;
 }
 
 function ordEscape(s) {
