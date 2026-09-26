@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — Заказ-наряды</title>
-<link rel="stylesheet" href="/assets/style.css?v=81">
-<link rel="stylesheet" href="/assets/auth.css?v=81">
+<link rel="stylesheet" href="/assets/style.css?v=82">
+<link rel="stylesheet" href="/assets/auth.css?v=82">
 <style>
 /* === СТИЛИ СТРАНИЦЫ ЗАКАЗ-НАРЯДОВ === */
 .ord-page { padding: 0; }
@@ -378,8 +378,8 @@
   <div class="divo-footer">© Диво Детейлинг • 2026</div>
 </div>
 
-<script src="/components/components.js?v=81"></script>
-<script src="/components/access-config.js?v=81"></script>
+<script src="/components/components.js?v=82"></script>
+<script src="/components/access-config.js?v=82"></script>
 <script>
 // ============================================
 // ЛОКАЛЬНОЕ ХРАНИЛИЩЕ (временно, до Supabase)
@@ -680,7 +680,7 @@ function divoCheckAuthAndInit() {
   if (!user) {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=81')
+    fetch('/components/auth-form.html?v=82')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
