@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — Заказ-наряды</title>
-<link rel="stylesheet" href="/assets/style.css?v=113">
-<link rel="stylesheet" href="/assets/auth.css?v=113">
+<link rel="stylesheet" href="/assets/style.css?v=114">
+<link rel="stylesheet" href="/assets/auth.css?v=114">
 <style>
 /* === СТИЛИ СТРАНИЦЫ ЗАКАЗ-НАРЯДОВ === */
 .ord-page { padding: 0; }
@@ -96,6 +96,17 @@
 .ord-calc-comp:last-child { border-bottom: none; }
 .ord-calc-comp-num { font-size: 12px; font-weight: 700; color: #52525b; min-width: 20px; text-align: right; }
 .ord-calc-comp-name { flex: 1; font-size: 13px; color: #d4d4d8; }
+.ord-calc-comp-input { width: 120px; background: #0a0a0a; border: 1px solid #27272a; border-radius: 6px; padding: 5px 8px; color: #fbbf24; font-size: 14px; font-weight: 800; font-family: inherit; text-align: right; box-sizing: border-box; }
+.ord-calc-comp-input:focus { outline: none; border-color: #fbbf24; }
+.ord-calc-comp-input::placeholder { color: #3f3f46; }
+.ord-calc-comp-cur { font-size: 13px; color: #52525b; flex-shrink: 0; }
+.ord-calc-summary { margin-top: 10px; padding-top: 8px; border-top: 1.5px solid #27272a; }
+.ord-calc-sum-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; font-size: 13px; color: #a1a1aa; }
+.ord-calc-sum-row.total { font-size: 15px; font-weight: 800; color: #fafafa; padding-top: 6px; }
+.ord-calc-sum-spent { color: #fbbf24; font-weight: 700; }
+.ord-calc-sum-rest.pos { color: #4ade80; font-weight: 800; }
+.ord-calc-sum-rest.zero { color: #71717a; font-weight: 800; }
+.ord-calc-sum-rest.neg { color: #ef4444; font-weight: 800; }
 .ord-calc-comp-empty { text-align: center; color: #52525b; padding: 12px; font-size: 13px; }
 .ord-calc-loading { text-align: center; color: #71717a; padding: 40px 20px; font-size: 14px; }
 .ord-calc-nosvc { text-align: center; color: #71717a; padding: 30px 20px; font-size: 14px; }
@@ -319,8 +330,8 @@
   <div class="divo-footer">© Диво Детейлинг • 2026</div>
 </div>
 
-<script src="/components/components.js?v=113"></script>
-<script src="/components/access-config.js?v=113"></script>
+<script src="/components/components.js?v=114"></script>
+<script src="/components/access-config.js?v=114"></script>
 <script>
 // ============================================
 // ЗАКАЗ-НАРЯДЫ — SUPABASE
@@ -1008,15 +1019,17 @@ function ordDelete() {
 
 var ORD_CALC_ORDER = null;
 var ORD_CALC_COMPONENTS = {};
+var ORD_CALC_COSTS = {};
+var ORD_CALC_SAVE_TIMER = null;
 
 function ordOpenCalc(orderId) {
   ordGetAll(function(orders) {
     var o = orders.find(function(x) { return x.id === orderId; });
     if (!o) { alert('Заказ не найден'); return; }
     ORD_CALC_ORDER = o;
-    document.getElementById('ordCalcTitle').textContent = '🧮 Расчёт — #' + (o.number || o.id);
+    document.getElementById('ordCalcTitle').textContent = '\u{1F9EE} Расчёт — #' + (o.number || o.id);
     document.getElementById('ordCalcModal').classList.add('show');
-    document.getElementById('ordCalcBody').innerHTML = '<div class="ord-calc-loading">Загрузка услуг...</div>';
+    document.getElementById('ordCalcBody').innerHTML = '<div class="ord-calc-loading">Загрузка...</div>';
     ordCalcRender();
   });
 }
@@ -1025,6 +1038,7 @@ function ordCloseCalc() {
   document.getElementById('ordCalcModal').classList.remove('show');
   ORD_CALC_ORDER = null;
   ORD_CALC_COMPONENTS = {};
+  ORD_CALC_COSTS = {};
 }
 
 function ordCalcRender() {
@@ -1048,28 +1062,33 @@ function ordCalcRender() {
     document.getElementById('ordCalcBody').innerHTML = html;
     return;
   }
-  var filter = 'service_id=in.(' + svcIds.join(',') + ')';
-  fetch(ORD_SUPABASE_URL + '/rest/v1/service_components?select=*&' + filter + '&order=service_id.asc,sort_order.asc,name.asc', {
-    headers: { 'apikey': ORD_SUPABASE_KEY, 'Authorization': 'Bearer ' + ORD_SUPABASE_KEY }
-  })
-    .then(function(r) { return r.json(); })
-    .then(function(comps) {
-      ORD_CALC_COMPONENTS = {};
-      for (var i = 0; i < comps.length; i++) {
-        var sid = comps[i].service_id;
-        if (!ORD_CALC_COMPONENTS[sid]) ORD_CALC_COMPONENTS[sid] = [];
-        ORD_CALC_COMPONENTS[sid].push(comps[i]);
-      }
-      var html = '';
-      for (var i = 0; i < services.length; i++) {
-        html += ordCalcAccHTML(services[i], i, false);
-      }
-      document.getElementById('ordCalcBody').innerHTML = html;
-    })
-    .catch(function(e) {
-      console.error('Ошибка загрузки состава:', e);
-      document.getElementById('ordCalcBody').innerHTML = '<div class="ord-calc-nosvc">Ошибка загрузки состава услуг</div>';
-    });
+  var compUrl = ORD_SUPABASE_URL + '/rest/v1/service_components?select=*&service_id=in.(' + svcIds.join(',') + ')&order=service_id.asc,sort_order.asc,name.asc';
+  var costUrl = ORD_SUPABASE_URL + '/rest/v1/order_component_costs?select=*&order_id=eq.' + encodeURIComponent(o.id);
+  Promise.all([
+    fetch(compUrl, { headers: { 'apikey': ORD_SUPABASE_KEY, 'Authorization': 'Bearer ' + ORD_SUPABASE_KEY } }).then(function(r) { return r.json(); }),
+    fetch(costUrl, { headers: { 'apikey': ORD_SUPABASE_KEY, 'Authorization': 'Bearer ' + ORD_SUPABASE_KEY } }).then(function(r) { return r.json(); })
+  ]).then(function(results) {
+    var comps = results[0] || [];
+    var costs = results[1] || [];
+    ORD_CALC_COMPONENTS = {};
+    for (var i = 0; i < comps.length; i++) {
+      var sid = comps[i].service_id;
+      if (!ORD_CALC_COMPONENTS[sid]) ORD_CALC_COMPONENTS[sid] = [];
+      ORD_CALC_COMPONENTS[sid].push(comps[i]);
+    }
+    ORD_CALC_COSTS = {};
+    for (var j = 0; j < costs.length; j++) {
+      ORD_CALC_COSTS[costs[j].component_id] = Number(costs[j].price) || 0;
+    }
+    var html = '';
+    for (var i = 0; i < services.length; i++) {
+      html += ordCalcAccHTML(services[i], i, false);
+    }
+    document.getElementById('ordCalcBody').innerHTML = html;
+  }).catch(function(e) {
+    console.error('Ошибка загрузки:', e);
+    document.getElementById('ordCalcBody').innerHTML = '<div class="ord-calc-nosvc">Ошибка загрузки данных</div>';
+  });
 }
 
 function ordCalcAccHTML(svc, idx, isManual) {
@@ -1095,15 +1114,87 @@ function ordCalcAccHTML(svc, idx, isManual) {
     html += '<div class="ord-calc-comp-empty">Состав не задан. Добавьте в разделе «Расчёт стоимости»</div>';
   } else {
     for (var i = 0; i < components.length; i++) {
+      var comp = components[i];
+      var cost = ORD_CALC_COSTS[comp.id] || '';
       html += '<div class="ord-calc-comp">';
       html += '<span class="ord-calc-comp-num">' + (i + 1) + '.</span>';
-      html += '<span class="ord-calc-comp-name">' + ordEscape(components[i].name) + '</span>';
+      html += '<span class="ord-calc-comp-name">' + ordEscape(comp.name) + '</span>';
+      html += '<input type="number" class="ord-calc-comp-input" inputmode="decimal" min="0" step="any" placeholder="0" value="' + cost + '" data-comp="' + comp.id + '" data-acc="' + accId + '" oninput="ordCalcOnPriceInput(this)">';
+      html += '<span class="ord-calc-comp-cur">₽</span>';
       html += '</div>';
     }
+    html += '<div class="ord-calc-summary" id="' + accId + '_summary">';
+    html += '<div class="ord-calc-sum-row"><span>Сумма расходов:</span><span class="ord-calc-sum-spent" id="' + accId + '_spent">0 ₽</span></div>';
+    html += '<div class="ord-calc-sum-row total"><span>Остаток:</span><span class="ord-calc-sum-rest pos" id="' + accId + '_rest">' + ordFormatPrice(price) + ' ₽</span></div>';
+    html += '</div>';
   }
   html += '</div>';
   html += '</div>';
   return html;
+}
+
+function ordCalcOnPriceInput(input) {
+  var compId = input.dataset.comp;
+  var accId = input.dataset.acc;
+  var val = parseFloat(input.value) || 0;
+  ORD_CALC_COSTS[compId] = val;
+  ordCalcRecalcAccordion(accId);
+  ordCalcScheduleSave(compId, val);
+}
+
+function ordCalcRecalcAccordion(accId) {
+  var acc = document.getElementById(accId);
+  if (!acc) return;
+  var inputs = acc.querySelectorAll('.ord-calc-comp-input');
+  var spent = 0;
+  for (var i = 0; i < inputs.length; i++) {
+    spent += (parseFloat(inputs[i].value) || 0);
+  }
+  var svc = ordCalcFindSvcByAccId(accId);
+  var price = svc ? (Number(svc.price) || 0) : 0;
+  var rest = price - spent;
+  var spentEl = document.getElementById(accId + '_spent');
+  var restEl = document.getElementById(accId + '_rest');
+  if (spentEl) spentEl.textContent = ordFormatPrice(spent) + ' ₽';
+  if (restEl) {
+    restEl.textContent = (rest < 0 ? '−' + ordFormatPrice(Math.abs(rest)) : ordFormatPrice(rest)) + ' ₽';
+    restEl.className = 'ord-calc-sum-rest ' + (rest < 0 ? 'neg' : (rest === 0 ? 'zero' : 'pos'));
+  }
+}
+
+function ordCalcFindSvcByAccId(accId) {
+  var idx = parseInt(accId.replace('ordCalcAcc', ''), 10);
+  var services = (ORD_CALC_ORDER && ORD_CALC_ORDER.services) || [];
+  return services[idx] || null;
+}
+
+function ordCalcScheduleSave(compId, price) {
+  if (ORD_CALC_SAVE_TIMER) clearTimeout(ORD_CALC_SAVE_TIMER);
+  ORD_CALC_SAVE_TIMER = setTimeout(function() {
+    ordCalcSavePrice(compId, price);
+  }, 800);
+}
+
+function ordCalcSavePrice(compId, price) {
+  if (!ORD_CALC_ORDER) return;
+  var url = ORD_SUPABASE_URL + '/rest/v1/order_component_costs?order_id=eq.' + encodeURIComponent(ORD_CALC_ORDER.id) + '&component_id=eq.' + encodeURIComponent(compId);
+  fetch(url, {
+    method: 'POST',
+    headers: {
+      'apikey': ORD_SUPABASE_KEY,
+      'Authorization': 'Bearer ' + ORD_SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'resolution=merge-duplicates'
+    },
+    body: JSON.stringify({
+      order_id: ORD_CALC_ORDER.id,
+      component_id: compId,
+      price: Number(price) || 0,
+      updated_at: new Date().toISOString()
+    })
+  }).catch(function(e) {
+    console.error('Ошибка сохранения цены:', e);
+  });
 }
 
 function ordCalcToggle(accId) {
@@ -1111,7 +1202,7 @@ function ordCalcToggle(accId) {
   if (el) el.classList.toggle('open');
 }
 
-// === ФИЛЬТРЫ ===
+// === ФИЛЬТРЫ ===// === ФИЛЬТРЫ ===
 function ordInitFilters() {
   var btns = document.querySelectorAll('.ord-filter-btn');
   for (var i = 0; i < btns.length; i++) {
@@ -1130,7 +1221,7 @@ function divoCheckAuthAndInit() {
   if (!user) {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=113')
+    fetch('/components/auth-form.html?v=114')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
