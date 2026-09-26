@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — CRM</title>
-<link rel="stylesheet" href="/assets/style.css?v=99">
-<link rel="stylesheet" href="/assets/dashboard.css?v=99">
-<link rel="stylesheet" href="/assets/auth.css?v=99">
+<link rel="stylesheet" href="/assets/style.css?v=100">
+<link rel="stylesheet" href="/assets/dashboard.css?v=100">
+<link rel="stylesheet" href="/assets/auth.css?v=100">
 </head>
 <body>
 
@@ -142,7 +142,7 @@
 
 </div>
 
-<script src="/components/components.js?v=99"></script>
+<script src="/components/components.js?v=100"></script>
 <script>
 function divoCheckAuthAndInit() {
   var user = divoGetUser();
@@ -151,7 +151,7 @@ function divoCheckAuthAndInit() {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
 
-    fetch('/components/auth-form.html?v=99')
+    fetch('/components/auth-form.html?v=100')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
