@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — Заказ-наряды</title>
-<link rel="stylesheet" href="/assets/style.css?v=126">
-<link rel="stylesheet" href="/assets/auth.css?v=126">
+<link rel="stylesheet" href="/assets/style.css?v=127">
+<link rel="stylesheet" href="/assets/auth.css?v=127">
 <style>
 /* === СТИЛИ СТРАНИЦЫ ЗАКАЗ-НАРЯДОВ === */
 .ord-page { padding: 0; }
@@ -370,8 +370,8 @@
   <div class="divo-footer">© Диво Детейлинг • 2026</div>
 </div>
 
-<script src="/components/components.js?v=126"></script>
-<script src="/components/access-config.js?v=126"></script>
+<script src="/components/components.js?v=127"></script>
+<script src="/components/access-config.js?v=127"></script>
 <script>
 // ============================================
 // ЗАКАЗ-НАРЯДЫ — SUPABASE
@@ -1047,6 +1047,10 @@ function ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, status
     .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(function() {
       ordInvalidateCache();
+      // Если заказ-наряд переведён в "Готово" — создаём записи в "Расчётах" для контрагентов
+      if (status === 'done') {
+        ordPushContractorPayments(ORD_EDITING_ID, number, dateOut || dateIn, services, totalPrice);
+      }
       ordCloseForm();
       ordRender();
     })
@@ -1055,6 +1059,122 @@ function ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, status
       alert('❌ Ошибка сохранения: ' + e.message);
       if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 Сохранить'; }
     });
+}
+
+// Создать записи в таблице entries (Раздел "Расчёты") для всех контрагентов заказ-наряда
+// Вызывается при переводе заказ-наряда в статус "Готово"
+function ordPushContractorPayments(orderId, orderNumber, orderDate, services, orderTotal) {
+  if (!orderId) return;
+  // 1. Загружаем: компоненты услуг, цены (с contractor_id) и доп. расходы
+  var svcIds = [];
+  for (var i = 0; i < services.length; i++) {
+    var sid = services[i].serviceId;
+    if (sid && svcIds.indexOf(sid) === -1) svcIds.push(sid);
+  }
+  var compUrl = ORD_SUPABASE_URL + '/rest/v1/service_components?select=*&service_id=in.(' + svcIds.join(',') + ')';
+  var costUrl = ORD_SUPABASE_URL + '/rest/v1/order_component_costs?select=*&order_id=eq.' + encodeURIComponent(orderId);
+  var extraUrl = ORD_SUPABASE_URL + '/rest/v1/order_extra_costs?select=*&order_id=eq.' + encodeURIComponent(orderId);
+  var contrUrl = ORD_SUPABASE_URL + '/rest/v1/contractors?select=id,category,name,phone';
+
+  Promise.all([
+    svcIds.length ? fetch(compUrl, { headers: { 'apikey': ORD_SUPABASE_KEY, 'Authorization': 'Bearer ' + ORD_SUPABASE_KEY } }).then(function(r) { return r.json(); }) : Promise.resolve([]),
+    fetch(costUrl, { headers: { 'apikey': ORD_SUPABASE_KEY, 'Authorization': 'Bearer ' + ORD_SUPABASE_KEY } }).then(function(r) { return r.json(); }),
+    fetch(extraUrl, { headers: { 'apikey': ORD_SUPABASE_KEY, 'Authorization': 'Bearer ' + ORD_SUPABASE_KEY } }).then(function(r) { return r.json(); }),
+    fetch(contrUrl, { headers: { 'apikey': ORD_SUPABASE_KEY, 'Authorization': 'Bearer ' + ORD_SUPABASE_KEY } }).then(function(r) { return r.json(); })
+  ]).then(function(results) {
+    var comps = results[0] || [];
+    var costs = results[1] || [];
+    var extras = results[2] || [];
+    var contrs = results[3] || [];
+
+    // Карта: componentId → { serviceName, componentName }
+    var compMap = {};
+    for (var i = 0; i < comps.length; i++) {
+      // Найти название услуги для этого компонента
+      var svcName = '';
+      for (var j = 0; j < services.length; j++) {
+        if (services[j].serviceId === comps[i].service_id) { svcName = services[j].name; break; }
+      }
+      compMap[comps[i].id] = { serviceName: svcName, componentName: comps[i].name };
+    }
+    // Карта: contractorId → name
+    var contrMap = {};
+    for (var k = 0; k < contrs.length; k++) {
+      contrMap[contrs[k].id] = contrs[k];
+    }
+
+    // Формируем дату (ДД.ММ.ГГГГ)
+    var dt = orderDate ? new Date(orderDate) : new Date();
+    var dd = String(dt.getDate()).padStart(2, '0');
+    var mm = String(dt.getMonth() + 1).padStart(2, '0');
+    var yyyy = dt.getFullYear();
+    var dateStr = dd + '.' + mm + '.' + yyyy;
+    var entryDate = yyyy + '-' + mm + '-' + dd;
+
+    var tasks = [];
+
+    // 2. Компоненты с contractor_id и ценой > 0
+    for (var ci = 0; ci < costs.length; ci++) {
+      var cost = costs[ci];
+      if (!cost.contractor_id) continue;
+      var price = Number(cost.price) || 0;
+      if (price <= 0) continue;
+      var compInfo = compMap[cost.component_id] || { serviceName: '', componentName: '' };
+      var contr = contrMap[cost.contractor_id] || { name: '' };
+      var comment = 'Заказ #' + orderNumber + ' от ' + dateStr + ' • ' + compInfo.serviceName;
+      if (compInfo.componentName) comment += ' → ' + compInfo.componentName;
+      tasks.push(ordPushOnePayment(contr, price, comment, entryDate, cost.contractor_id));
+    }
+
+    // 3. Доп. расходы с contractor_id и ценой > 0
+    for (var ei = 0; ei < extras.length; ei++) {
+      var ex = extras[ei];
+      if (!ex.contractor_id) continue;
+      var exPrice = Number(ex.price) || 0;
+      if (exPrice <= 0) continue;
+      var exContr = contrMap[ex.contractor_id] || { name: '' };
+      var exComment = 'Заказ #' + orderNumber + ' от ' + dateStr + ' • Доп. расход';
+      if (ex.name) exComment += ' → ' + ex.name;
+      tasks.push(ordPushOnePayment(exContr, exPrice, exComment, entryDate, ex.contractor_id));
+    }
+
+    if (tasks.length === 0) {
+      console.log('Нет контрагентов с суммами для записей в расчёты');
+      return;
+    }
+    console.log('Создаём ' + tasks.length + ' записей в "Расчёты" для контрагентов');
+    Promise.all(tasks).then(function() {
+      console.log('✅ Записи в "Расчёты" созданы');
+    }).catch(function(e) {
+      console.error('Ошибка создания записей в расчёты:', e);
+    });
+  }).catch(function(e) {
+    console.error('Ошибка загрузки данных для расчётов:', e);
+  });
+}
+
+function ordPushOnePayment(contr, amount, comment, entryDate, contractorId) {
+  var body = {
+    name: contr.name || '',
+    amount: Math.round(amount * 100) / 100,
+    comments: comment,
+    entry_date: entryDate,
+    is_checked: false,
+    contractor_id: contractorId
+  };
+  return fetch(ORD_SUPABASE_URL + '/rest/v1/entries', {
+    method: 'POST',
+    headers: {
+      'apikey': ORD_SUPABASE_KEY,
+      'Authorization': 'Bearer ' + ORD_SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify(body)
+  }).then(function(r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.text();
+  });
 }
 
 function ordDelete() {
@@ -1665,7 +1785,7 @@ function divoCheckAuthAndInit() {
   if (!user) {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=126')
+    fetch('/components/auth-form.html?v=127')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
