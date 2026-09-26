@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — Заказ-наряды</title>
-<link rel="stylesheet" href="/assets/style.css?v=88">
-<link rel="stylesheet" href="/assets/auth.css?v=88">
+<link rel="stylesheet" href="/assets/style.css?v=89">
+<link rel="stylesheet" href="/assets/auth.css?v=89">
 <style>
 /* === СТИЛИ СТРАНИЦЫ ЗАКАЗ-НАРЯДОВ === */
 .ord-page { padding: 0; }
@@ -27,30 +27,29 @@
 .ord-search input::placeholder { color: #52525b; }
 .ord-search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; color: #52525b; pointer-events: none; }
 .ord-list { display: flex; flex-direction: column; gap: 10px; }
-.ord-card { background: #18181b; border: 1.5px solid #27272a; border-radius: 12px; padding: 16px 18px; cursor: pointer; transition: all .15s; display: flex; gap: 16px; align-items: flex-start; }
+.ord-card { background: #18181b; border: 1.5px solid #27272a; border-radius: 10px; padding: 10px 14px; cursor: pointer; transition: all .15s; display: flex; gap: 10px; align-items: center; }
 .ord-card:hover { border-color: #3f3f46; transform: translateY(-1px); }
-.ord-card-status-bar { width: 4px; align-self: stretch; border-radius: 2px; flex-shrink: 0; }
+.ord-card-status-bar { width: 3px; align-self: stretch; border-radius: 2px; flex-shrink: 0; min-height: 32px; }
 .ord-card-status-bar.new { background: #71717a; }
 .ord-card-status-bar.in_progress { background: #fbbf24; }
 .ord-card-status-bar.done { background: #22c55e; }
 .ord-card-status-bar.issued { background: #3b82f6; }
-.ord-card-main { flex: 1; min-width: 0; }
-.ord-card-header { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
-.ord-card-num { font-size: 15px; font-weight: 800; color: #fafafa; }
-.ord-card-car-color { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.15); }
-.ord-card-car { font-size: 14px; font-weight: 600; color: #d4d4d8; display: flex; align-items: center; gap: 6px; }
-.ord-card-plate { background: #0a0a0a; border: 1px solid #3f3f46; color: #fafafa; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 700; font-family: monospace; letter-spacing: 1px; }
-.ord-card-status { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+.ord-card-main { flex: 1; min-width: 0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.ord-card-num { font-size: 14px; font-weight: 800; color: #fafafa; flex-shrink: 0; }
+.ord-card-car-color { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.15); }
+.ord-card-car { font-size: 14px; font-weight: 600; color: #d4d4d8; display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.ord-card-plate { background: #0a0a0a; border: 1px solid #3f3f46; color: #fafafa; padding: 2px 7px; border-radius: 4px; font-size: 12px; font-weight: 700; font-family: monospace; letter-spacing: 1px; flex-shrink: 0; }
+.ord-card-meta { font-size: 13px; color: #a1a1aa; display: flex; align-items: center; gap: 4px; flex-shrink: 0; white-space: nowrap; }
+.ord-card-meta b { color: #fafafa; font-weight: 600; }
+.ord-card-sep { color: #3f3f46; font-size: 12px; flex-shrink: 0; user-select: none; }
+.ord-card-services { font-size: 12px; color: #d4d4d8; display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+.ord-card-services-label { color: #71717a; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 2px; }
+.ord-card-service-tag { display: inline-block; background: #0a0a0a; border: 1px solid #27272a; padding: 2px 7px; border-radius: 4px; font-size: 12px; white-space: nowrap; }
+.ord-card-status { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0; margin-left: auto; }
 .ord-card-status.new { background: #27272a; color: #a1a1aa; }
 .ord-card-status.in_progress { background: #422006; color: #fbbf24; }
 .ord-card-status.done { background: #14241a; color: #4ade80; }
 .ord-card-status.issued { background: #1e293b; color: #93c5fd; }
-.ord-card-info { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: #a1a1aa; margin-bottom: 8px; }
-.ord-card-info-item { display: flex; align-items: center; gap: 6px; }
-.ord-card-info-item b { color: #fafafa; font-weight: 600; }
-.ord-card-services { font-size: 13px; color: #d4d4d8; line-height: 1.5; }
-.ord-card-services-label { color: #71717a; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 6px; }
-.ord-card-service-tag { display: inline-block; background: #0a0a0a; border: 1px solid #27272a; padding: 2px 8px; border-radius: 4px; margin: 2px 4px 2px 0; font-size: 12px; }
 .ord-empty { text-align: center; padding: 60px 20px; color: #52525b; }
 .ord-empty-icon { font-size: 48px; margin-bottom: 12px; }
 .ord-empty-text { font-size: 15px; margin-bottom: 16px; }
@@ -206,8 +205,8 @@
   <div class="divo-footer">© Диво Детейлинг • 2026</div>
 </div>
 
-<script src="/components/components.js?v=88"></script>
-<script src="/components/access-config.js?v=88"></script>
+<script src="/components/components.js?v=89"></script>
+<script src="/components/access-config.js?v=89"></script>
 <script>
 // ============================================
 // ЗАКАЗ-НАРЯДЫ — SUPABASE
@@ -332,29 +331,33 @@ function ordRenderList(orders) {
   var html = '';
   for (var i = 0; i < filtered.length; i++) {
     var o = filtered[i];
-    var servicesHtml = '';
-    if (o.services && o.services.length) {
-      servicesHtml = '<div class="ord-card-services"><span class="ord-card-services-label">Услуги:</span>';
-      for (var j = 0; j < o.services.length; j++) {
-        servicesHtml += '<span class="ord-card-service-tag">' + o.services[j] + '</span>';
-      }
-      servicesHtml += '</div>';
+    var parts = [];
+    parts.push('<span class="ord-card-num">#' + (o.number || o.id) + '</span>');
+    parts.push('<span class="ord-card-sep">•</span>');
+    parts.push('<span class="ord-card-car"><span class="ord-card-car-color" style="background:' + (o.carColor || '#525252') + '"></span>' + (o.carBrand || '—') + '</span>');
+    if (o.carPlate) {
+      parts.push('<span class="ord-card-sep">•</span>');
+      parts.push('<span class="ord-card-plate">' + o.carPlate + '</span>');
     }
+    parts.push('<span class="ord-card-sep">•</span>');
+    parts.push('<span class="ord-card-meta">📍 <b>Пост ' + (o.post || '?') + '</b></span>');
+    if (o.dateIn) {
+      parts.push('<span class="ord-card-sep">•</span>');
+      parts.push('<span class="ord-card-meta">📅 <b>' + ordFormatDate(o.dateIn) + (o.dateOut ? ' → ' + ordFormatDate(o.dateOut) : '') + '</b></span>');
+    }
+    if (o.services && o.services.length) {
+      var svcHtml = '<span class="ord-card-services"><span class="ord-card-services-label">Услуги:</span>';
+      for (var j = 0; j < o.services.length; j++) {
+        svcHtml += '<span class="ord-card-service-tag">' + o.services[j] + '</span>';
+      }
+      svcHtml += '</span>';
+      parts.push('<span class="ord-card-sep">•</span>');
+      parts.push(svcHtml);
+    }
+    parts.push('<span class="ord-card-status ' + o.status + '">' + ORD_STATUS_NAMES[o.status] + '</span>');
     html += '<div class="ord-card" onclick="ordOpenModal(\'' + o.id + '\')">';
-    html += '  <div class="ord-card-status-bar ' + o.status + '"></div>';
-    html += '  <div class="ord-card-main">';
-    html += '    <div class="ord-card-header">';
-    html += '      <span class="ord-card-num">#' + (o.number || o.id) + '</span>';
-    html += '      <span class="ord-card-car"><span class="ord-card-car-color" style="background:' + (o.carColor || '#525252') + '"></span>' + (o.carBrand || '—') + '</span>';
-    if (o.carPlate) html += '<span class="ord-card-plate">' + o.carPlate + '</span>';
-    html += '      <span class="ord-card-status ' + o.status + '">' + ORD_STATUS_NAMES[o.status] + '</span>';
-    html += '    </div>';
-    html += '    <div class="ord-card-info">';
-    html += '      <span class="ord-card-info-item">📍 <b>Пост ' + (o.post || '?') + '</b></span>';
-    if (o.dateIn) html += '<span class="ord-card-info-item">📅 <b>' + ordFormatDate(o.dateIn) + (o.dateOut ? ' → ' + ordFormatDate(o.dateOut) : '') + '</b></span>';
-    html += '    </div>';
-    html += servicesHtml;
-    html += '  </div>';
+    html += '<div class="ord-card-status-bar ' + o.status + '"></div>';
+    html += '<div class="ord-card-main">' + parts.join('') + '</div>';
     html += '</div>';
   }
   listEl.innerHTML = html;
@@ -557,7 +560,7 @@ function divoCheckAuthAndInit() {
   if (!user) {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=88')
+    fetch('/components/auth-form.html?v=89')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
