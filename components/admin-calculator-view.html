@@ -5,14 +5,49 @@
   <div class="acalc-header">
     <div>
       <h1 class="acalc-title">🧮 Расчёт стоимости услуг</h1>
-      <div class="acalc-subtitle">Калькулятор стоимости работ для клиентов и партнёров</div>
+      <div class="acalc-subtitle">Состав услуги — из чего она состоит или может состоять</div>
     </div>
   </div>
 
-  <div class="acalc-placeholder">
+  <!-- ВЫБОР УСЛУГИ ИЗ ПРАЙСА -->
+  <div class="acalc-picker">
+    <div class="acalc-picker-label">Выберите услугу из прайса:</div>
+    <div class="acalc-picker-row">
+      <select class="acalc-select" id="acalcCat" onchange="acalcOnCat()">
+        <option value="">— Категория —</option>
+      </select>
+      <select class="acalc-select" id="acalcSubcat" onchange="acalcOnSubcat()" disabled>
+        <option value="">— Подкатегория —</option>
+      </select>
+      <select class="acalc-select" id="acalcSvc" onchange="acalcOnSvc()" disabled>
+        <option value="">— Услуга —</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- БЛОК СОСТАВА УСЛУГИ -->
+  <div class="acalc-components" id="acalcComponents" style="display:none;">
+    <div class="acalc-comp-header">
+      <div class="acalc-comp-title">Состав услуги: <span id="acalcSvcName">—</span></div>
+    </div>
+
+    <div class="acalc-comp-list" id="acalcCompList">
+      <!-- строки загружаются сюда -->
+    </div>
+
+    <!-- Форма добавления -->
+    <div class="acalc-add-row">
+      <input type="text" class="acalc-add-input" id="acalcAddInput" placeholder="Например: Мойка авто" onkeydown="if(event.key==='Enter'){event.preventDefault();acalcAdd();}">
+      <button type="button" class="acalc-add-btn" onclick="acalcAdd()">＋ Добавить</button>
+    </div>
+
+    <div class="acalc-status" id="acalcStatus"></div>
+  </div>
+
+  <!-- ПУСТОЕ СОСТОЯНИЕ (услуга не выбрана) -->
+  <div class="acalc-placeholder" id="acalcPlaceholder">
     <div class="acalc-placeholder-icon">🧮</div>
-    <div class="acalc-placeholder-title">Раздел в разработке</div>
-    <div class="acalc-placeholder-text">Скоро здесь появится калькулятор расчёта стоимости услуг</div>
+    <div class="acalc-placeholder-text">Выберите услугу из прайса,<br>чтобы задать её состав</div>
   </div>
 </div>
 
@@ -21,8 +56,319 @@
 .acalc-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
 .acalc-title { font-size: 24px; font-weight: 800; color: #fafafa; margin: 0; }
 .acalc-subtitle { font-size: 13px; color: #a1a1aa; margin-top: 4px; }
+
+.acalc-picker { background: #18181b; border: 1.5px solid #27272a; border-radius: 12px; padding: 16px; margin-bottom: 20px; }
+.acalc-picker-label { font-size: 12px; font-weight: 700; color: #71717a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+.acalc-picker-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.acalc-select { flex: 1; min-width: 180px; background: #0a0a0a; border: 1.5px solid #27272a; border-radius: 8px; padding: 10px 12px; color: #fafafa; font-size: 14px; font-family: inherit; box-sizing: border-box; }
+.acalc-select:focus { outline: none; border-color: #3b82f6; }
+.acalc-select:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.acalc-components { background: #18181b; border: 1.5px solid #27272a; border-radius: 12px; padding: 20px; }
+.acalc-comp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1.5px solid #27272a; }
+.acalc-comp-title { font-size: 16px; font-weight: 700; color: #fafafa; }
+.acalc-comp-title span { color: #4ade80; }
+
+.acalc-comp-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.acalc-comp-item { display: flex; gap: 10px; align-items: center; background: #0a0a0a; border: 1px solid #27272a; border-radius: 8px; padding: 10px 12px; }
+.acalc-comp-num { font-size: 13px; font-weight: 700; color: #52525b; min-width: 24px; text-align: right; }
+.acalc-comp-name { flex: 1; background: transparent; border: none; color: #fafafa; font-size: 14px; font-family: inherit; outline: none; padding: 4px 0; }
+.acalc-comp-name:focus { color: #3b82f6; }
+.acalc-comp-save { font-size: 11px; color: #52525b; padding: 4px 8px; border-radius: 4px; cursor: pointer; display: none; }
+.acalc-comp-item.dirty .acalc-comp-save { display: inline-block; color: #fbbf24; }
+.acalc-comp-del { background: transparent; border: none; color: #71717a; cursor: pointer; font-size: 16px; padding: 4px; border-radius: 4px; }
+.acalc-comp-del:hover { color: #ef4444; background: #1c0a0a; }
+
+.acalc-comp-empty { text-align: center; color: #52525b; padding: 30px 20px; font-size: 14px; }
+
+.acalc-add-row { display: flex; gap: 8px; margin-top: 8px; }
+.acalc-add-input { flex: 1; background: #0a0a0a; border: 1.5px solid #27272a; border-radius: 8px; padding: 10px 14px; color: #fafafa; font-size: 14px; font-family: inherit; box-sizing: border-box; }
+.acalc-add-input:focus { outline: none; border-color: #3b82f6; }
+.acalc-add-input::placeholder { color: #52525b; }
+.acalc-add-btn { background: #1e3a8a; border: 1.5px solid #3b82f6; color: #93c5fd; padding: 10px 18px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 14px; font-family: inherit; white-space: nowrap; }
+.acalc-add-btn:hover { background: #1e40af; color: #fafafa; }
+
+.acalc-status { font-size: 12px; color: #52525b; margin-top: 10px; min-height: 16px; }
+.acalc-status.ok { color: #4ade80; }
+.acalc-status.err { color: #ef4444; }
+
 .acalc-placeholder { text-align: center; padding: 80px 20px; color: #52525b; }
 .acalc-placeholder-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
-.acalc-placeholder-title { font-size: 20px; font-weight: 700; color: #a1a1aa; margin-bottom: 8px; }
-.acalc-placeholder-text { font-size: 14px; color: #71717a; }
+.acalc-placeholder-text { font-size: 14px; color: #71717a; line-height: 1.6; }
+
+@media (max-width: 680px) {
+  .acalc-picker-row { flex-direction: column; }
+  .acalc-comp-item { flex-wrap: wrap; }
+}
 </style>
+
+<script>
+// === КОНФИГ ===
+var ACALC_URL = 'https://jnbqzngsglnjzzpsvvgn.supabase.co';
+var ACALC_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuYnF6bmdzZ2xuanp6cHN2dmduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyMzIwOTEsImV4cCI6MjEwNDgwODA5MX0.uHVMUKBtO0326KB3bAHQ8rywBvBms7WvfaxPrhm3_Y0';
+
+// === СОСТОЯНИЕ ===
+var ACALC_CATS = [];
+var ACALC_SUBCATS = [];
+var ACALC_SERVICES = [];
+var ACALC_COMPONENTS = [];
+var ACALC_CURRENT_SVC = null; // { id, name }
+
+function acalcHeaders() {
+  return { 'apikey': ACALC_KEY, 'Authorization': 'Bearer ' + ACALC_KEY, 'Content-Type': 'application/json' };
+}
+
+// === ИНИЦИАЛИЗАЦИЯ ===
+function acalcInit() {
+  Promise.all([
+    fetch(ACALC_URL + '/rest/v1/service_categories?select=*&order=sort_order.asc,name.asc', { headers: acalcHeaders() }).then(function(r) { return r.json(); }),
+    fetch(ACALC_URL + '/rest/v1/service_subcategories?select=*&order=sort_order.asc,name.asc', { headers: acalcHeaders() }).then(function(r) { return r.json(); }),
+    fetch(ACALC_URL + '/rest/v1/services?select=*&order=name.asc', { headers: acalcHeaders() }).then(function(r) { return r.json(); })
+  ]).then(function(results) {
+    ACALC_CATS = results[0] || [];
+    ACALC_SUBCATS = results[1] || [];
+    ACALC_SERVICES = results[2] || [];
+    acalcRenderCatSelect();
+  }).catch(function(e) {
+    console.error('Ошибка загрузки прайса:', e);
+    acalcShowStatus('Ошибка загрузки прайса', 'err');
+  });
+}
+
+// === СЕЛЕКТЫ ===
+function acalcRenderCatSelect() {
+  var sel = document.getElementById('acalcCat');
+  var html = '<option value="">— Категория —</option>';
+  for (var i = 0; i < ACALC_CATS.length; i++) {
+    var c = ACALC_CATS[i];
+    html += '<option value="' + c.id + '">' + c.name + '</option>';
+  }
+  sel.innerHTML = html;
+}
+
+function acalcOnCat() {
+  var catId = parseInt(document.getElementById('acalcCat').value) || null;
+  var subSel = document.getElementById('acalcSubcat');
+  var svcSel = document.getElementById('acalcSvc');
+
+  if (!catId) {
+    subSel.innerHTML = '<option value="">— Подкатегория —</option>';
+    subSel.disabled = true;
+    svcSel.innerHTML = '<option value="">— Услуга —</option>';
+    svcSel.disabled = true;
+    acalcHideComponents();
+    return;
+  }
+
+  var subs = ACALC_SUBCATS.filter(function(s) { return s.category_id === catId; });
+  if (subs.length === 0) {
+    subSel.innerHTML = '<option value="">(без подкатегорий)</option>';
+    subSel.disabled = true;
+  } else {
+    var html = '<option value="">— Подкатегория —</option>';
+    for (var i = 0; i < subs.length; i++) {
+      html += '<option value="' + subs[i].id + '">' + subs[i].name + '</option>';
+    }
+    subSel.innerHTML = html;
+    subSel.disabled = false;
+  }
+  svcSel.innerHTML = '<option value="">— Услуга —</option>';
+  svcSel.disabled = true;
+  acalcHideComponents();
+}
+
+function acalcOnSubcat() {
+  var catId = parseInt(document.getElementById('acalcCat').value) || null;
+  var subId = parseInt(document.getElementById('acalcSubcat').value) || null;
+  var svcSel = document.getElementById('acalcSvc');
+
+  var svcs;
+  if (subId) {
+    svcs = ACALC_SERVICES.filter(function(s) { return s.subcategory_id === subId; });
+  } else if (catId) {
+    svcs = ACALC_SERVICES.filter(function(s) { return s.category_id === catId; });
+  } else {
+    svcs = [];
+  }
+
+  if (svcs.length === 0) {
+    svcSel.innerHTML = '<option value="">— Нет услуг —</option>';
+    svcSel.disabled = true;
+  } else {
+    var html = '<option value="">— Услуга —</option>';
+    for (var i = 0; i < svcs.length; i++) {
+      html += '<option value="' + svcs[i].id + '">' + svcs[i].name + '</option>';
+    }
+    svcSel.innerHTML = html;
+    svcSel.disabled = false;
+  }
+  acalcHideComponents();
+}
+
+function acalcOnSvc() {
+  var svcId = parseInt(document.getElementById('acalcSvc').value) || null;
+  if (!svcId) {
+    acalcHideComponents();
+    return;
+  }
+  var svc = ACALC_SERVICES.find(function(s) { return s.id === svcId; });
+  if (!svc) {
+    acalcHideComponents();
+    return;
+  }
+  ACALC_CURRENT_SVC = svc;
+  document.getElementById('acalcSvcName').textContent = svc.name;
+  document.getElementById('acalcPlaceholder').style.display = 'none';
+  document.getElementById('acalcComponents').style.display = 'block';
+  acalcLoadComponents(svcId);
+}
+
+// === ЗАГРУЗКА СОСТАВА ===
+function acalcLoadComponents(svcId) {
+  fetch(ACALC_URL + '/rest/v1/service_components?service_id=eq.' + svcId + '&order=sort_order.asc,name.asc', { headers: acalcHeaders() })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      ACALC_COMPONENTS = data || [];
+      acalcRenderList();
+    })
+    .catch(function(e) {
+      console.error('Ошибка загрузки состава:', e);
+      acalcShowStatus('Ошибка загрузки состава', 'err');
+    });
+}
+
+function acalcRenderList() {
+  var el = document.getElementById('acalcCompList');
+  if (ACALC_COMPONENTS.length === 0) {
+    el.innerHTML = '<div class="acalc-comp-empty">Состав не задан. Добавьте первый компонент 👇</div>';
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < ACALC_COMPONENTS.length; i++) {
+    var c = ACALC_COMPONENTS[i];
+    html += '<div class="acalc-comp-item" data-id="' + c.id + '">';
+    html += '<span class="acalc-comp-num">' + (i + 1) + '.</span>';
+    html += '<input type="text" class="acalc-comp-name" value="' + acalcEscape(c.name) + '" oninput="acalcOnEdit(this)" onblur="acalcSaveOnBlur(this, \'' + c.id + '\')">';
+    html += '<button type="button" class="acalc-comp-save" onclick="acalcSaveName(\'' + c.id + '\')">💾</button>';
+    html += '<button type="button" class="acalc-comp-del" onclick="acalcDel(\'' + c.id + '\')">✕</button>';
+    html += '</div>';
+  }
+  el.innerHTML = html;
+}
+
+// === ДОБАВЛЕНИЕ ===
+function acalcAdd() {
+  var input = document.getElementById('acalcAddInput');
+  var name = input.value.trim();
+  if (!name) return;
+  if (!ACALC_CURRENT_SVC) return;
+
+  var sortOrder = ACALC_COMPONENTS.length;
+  acalcShowStatus('Сохранение...', '');
+
+  fetch(ACALC_URL + '/rest/v1/service_components', {
+    method: 'POST',
+    headers: acalcHeaders(),
+    body: JSON.stringify({
+      service_id: ACALC_CURRENT_SVC.id,
+      name: name,
+      sort_order: sortOrder
+    })
+  }).then(function(r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  }).then(function() {
+    input.value = '';
+    acalcShowStatus('Добавлено: ' + name, 'ok');
+    acalcLoadComponents(ACALC_CURRENT_SVC.id);
+  }).catch(function(e) {
+    console.error('Ошибка добавления:', e);
+    acalcShowStatus('Ошибка добавления', 'err');
+  });
+}
+
+// === УДАЛЕНИЕ ===
+function acalcDel(id) {
+  if (!confirm('Удалить компонент из состава услуги?')) return;
+  acalcShowStatus('Удаление...', '');
+  fetch(ACALC_URL + '/rest/v1/service_components?id=eq.' + id, {
+    method: 'DELETE',
+    headers: acalcHeaders()
+  }).then(function(r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    acalcShowStatus('Удалено', 'ok');
+    acalcLoadComponents(ACALC_CURRENT_SVC.id);
+  }).catch(function(e) {
+    console.error('Ошибка удаления:', e);
+    acalcShowStatus('Ошибка удаления', 'err');
+  });
+}
+
+// === РЕДАКТИРОВАНИЕ НАЗВАНИЯ ===
+function acalcOnEdit(inputEl) {
+  var item = inputEl.closest('.acalc-comp-item');
+  if (item) item.classList.add('dirty');
+}
+
+function acalcSaveOnBlur(inputEl, id) {
+  // Сохраняем при потере фокуса, если было изменение
+  var item = inputEl.closest('.acalc-comp-item');
+  if (item && item.classList.contains('dirty')) {
+    acalcSaveName(id);
+  }
+}
+
+function acalcSaveName(id) {
+  var item = document.querySelector('.acalc-comp-item[data-id="' + id + '"]');
+  if (!item) return;
+  var input = item.querySelector('.acalc-comp-name');
+  var name = input.value.trim();
+  if (!name) return;
+
+  acalcShowStatus('Сохранение...', '');
+  fetch(ACALC_URL + '/rest/v1/service_components?id=eq.' + id, {
+    method: 'PATCH',
+    headers: acalcHeaders(),
+    body: JSON.stringify({ name: name })
+  }).then(function(r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    item.classList.remove('dirty');
+    acalcShowStatus('Сохранено', 'ok');
+    acalcLoadComponents(ACALC_CURRENT_SVC.id);
+  }).catch(function(e) {
+    console.error('Ошибка сохранения:', e);
+    acalcShowStatus('Ошибка сохранения', 'err');
+  });
+}
+
+// === УТИЛИТЫ ===
+function acalcHideComponents() {
+  ACALC_CURRENT_SVC = null;
+  ACALC_COMPONENTS = [];
+  document.getElementById('acalcComponents').style.display = 'none';
+  document.getElementById('acalcPlaceholder').style.display = 'block';
+}
+
+function acalcShowStatus(text, type) {
+  var el = document.getElementById('acalcStatus');
+  if (!el) return;
+  el.textContent = text;
+  el.className = 'acalc-status' + (type ? ' ' + type : '');
+  if (text && text !== 'Сохранение...' && text !== 'Удаление...') {
+    setTimeout(function() {
+      if (el.textContent === text) {
+        el.textContent = '';
+        el.className = 'acalc-status';
+      }
+    }, 2500);
+  }
+}
+
+function acalcEscape(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// === СТАРТ ===
+acalcInit();
+</script>
