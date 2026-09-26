@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — Заказ-наряды</title>
-<link rel="stylesheet" href="/assets/style.css?v=119">
-<link rel="stylesheet" href="/assets/auth.css?v=119">
+<link rel="stylesheet" href="/assets/style.css?v=120">
+<link rel="stylesheet" href="/assets/auth.css?v=120">
 <style>
 /* === СТИЛИ СТРАНИЦЫ ЗАКАЗ-НАРЯДОВ === */
 .ord-page { padding: 0; }
@@ -362,8 +362,8 @@
   <div class="divo-footer">© Диво Детейлинг • 2026</div>
 </div>
 
-<script src="/components/components.js?v=119"></script>
-<script src="/components/access-config.js?v=119"></script>
+<script src="/components/components.js?v=120"></script>
+<script src="/components/access-config.js?v=120"></script>
 <script>
 // ============================================
 // ЗАКАЗ-НАРЯДЫ — SUPABASE
@@ -1190,7 +1190,7 @@ function ordCalcExtraHTML() {
     for (var i = 0; i < ORD_CALC_EXTRA.length; i++) {
       var ex = ORD_CALC_EXTRA[i];
       html += '<div class="ord-calc-extra-row">';
-      html += '<input type="text" class="ord-calc-extra-name" placeholder="Название (скотч, сломали...)" value="' + ordEscape(ex.name) + '" data-ex="' + i + '" oninput="ordCalcExtraEdit(this,\'name\')">';
+      html += '<input type="text" class="ord-calc-extra-name" placeholder="Название" value="' + ordEscape(ex.name) + '" data-ex="' + i + '" oninput="ordCalcExtraEdit(this,\'name\')">';
       html += '<input type="number" class="ord-calc-extra-price" inputmode="decimal" min="0" step="any" placeholder="0" value="' + (ex.price || '') + '" data-ex="' + i + '" oninput="ordCalcExtraEdit(this,\'price\')">';
       html += '<button type="button" class="ord-calc-extra-del" onclick="ordCalcExtraDel(' + i + ')">✕</button>';
       html += '</div>';
@@ -1525,7 +1525,7 @@ function divoCheckAuthAndInit() {
   if (!user) {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=119')
+    fetch('/components/auth-form.html?v=120')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
