@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — Заказ-наряды</title>
-<link rel="stylesheet" href="/assets/style.css?v=124">
-<link rel="stylesheet" href="/assets/auth.css?v=124">
+<link rel="stylesheet" href="/assets/style.css?v=125">
+<link rel="stylesheet" href="/assets/auth.css?v=125">
 <style>
 /* === СТИЛИ СТРАНИЦЫ ЗАКАЗ-НАРЯДОВ === */
 .ord-page { padding: 0; }
@@ -128,12 +128,12 @@
 .ord-calc-extra-del { background: #18181b; border: 1px solid #3f3f46; color: #71717a; width: 28px; height: 28px; border-radius: 6px; cursor: pointer; font-size: 16px; font-family: inherit; flex-shrink: 0; }
 .ord-calc-extra-del:hover { background: #ef4444; border-color: #ef4444; color: #fafafa; }
 .ord-calc-extra-empty { text-align: center; color: #52525b; padding: 10px; font-size: 13px; }
-.ord-calc-cat-select, .ord-calc-contr-select { background: #0a0a0a; border: 1px solid #27272a; border-radius: 6px; padding: 5px 6px; color: #93c5fd; font-size: 12px; font-family: inherit; max-width: 130px; flex-shrink: 0; cursor: pointer; }
+.ord-calc-cat-select, .ord-calc-comp-select { background: #0a0a0a; border: 1px solid #27272a; border-radius: 6px; padding: 5px 6px; color: #93c5fd; font-size: 12px; font-family: inherit; max-width: 130px; flex-shrink: 0; cursor: pointer; }
 .ord-calc-cat-select { color: #a78bfa; max-width: 110px; border-color: #4c1d95; }
 .ord-calc-cat-select:focus { outline: none; border-color: #7c3aed; }
-.ord-calc-contr-select:focus { outline: none; border-color: #3b82f6; }
-.ord-calc-contr-select option, .ord-calc-cat-select option { background: #0a0a0a; color: #fafafa; }
-.ord-calc-contr-select:focus { outline: none; border-color: #3b82f6; }
+.ord-calc-comp-select:focus { outline: none; border-color: #3b82f6; }
+.ord-calc-comp-select option, .ord-calc-cat-select option { background: #0a0a0a; color: #fafafa; }
+.ord-calc-comp-select:focus { outline: none; border-color: #3b82f6; }
 .ord-calc-comp-select option, .ord-calc-extra-select option { background: #0a0a0a; color: #fafafa; }
 
 .ord-calc-bot-title { font-size: 14px; font-weight: 800; color: #fafafa; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -370,8 +370,8 @@
   <div class="divo-footer">© Диво Детейлинг • 2026</div>
 </div>
 
-<script src="/components/components.js?v=124"></script>
-<script src="/components/access-config.js?v=124"></script>
+<script src="/components/components.js?v=125"></script>
+<script src="/components/access-config.js?v=125"></script>
 <script>
 // ============================================
 // ЗАКАЗ-НАРЯДЫ — SUPABASE
@@ -1655,7 +1655,7 @@ function divoCheckAuthAndInit() {
   if (!user) {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=124')
+    fetch('/components/auth-form.html?v=125')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
