@@ -91,6 +91,8 @@
 .ord-btn-add-row:hover { background: #1e3a8a; color: #fafafa; }
 .ord-row-total { font-size: 15px; font-weight: 800; color: #4ade80; }
 .ord-row-total span { font-size: 17px; }
+.ord-row input.ord-manual-name { color: #fbbf24; font-weight: 600; }
+.ord-row input.ord-manual-name:focus { color: #fafafa; }
 .ord-empty-row { text-align: center; color: #52525b; padding: 20px; font-size: 13px; grid-column: 1 / -1; }
 @media (max-width: 680px) {
   .ord-row { grid-template-columns: 1fr 1fr; }
@@ -470,7 +472,7 @@ function ordGetSelectedColor() {
 }
 
 function ordAddRow() {
-  ORD_ROWS.push({ catId: '', subcatId: '', svcId: '', svcName: '', price: 0 });
+  ORD_ROWS.push({ catId: '', subcatId: '', svcId: '', svcName: '', price: 0, manual: false });
   ordRenderRows();
 }
 
@@ -489,38 +491,51 @@ function ordRenderRows() {
   var html = '';
   for (var i = 0; i < ORD_ROWS.length; i++) {
     var r = ORD_ROWS[i];
-    // Селект категорий
     html += '<div class="ord-row" data-idx="' + i + '">';
-    html += '<select onchange="ordOnRowCat(' + i + ', this.value)">' + ordCatOptions(r.catId) + '</select>';
-    // Селект подкатегорий
-    if (r.catId) {
-      html += '<select onchange="ordOnRowSubcat(' + i + ', this.value)">' + ordSubcatOptions(r.catId, r.subcatId) + '</select>';
+    // Колонка 1: Категория (с опцией "Ручной ввод" в конце)
+    html += '<select onchange="ordOnRowCat(' + i + ', this.value)">' + ordCatOptions(r.catId, r.manual) + '</select>';
+    // Колонки 2-3: зависит от режима
+    if (r.manual) {
+      // Ручной ввод: одно текстовое поле на 2 колонки
+      html += '<input type="text" class="ord-manual-name" value="' + ordEscape(r.svcName) + '" placeholder="Название услуги..." oninput="ordOnRowManualName(' + i + ', this.value)" style="grid-column: span 2;">';
     } else {
-      html += '<select disabled><option>—</option></select>';
+      // Выбор из прайса: подкатегория + услуга
+      if (r.catId) {
+        html += '<select onchange="ordOnRowSubcat(' + i + ', this.value)">' + ordSubcatOptions(r.catId, r.subcatId) + '</select>';
+        html += '<select onchange="ordOnRowSvc(' + i + ', this.value, this.options[this.selectedIndex])">' + ordSvcOptions(r.catId, r.subcatId, r.svcId) + '</select>';
+      } else {
+        html += '<select disabled><option>—</option></select>';
+        html += '<select disabled><option>—</option></select>';
+      }
     }
-    // Селект услуг
-    if (r.catId) {
-      html += '<select onchange="ordOnRowSvc(' + i + ', this.value, this.options[this.selectedIndex])">' + ordSvcOptions(r.catId, r.subcatId, r.svcId) + '</select>';
-    } else {
-      html += '<select disabled><option>—</option></select>';
-    }
-    // Поле цены
+    // Цена
     html += '<input type="number" class="ord-price" value="' + (r.price || 0) + '" placeholder="0" min="0" step="100" oninput="ordOnRowPrice(' + i + ', this.value)">';
-    // Кнопка удаления
+    // Удаление
     html += '<button type="button" class="ord-row-del" onclick="ordRemoveRow(' + i + ')">✕</button>';
     html += '</div>';
   }
   el.innerHTML = html;
 }
 
-function ordCatOptions(selected) {
+function ordEscape(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function ordCatOptions(selected, isManual) {
   var html = '<option value="">— Категория —</option>';
   for (var i = 0; i < ORD_PRICE_CATS.length; i++) {
     var c = ORD_PRICE_CATS[i];
-    var sel = (String(c.id) === String(selected)) ? ' selected' : '';
+    var sel = (String(c.id) === String(selected) && !isManual) ? ' selected' : '';
     html += '<option value="' + c.id + '"' + sel + '>' + c.name + '</option>';
   }
+  var selM = isManual ? ' selected' : '';
+  html += '<option value="manual"' + selM + '>✍ Ручной ввод</option>';
   return html;
+}
+
+function ordOnRowManualName(idx, val) {
+  ORD_ROWS[idx].svcName = val;
 }
 
 function ordSubcatOptions(catId, selected) {
@@ -554,10 +569,18 @@ function ordSvcOptions(catId, subcatId, selected) {
 
 function ordOnRowCat(idx, val) {
   var r = ORD_ROWS[idx];
-  r.catId = val;
-  r.subcatId = '';
-  r.svcId = '';
-  r.svcName = '';
+  if (val === 'manual') {
+    r.manual = true;
+    r.catId = '';
+    r.subcatId = '';
+    r.svcId = '';
+  } else {
+    r.manual = false;
+    r.catId = val;
+    r.subcatId = '';
+    r.svcId = '';
+    r.svcName = '';
+  }
   ordRenderRows();
 }
 
@@ -612,7 +635,7 @@ function ordLoadPrices(callback) {
 }
 
 function ordResetRows() {
-  ORD_ROWS = [{ catId: '', subcatId: '', svcId: '', svcName: '', price: 0 }];
+  ORD_ROWS = [{ catId: '', subcatId: '', svcId: '', svcName: '', price: 0, manual: false }];
   ordRenderRows();
   ordRecalcTotal();
 }
@@ -625,8 +648,8 @@ function ordRowsToServices() {
     if (!r.svcName) continue; // пустые строки пропускаем
     services.push({
       name: r.svcName,
-      serviceId: r.svcId ? parseInt(r.svcId) : null,
-      manual: false,
+      serviceId: r.manual ? null : (r.svcId ? parseInt(r.svcId) : null),
+      manual: r.manual,
       price: Number(r.price) || 0
     });
   }
@@ -637,7 +660,7 @@ function ordRowsToServices() {
 function ordServicesToRows(services) {
   ORD_ROWS = [];
   if (!services || services.length === 0) {
-    ORD_ROWS.push({ catId: '', subcatId: '', svcId: '', svcName: '', price: 0 });
+    ORD_ROWS.push({ catId: '', subcatId: '', svcId: '', svcName: '', price: 0, manual: false });
     return;
   }
   for (var i = 0; i < services.length; i++) {
