@@ -196,6 +196,11 @@
   .cs-add-btn { grid-column: 1 / -1; }
   .cs-modal-grid { grid-template-columns: 1fr; }
 }
+/* Записи из заказ-нарядов */
+.cs-order-badge { display: inline-block; background: #1e3a5f; color: #60a5fa; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-left: 6px; vertical-align: middle; border: 1px solid #3b82f6; }
+.cs-order-row { background: #0d1520; }
+.cs-order-row td { border-bottom: 1px solid #1e3a5f !important; }
+.cs-order-lock { color: #52525b; font-size: 11px; cursor: help; }
 </style>
 
 <script>
@@ -219,10 +224,6 @@
     for (var k in extra) h[k] = extra[k];
     return h;
   }
-  .cs-order-badge { display: inline-block; background: #1e3a5f; color: #60a5fa; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-left: 6px; vertical-align: middle; border: 1px solid #3b82f6; }
-  .cs-order-row { background: #0d1520; }
-  .cs-order-row td { border-bottom: 1px solid #1e3a5f !important; }
-  .cs-order-lock { color: #52525b; font-size: 11px; cursor: help; }
   function isPaymentRecord(comments) { return comments && comments.indexOf('Часть от') === 0; }
   function isOrderRecord(e) { return e && e.contractor_id != null; }
   function findCategoryByName(name) {
