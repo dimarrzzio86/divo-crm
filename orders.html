@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — Заказ-наряды</title>
-<link rel="stylesheet" href="/assets/style.css?v=96">
-<link rel="stylesheet" href="/assets/auth.css?v=96">
+<link rel="stylesheet" href="/assets/style.css?v=97">
+<link rel="stylesheet" href="/assets/auth.css?v=97">
 <style>
 /* === СТИЛИ СТРАНИЦЫ ЗАКАЗ-НАРЯДОВ === */
 .ord-page { padding: 0; }
@@ -15,6 +15,17 @@
 .ord-subtitle { font-size: 13px; color: #a1a1aa; margin-top: 4px; }
 .ord-btn-create { background: #22c55e; color: #0a0a0a; border: none; padding: 12px 22px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 14px; font-family: inherit; transition: all .15s; display: flex; align-items: center; gap: 8px; }
 .ord-btn-create:hover { background: #16a34a; transform: translateY(-1px); }
+.ord-form-card { background: #0a0a0a; border: 1.5px solid #27272a; border-radius: 14px; padding: 20px; margin-bottom: 20px; }
+.ord-form-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1.5px solid #27272a; }
+.ord-form-card-title { font-size: 18px; font-weight: 800; color: #fafafa; }
+.ord-form-card-close { background: #27272a; border: none; color: #a1a1aa; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit; }
+.ord-form-card-close:hover { background: #3f3f46; color: #fafafa; }
+.ord-services-block { margin-top: 16px; }
+.ord-services-block-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.ord-manual-toggle { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #a1a1aa; cursor: pointer; user-select: none; font-weight: 600; }
+.ord-manual-toggle input { cursor: pointer; width: 16px; height: 16px; }
+.ord-manual-toggle input:checked + span { color: #fbbf24; }
+.ord-form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; padding-top: 14px; border-top: 1.5px solid #27272a; }
 .ord-toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
 .ord-filters { display: flex; gap: 4px; background: #18181b; border: 1.5px solid #27272a; border-radius: 12px; padding: 4px; }
 .ord-filter-btn { padding: 8px 16px; background: transparent; color: #a1a1aa; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all .15s; }
@@ -52,13 +63,7 @@
 .ord-empty { text-align: center; padding: 60px 20px; color: #52525b; }
 .ord-empty-icon { font-size: 48px; margin-bottom: 12px; }
 .ord-empty-text { font-size: 15px; margin-bottom: 16px; }
-.ord-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: flex-start; justify-content: center; padding: 20px; overflow-y: auto; }
-.ord-modal-overlay.show { display: flex; }
-.ord-modal { background: #0a0a0a; border: 1.5px solid #27272a; border-radius: 16px; max-width: 640px; width: 100%; padding: 24px; margin: 20px auto; }
-.ord-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1.5px solid #27272a; }
-.ord-modal-title { font-size: 20px; font-weight: 800; color: #fafafa; }
-.ord-modal-close { background: #27272a; border: none; color: #a1a1aa; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 18px; font-family: inherit; }
-.ord-modal-close:hover { background: #3f3f46; color: #fafafa; }
+
 .ord-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .ord-form-group { display: flex; flex-direction: column; gap: 6px; }
 .ord-form-group.full { grid-column: 1 / -1; }
@@ -100,7 +105,7 @@
   .ord-row input.ord-price { grid-column: 1 / -1; }
   .ord-row .ord-row-del { grid-column: 1 / -1; width: fit-content; margin: 0 auto; }
 }
-.ord-modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; padding-top: 16px; border-top: 1.5px solid #27272a; }
+
 .ord-btn-cancel { background: #27272a; color: #d4d4d8; border: 1.5px solid #3f3f46; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; font-family: inherit; }
 .ord-btn-cancel:hover { background: #3f3f46; }
 .ord-btn-save { background: #22c55e; color: #0a0a0a; border: none; padding: 10px 22px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 14px; font-family: inherit; }
@@ -126,7 +131,97 @@
             <div class="ord-title">📋 Заказ-наряды <span class="ord-title-count" id="ordCount">0</span></div>
             <div class="ord-subtitle">Записи клиентов · посты · услуги</div>
           </div>
-          <button class="ord-btn-create" onclick="ordOpenModal()">➕ Создать заказ-наряд</button>
+          <button class="ord-btn-create" onclick="ordOpenForm()">➕ Создать заказ-наряд</button>
+        </div>
+
+        <!-- ФОРМА СОЗДАНИЯ/РЕДАКТИРОВАНИЯ (на странице, не модалка) -->
+        <div class="ord-form-card" id="ordFormCard" style="display:none;">
+          <div class="ord-form-card-head">
+            <div class="ord-form-card-title" id="ordFormTitle">Новый заказ-наряд</div>
+            <button class="ord-form-card-close" onclick="ordCloseForm()">✕ Свернуть</button>
+          </div>
+
+          <div class="ord-form-grid">
+            <div class="ord-form-group">
+              <label class="ord-form-label">Номер *</label>
+              <input type="text" class="ord-form-input" id="ordField-number" placeholder="Напр. 1234">
+            </div>
+            <div class="ord-form-group">
+              <label class="ord-form-label">Пост</label>
+              <select class="ord-form-select" id="ordField-post">
+                <option value="auto">Авто (свободный)</option>
+                <option value="1">Пост 1</option>
+                <option value="2">Пост 2</option>
+                <option value="3">Пост 3</option>
+                <option value="4">Пост 4</option>
+              </select>
+            </div>
+            <div class="ord-form-group">
+              <label class="ord-form-label">Марка / модель *</label>
+              <input type="text" class="ord-form-input" id="ordField-carBrand" placeholder="Toyota Camry">
+            </div>
+            <div class="ord-form-group">
+              <label class="ord-form-label">Госномер *</label>
+              <input type="text" class="ord-form-input" id="ordField-carPlate" placeholder="А123ВС 77" style="text-transform:uppercase;">
+            </div>
+            <div class="ord-form-group">
+              <label class="ord-form-label">Дата заезда *</label>
+              <input type="date" class="ord-form-input" id="ordField-dateIn">
+            </div>
+            <div class="ord-form-group">
+              <label class="ord-form-label">Дата выезда *</label>
+              <input type="date" class="ord-form-input" id="ordField-dateOut">
+            </div>
+            <div class="ord-form-group">
+              <label class="ord-form-label">Цвет авто</label>
+              <div class="ord-color-palette" id="ordColorPalette"></div>
+            </div>
+            <div class="ord-form-group">
+              <label class="ord-form-label">Статус</label>
+              <select class="ord-form-select" id="ordField-status">
+                <option value="new">🟕 Новый</option>
+                <option value="in_progress">🟡 В работе</option>
+                <option value="done">🟢 Готово</option>
+                <option value="issued">🔵 Выдано</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- ТАБЛИЦА УСЛУГ С ГАЛОЧКОЙ РУЧНОГО ВВОДА -->
+          <div class="ord-services-block">
+            <div class="ord-services-block-head">
+              <label class="ord-form-label">Услуги и цены</label>
+              <label class="ord-manual-toggle">
+                <input type="checkbox" id="ordManualMode" onchange="ordToggleManualMode()">
+                <span>✍ Ручной ввод</span>
+              </label>
+            </div>
+            <div class="ord-rows-table" id="ordRowsTable">
+              <div class="ord-row ord-row-head" id="ordRowHead">
+                <div>Категория</div>
+                <div>Подкатегория</div>
+                <div>Услуга</div>
+                <div>Цена, ₽</div>
+                <div style="width:32px"></div>
+              </div>
+              <div class="ord-row-body" id="ordRowsBody"></div>
+              <div class="ord-row-foot">
+                <button type="button" class="ord-btn-add-row" onclick="ordAddRow()">＋ Добавить строку</button>
+                <div class="ord-row-total">ИТОГО: <span id="ordTotalPrice">0</span> ₽</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ord-form-group full" style="margin-top:14px;">
+            <label class="ord-form-label">Комментарий</label>
+            <textarea class="ord-form-textarea" id="ordField-note" placeholder="Доп. инфо..."></textarea>
+          </div>
+
+          <div class="ord-form-actions">
+            <button class="ord-btn-delete" id="ordDeleteBtn" onclick="ordDelete()" style="display:none;">🗑 Удалить</button>
+            <button class="ord-btn-cancel" onclick="ordCloseForm()">Отмена</button>
+            <button class="ord-btn-save" onclick="ordSave()">💾 Сохранить</button>
+          </div>
         </div>
 
         <div class="ord-toolbar">
@@ -148,94 +243,13 @@
         </div>
       </div>
 
-      <div class="ord-modal-overlay" id="ordModal">
-        <div class="ord-modal">
-          <div class="ord-modal-header">
-            <div class="ord-modal-title" id="ordModalTitle">Новый заказ-наряд</div>
-            <button class="ord-modal-close" onclick="ordCloseModal()">✕</button>
-          </div>
-          <div class="ord-form-grid">
-            <div class="ord-form-group">
-              <label class="ord-form-label">Номер заказ-наряда *</label>
-              <input type="text" class="ord-form-input" id="ordField-number" placeholder="Напр. 1234">
-              <div class="ord-form-hint">Из внешней CRM</div>
-            </div>
-            <div class="ord-form-group">
-              <label class="ord-form-label">Пост</label>
-              <select class="ord-form-select" id="ordField-post">
-                <option value="auto">Авто (свободный)</option>
-                <option value="1">Пост 1</option>
-                <option value="2">Пост 2</option>
-                <option value="3">Пост 3</option>
-                <option value="4">Пост 4</option>
-              </select>
-              <div class="ord-form-hint">Если не выбрать — назначится свободный</div>
-            </div>
-            <div class="ord-form-group">
-              <label class="ord-form-label">Марка / модель *</label>
-              <input type="text" class="ord-form-input" id="ordField-carBrand" placeholder="Toyota Camry">
-            </div>
-            <div class="ord-form-group">
-              <label class="ord-form-label">Госномер</label>
-              <input type="text" class="ord-form-input" id="ordField-carPlate" placeholder="А123ВС 77" style="text-transform:uppercase;">
-            </div>
-            <div class="ord-form-group full">
-              <label class="ord-form-label">Цвет авто (для графика)</label>
-              <div class="ord-color-palette" id="ordColorPalette"></div>
-            </div>
-            <div class="ord-form-group">
-              <label class="ord-form-label">Дата заезда *</label>
-              <input type="date" class="ord-form-input" id="ordField-dateIn">
-            </div>
-            <div class="ord-form-group">
-              <label class="ord-form-label">Дата выезда *</label>
-              <input type="date" class="ord-form-input" id="ordField-dateOut">
-            </div>
-            <div class="ord-form-group full">
-              <label class="ord-form-label">Статус</label>
-              <select class="ord-form-select" id="ordField-status">
-                <option value="new">🆕 Новый</option>
-                <option value="in_progress">🟡 В работе</option>
-                <option value="done">🟢 Готово</option>
-                <option value="issued">🔵 Выдано</option>
-              </select>
-            </div>
-            <div class="ord-form-group full">
-              <label class="ord-form-label">Услуги и цены</label>
-              <div class="ord-rows-table" id="ordRowsTable">
-                <div class="ord-row ord-row-head">
-                  <div>Категория</div>
-                  <div>Подкатегория</div>
-                  <div>Услуга</div>
-                  <div>Цена, ₽</div>
-                  <div style="width:32px"></div>
-                </div>
-                <div class="ord-row-body" id="ordRowsBody"></div>
-                <div class="ord-row-foot">
-                  <button type="button" class="ord-btn-add-row" onclick="ordAddRow()">＋ Добавить строку</button>
-                  <div class="ord-row-total">ИТОГО: <span id="ordTotalPrice">0</span> ₽</div>
-                </div>
-              </div>
-            </div>
-            <div class="ord-form-group full">
-              <label class="ord-form-label">Комментарий</label>
-              <textarea class="ord-form-textarea" id="ordField-note" placeholder="Доп. инфо..."></textarea>
-            </div>
-          </div>
-          <div class="ord-modal-actions">
-            <button class="ord-btn-delete" id="ordDeleteBtn" onclick="ordDelete()" style="display:none;">🗑 Удалить</button>
-            <button class="ord-btn-cancel" onclick="ordCloseModal()">Отмена</button>
-            <button class="ord-btn-save" onclick="ordSave()">💾 Сохранить</button>
-          </div>
-        </div>
-      </div>
-    </main>
+      </main>
   </div>
   <div class="divo-footer">© Диво Детейлинг • 2026</div>
 </div>
 
-<script src="/components/components.js?v=96"></script>
-<script src="/components/access-config.js?v=96"></script>
+<script src="/components/components.js?v=97"></script>
+<script src="/components/access-config.js?v=97"></script>
 <script>
 // ============================================
 // ЗАКАЗ-НАРЯДЫ — SUPABASE
@@ -249,6 +263,7 @@ var ORD_CACHE = null;
 var ORD_PRICE_CATS = null;
 var ORD_PRICE_SUBCATS = null;
 var ORD_PRICE_SERVICES = null;
+var ORD_MANUAL_MODE = false;
 
 var ORD_CAR_COLORS = [
   {hex:'#ef4444', name:'Красный'},   {hex:'#3b82f6', name:'Синий'},
@@ -358,7 +373,7 @@ function ordRenderList(orders) {
 
   var listEl = document.getElementById('ordList');
   if (filtered.length === 0) {
-    listEl.innerHTML = '<div class="ord-empty"><div class="ord-empty-icon">📋</div><div class="ord-empty-text">' + (orders.length === 0 ? 'Пока нет заказ-нарядов' : 'Ничего не найдено') + '</div>' + (orders.length === 0 ? '<button class="ord-btn-create" onclick="ordOpenModal()">➕ Создать первый</button>' : '') + '</div>';
+    listEl.innerHTML = '<div class="ord-empty"><div class="ord-empty-icon">📋</div><div class="ord-empty-text">' + (orders.length === 0 ? 'Пока нет заказ-нарядов' : 'Ничего не найдено') + '</div>' + (orders.length === 0 ? '<button class="ord-btn-create" onclick="ordOpenForm()">➕ Создать первый</button>' : '') + '</div>';
     return;
   }
 
@@ -384,7 +399,7 @@ function ordRenderList(orders) {
       parts.push('<span class="ord-card-price">💰 ' + ordFormatPrice(o.price) + ' ₽</span>');
     }
     parts.push('<span class="ord-card-status ' + o.status + '">' + ORD_STATUS_NAMES[o.status] + '</span>');
-    html += '<div class="ord-card" onclick="ordOpenModal(\'' + o.id + '\')">';
+    html += '<div class="ord-card" onclick="ordOpenForm(\'' + o.id + '\')">';
     html += '<div class="ord-card-status-bar ' + o.status + '"></div>';
     html += '<div class="ord-card-main">' + parts.join('') + '</div>';
     html += '</div>';
@@ -404,24 +419,37 @@ function ordFormatPrice(p) {
 }
 
 // === МОДАЛКА ===
-function ordOpenModal(id) {
+function ordOpenForm(id) {
   ORD_EDITING_ID = id || null;
   ordLoadPrices(function() {
     if (!id) {
       ordResetRows();
-      ordFillModal(null);
+      ordFillForm(null);
+      document.getElementById('ordFormTitle').textContent = 'Новый заказ-наряд';
+      document.getElementById('ordDeleteBtn').style.display = 'none';
+      document.getElementById('ordFormCard').style.display = 'block';
+      document.getElementById('ordFormCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }
     ordGetAll(function(orders) {
       var o = orders.find(function(x){return x.id === id;});
-      ordFillModal(o);
+      ordFillForm(o);
+      document.getElementById('ordFormTitle').textContent = 'Заказ-наряд #' + (o ? o.number : id);
+      document.getElementById('ordDeleteBtn').style.display = 'block';
+      document.getElementById('ordFormCard').style.display = 'block';
+      document.getElementById('ordFormCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   });
 }
 
-function ordFillModal(o) {
+function ordCloseForm() {
+  document.getElementById('ordFormCard').style.display = 'none';
+  ORD_EDITING_ID = null;
+}
+
+function ordFillForm(o) {
   var id = ORD_EDITING_ID;
-  document.getElementById('ordModalTitle').textContent = id ? 'Заказ-наряд #' + (o ? o.number : id) : 'Новый заказ-наряд';
+  document.getElementById('ordFormTitle').textContent = id ? 'Заказ-наряд #' + (o ? o.number : id) : 'Новый заказ-наряд';
   document.getElementById('ordDeleteBtn').style.display = id ? 'block' : 'none';
   document.getElementById('ordField-number').value = o ? (o.number || '') : '';
   document.getElementById('ordField-carBrand').value = o ? (o.carBrand || '') : '';
@@ -440,14 +468,9 @@ function ordFillModal(o) {
   ordRenderRows();
   ordRecalcTotal();
   ordRenderColorPalette(o ? o.carColor : null);
-  document.getElementById('ordModal').classList.add('show');
 }
 
-function ordCloseModal() {
-  document.getElementById('ordModal').classList.remove('show');
-  ORD_EDITING_ID = null;
-  ORD_SERVICES = [];
-}
+
 
 function ordRenderColorPalette(activeColor) {
   var el = document.getElementById('ordColorPalette');
@@ -482,6 +505,32 @@ function ordRemoveRow(idx) {
   ordRecalcTotal();
 }
 
+
+function ordToggleManualMode() {
+  ORD_MANUAL_MODE = document.getElementById('ordManualMode').checked;
+  // При переключении режима сбрасываем выбор услуг, но сохраняем цены и названия
+  for (var i = 0; i < ORD_ROWS.length; i++) {
+    if (ORD_MANUAL_MODE) {
+      // Переходим в ручной режим — сохраняем svcName если есть
+      ORD_ROWS[i].manual = true;
+      ORD_ROWS[i].catId = '';
+      ORD_ROWS[i].subcatId = '';
+      ORD_ROWS[i].svcId = '';
+    } else {
+      // Возвращаемся к прайсу — сбрасываем выбор
+      ORD_ROWS[i].manual = false;
+      ORD_ROWS[i].catId = '';
+      ORD_ROWS[i].subcatId = '';
+      ORD_ROWS[i].svcId = '';
+    }
+  }
+  // Скрываем/показываем заголовок таблицы
+  var head = document.getElementById('ordRowHead');
+  if (head) head.style.display = ORD_MANUAL_MODE ? 'none' : 'grid';
+  ordRenderRows();
+  ordRecalcTotal();
+}
+
 function ordRenderRows() {
   var el = document.getElementById('ordRowsBody');
   if (ORD_ROWS.length === 0) {
@@ -492,14 +541,12 @@ function ordRenderRows() {
   for (var i = 0; i < ORD_ROWS.length; i++) {
     var r = ORD_ROWS[i];
     html += '<div class="ord-row" data-idx="' + i + '">';
-    // Колонка 1: Категория (с опцией "Ручной ввод" в конце)
-    html += '<select onchange="ordOnRowCat(' + i + ', this.value)">' + ordCatOptions(r.catId, r.manual) + '</select>';
-    // Колонки 2-3: зависит от режима
-    if (r.manual) {
-      // Ручной ввод: одно текстовое поле на 2 колонки
-      html += '<input type="text" class="ord-manual-name" value="' + ordEscape(r.svcName) + '" placeholder="Название услуги..." oninput="ordOnRowManualName(' + i + ', this.value)" style="grid-column: span 2;">';
+    if (ORD_MANUAL_MODE || r.manual) {
+      // Ручной режим: одно текстовое поле на 3 колонки
+      html += '<input type="text" class="ord-manual-name" value="' + ordEscape(r.svcName) + '" placeholder="Название услуги..." oninput="ordOnRowManualName(' + i + ', this.value)" style="grid-column: span 3;">';
     } else {
-      // Выбор из прайса: подкатегория + услуга
+      // Режим прайса: 3 селекта
+      html += '<select onchange="ordOnRowCat(' + i + ', this.value)">' + ordCatOptions(r.catId) + '</select>';
       if (r.catId) {
         html += '<select onchange="ordOnRowSubcat(' + i + ', this.value)">' + ordSubcatOptions(r.catId, r.subcatId) + '</select>';
         html += '<select onchange="ordOnRowSvc(' + i + ', this.value, this.options[this.selectedIndex])">' + ordSvcOptions(r.catId, r.subcatId, r.svcId) + '</select>';
@@ -522,15 +569,13 @@ function ordEscape(s) {
   return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function ordCatOptions(selected, isManual) {
+function ordCatOptions(selected) {
   var html = '<option value="">— Категория —</option>';
   for (var i = 0; i < ORD_PRICE_CATS.length; i++) {
     var c = ORD_PRICE_CATS[i];
-    var sel = (String(c.id) === String(selected) && !isManual) ? ' selected' : '';
+    var sel = (String(c.id) === String(selected)) ? ' selected' : '';
     html += '<option value="' + c.id + '"' + sel + '>' + c.name + '</option>';
   }
-  var selM = isManual ? ' selected' : '';
-  html += '<option value="manual"' + selM + '>✍ Ручной ввод</option>';
   return html;
 }
 
@@ -569,18 +614,10 @@ function ordSvcOptions(catId, subcatId, selected) {
 
 function ordOnRowCat(idx, val) {
   var r = ORD_ROWS[idx];
-  if (val === 'manual') {
-    r.manual = true;
-    r.catId = '';
-    r.subcatId = '';
-    r.svcId = '';
-  } else {
-    r.manual = false;
-    r.catId = val;
-    r.subcatId = '';
-    r.svcId = '';
-    r.svcName = '';
-  }
+  r.catId = val;
+  r.subcatId = '';
+  r.svcId = '';
+  r.svcName = '';
   ordRenderRows();
 }
 
@@ -750,7 +787,7 @@ function ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, status
     .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(function() {
       ordInvalidateCache();
-      ordCloseModal();
+      ordCloseForm();
       ordRender();
     })
     .catch(function(e) {
@@ -773,7 +810,7 @@ function ordDelete() {
     .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); })
     .then(function() {
       ordInvalidateCache();
-      ordCloseModal();
+      ordCloseForm();
       ordRender();
     })
     .catch(function(e) {
@@ -801,7 +838,7 @@ function divoCheckAuthAndInit() {
   if (!user) {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=96')
+    fetch('/components/auth-form.html?v=97')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
@@ -839,9 +876,7 @@ function ordStartPage() {
   divoInit();
   ordInitFilters();
   ordRender();
-  document.getElementById('ordModal').addEventListener('click', function(e) {
-    if (e.target === this) ordCloseModal();
-  });
+
 }
 
 if (document.readyState === 'loading') {
