@@ -2,7 +2,7 @@
    DIVO CRM v2 — ЛОГИКА КОМПОНЕНТОВ
    ========================================== */
 
-var DIVO_VERSION = 'v79';
+var DIVO_VERSION = 'v80';
 
 var SUPABASE_URL = 'https://jnbqzngsglnjzzpsvvgn.supabase.co';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuYnF6bmdzZ2xuanp6cHN2dmduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyMzIwOTEsImV4cCI6MjEwNDgwODA5MX0.uHVMUKBtO0326KB3bAHQ8rywBvBms7WvfaxPrhm3_Y0';
@@ -36,7 +36,7 @@ var DIVO_USERS = [
 
 function divoGetUser() {
   try {
-    var saved = sessionStorage.getItem('divo_auth');
+    var saved = localStorage.getItem('divo_auth');
     if (!saved) return null;
     var data = JSON.parse(saved);
     if (data && data.username) return data;
@@ -142,7 +142,7 @@ function divoDoLogin() {
         try {
           var result = JSON.parse(xhr.responseText);
           if (result === true) {
-            sessionStorage.setItem('divo_auth', JSON.stringify({
+            localStorage.setItem('divo_auth', JSON.stringify({
               username: loginVal,
               password: passVal
             }));
@@ -169,7 +169,7 @@ function divoDoLogin() {
 }
 
 function divoLogout() {
-  sessionStorage.removeItem('divo_auth');
+  localStorage.removeItem('divo_auth');
   location.href = 'index.html';
 }
 

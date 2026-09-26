@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — Контакты</title>
-<link rel="stylesheet" href="/assets/style.css?v=79">
-<link rel="stylesheet" href="/assets/auth.css?v=79">
-<link rel="stylesheet" href="/assets/contacts.css?v=79">
+<link rel="stylesheet" href="/assets/style.css?v=80">
+<link rel="stylesheet" href="/assets/auth.css?v=80">
+<link rel="stylesheet" href="/assets/contacts.css?v=80">
 </head>
 <body>
 
@@ -30,7 +30,7 @@
 
 </div>
 
-<script src="/components/components.js?v=79"></script>
+<script src="/components/components.js?v=80"></script>
 <script>
 function divoCheckAuthAndInit() {
   var user = divoGetUser();
@@ -39,7 +39,7 @@ function divoCheckAuthAndInit() {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
 
-    fetch('/components/auth-form.html?v=79')
+    fetch('/components/auth-form.html?v=80')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
@@ -68,7 +68,7 @@ function divoCheckAuthAndInit() {
   divoInit();
 
   // Грузим контент контактов
-  fetch('/components/contacts-view.html?v=79')
+  fetch('/components/contacts-view.html?v=80')
     .then(function(r) { return r.text(); })
     .then(function(html) {
       var content = document.getElementById('divoContent');
