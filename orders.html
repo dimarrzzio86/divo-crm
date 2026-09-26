@@ -1047,8 +1047,8 @@ function ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, status
     .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(function() {
       ordInvalidateCache();
-      // Если заказ-наряд переведён в "Готово" — создаём записи в "Расчётах" для контрагентов
-      if (status === 'done') {
+      // Если заказ-наряд в работе — создаём/обновляем записи в "Расчётах" для контрагентов
+      if (status === 'in_progress') {
         ordPushContractorPayments(ORD_EDITING_ID, number, dateOut || dateIn, services, totalPrice);
       }
       ordCloseForm();
@@ -1065,7 +1065,20 @@ function ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, status
 // Вызывается при переводе заказ-наряда в статус "Готово"
 function ordPushContractorPayments(orderId, orderNumber, orderDate, services, orderTotal) {
   if (!orderId) return;
-  // 1. Загружаем: компоненты услуг, цены (с contractor_id) и доп. расходы
+  // 0. Удаляем старые записи этого заказ-наряда (по комментарию "Заказ #XXX")
+  // чтобы при повторном сохранении не было дублей
+  var oldCommentPattern = 'Заказ #' + orderNumber + ' %';
+  var delUrl = ORD_SUPABASE_URL + '/rest/v1/entries?comments=like.' + encodeURIComponent(oldCommentPattern) + '&contractor_id=not.is.null';
+  fetch(delUrl, {
+    method: 'DELETE',
+    headers: {
+      'apikey': ORD_SUPABASE_KEY,
+      'Authorization': 'Bearer ' + ORD_SUPABASE_KEY
+    }
+  }).then(function(r) {
+    if (!r.ok) console.error('Ошибка удаления старых записей: HTTP ' + r.status);
+    // Продолжаем в любом случае
+    // 1. Загружаем: компоненты услуг, цены (с contractor_id) и доп. расходы
   var svcIds = [];
   for (var i = 0; i < services.length; i++) {
     var sid = services[i].serviceId;
@@ -1076,12 +1089,13 @@ function ordPushContractorPayments(orderId, orderNumber, orderDate, services, or
   var extraUrl = ORD_SUPABASE_URL + '/rest/v1/order_extra_costs?select=*&order_id=eq.' + encodeURIComponent(orderId);
   var contrUrl = ORD_SUPABASE_URL + '/rest/v1/contractors?select=id,category,name,phone';
 
-  Promise.all([
-    svcIds.length ? fetch(compUrl, { headers: { 'apikey': ORD_SUPABASE_KEY, 'Authorization': 'Bearer ' + ORD_SUPABASE_KEY } }).then(function(r) { return r.json(); }) : Promise.resolve([]),
-    fetch(costUrl, { headers: { 'apikey': ORD_SUPABASE_KEY, 'Authorization': 'Bearer ' + ORD_SUPABASE_KEY } }).then(function(r) { return r.json(); }),
-    fetch(extraUrl, { headers: { 'apikey': ORD_SUPABASE_KEY, 'Authorization': 'Bearer ' + ORD_SUPABASE_KEY } }).then(function(r) { return r.json(); }),
-    fetch(contrUrl, { headers: { 'apikey': ORD_SUPABASE_KEY, 'Authorization': 'Bearer ' + ORD_SUPABASE_KEY } }).then(function(r) { return r.json(); })
-  ]).then(function(results) {
+    return Promise.all([
+      svcIds.length ? fetch(compUrl, { headers: { 'apikey': ORD_SUPABASE_KEY, 'Authorization': 'Bearer ' + ORD_SUPABASE_KEY } }).then(function(r) { return r.json(); }) : Promise.resolve([]),
+      fetch(costUrl, { headers: { 'apikey': ORD_SUPABASE_KEY, 'Authorization': 'Bearer ' + ORD_SUPABASE_KEY } }).then(function(r) { return r.json(); }),
+      fetch(extraUrl, { headers: { 'apikey': ORD_SUPABASE_KEY, 'Authorization': 'Bearer ' + ORD_SUPABASE_KEY } }).then(function(r) { return r.json(); }),
+      fetch(contrUrl, { headers: { 'apikey': ORD_SUPABASE_KEY, 'Authorization': 'Bearer ' + ORD_SUPABASE_KEY } }).then(function(r) { return r.json(); })
+    ]);
+  }).then(function(results) {
     var comps = results[0] || [];
     var costs = results[1] || [];
     var extras = results[2] || [];
@@ -1150,6 +1164,19 @@ function ordPushContractorPayments(orderId, orderNumber, orderDate, services, or
     });
   }).catch(function(e) {
     console.error('Ошибка загрузки данных для расчётов:', e);
+  });
+}
+
+// Тестовая функция для ручного запуска из консоли
+function ordTestPayments(orderId) {
+  if (!orderId) { console.log('Укажите orderId'); return; }
+  fetch(ORD_SUPABASE_URL + '/rest/v1/orders?id=eq.' + encodeURIComponent(orderId) + '&select=*', {
+    headers: { 'apikey': ORD_SUPABASE_KEY, 'Authorization': 'Bearer ' + ORD_SUPABASE_KEY }
+  }).then(function(r) { return r.json(); }).then(function(rows) {
+    if (!rows.length) { console.log('Заказ не найден'); return; }
+    var o = rows[0];
+    console.log('Тестируем заказ #' + o.number, o);
+    ordPushContractorPayments(o.id, o.number, o.date_out || o.date_in, o.services || [], o.price);
   });
 }
 
