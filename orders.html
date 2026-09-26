@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — Заказ-наряды</title>
-<link rel="stylesheet" href="/assets/style.css?v=111">
-<link rel="stylesheet" href="/assets/auth.css?v=111">
+<link rel="stylesheet" href="/assets/style.css?v=112">
+<link rel="stylesheet" href="/assets/auth.css?v=112">
 <style>
 /* === СТИЛИ СТРАНИЦЫ ЗАКАЗ-НАРЯДОВ === */
 .ord-page { padding: 0; }
@@ -301,13 +301,26 @@
         </div>
       </div>
 
+      <!-- Модалка расчёта стоимости -->
+      <div class="ord-calc-overlay" id="ordCalcModal" onclick="if(event.target===this)ordCloseCalc()">
+        <div class="ord-calc-modal">
+          <div class="ord-calc-header">
+            <div class="ord-calc-title" id="ordCalcTitle">🧮 Расчёт стоимости</div>
+            <button class="ord-calc-close" onclick="ordCloseCalc()">✕</button>
+          </div>
+          <div id="ordCalcBody">
+            <div class="ord-calc-loading">Загрузка...</div>
+          </div>
+        </div>
+      </div>
+
       </main>
   </div>
   <div class="divo-footer">© Диво Детейлинг • 2026</div>
 </div>
 
-<script src="/components/components.js?v=111"></script>
-<script src="/components/access-config.js?v=111"></script>
+<script src="/components/components.js?v=112"></script>
+<script src="/components/access-config.js?v=112"></script>
 <script>
 // ============================================
 // ЗАКАЗ-НАРЯДЫ — SUPABASE
@@ -1117,7 +1130,7 @@ function divoCheckAuthAndInit() {
   if (!user) {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=111')
+    fetch('/components/auth-form.html?v=112')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
