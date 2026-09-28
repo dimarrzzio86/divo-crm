@@ -191,19 +191,21 @@
         <div class="sset-modal-option-content">
           <div class="sset-modal-option-title">🕐 Сокращённый день</div>
           <div class="sset-modal-option-desc">Особые часы работы в этот день</div>
-          <div class="sset-short-hours" id="ssetShortHours" style="display:none; margin-top: 10px;">
-            <div class="sset-hours-field">
-              <span class="sset-hours-label">Открытие</span>
-              <input type="time" class="sset-hours-input" id="ssetModalOpenTime" value="11:00">
-            </div>
-            <span class="sset-hours-sep">—</span>
-            <div class="sset-hours-field">
-              <span class="sset-hours-label">Закрытие</span>
-              <input type="time" class="sset-hours-input" id="ssetModalCloseTime" value="16:00">
-            </div>
-          </div>
         </div>
       </label>
+    </div>
+
+    <!-- Поля времени ВНЕ label (чтобы клик не переключал radio) -->
+    <div class="sset-short-hours" id="ssetShortHours" style="display:none;">
+      <div class="sset-hours-field">
+        <span class="sset-hours-label">Открытие</span>
+        <input type="time" class="sset-hours-input" id="ssetModalOpenTime" value="11:00">
+      </div>
+      <span class="sset-hours-sep">—</span>
+      <div class="sset-hours-field">
+        <span class="sset-hours-label">Закрытие</span>
+        <input type="time" class="sset-hours-input" id="ssetModalCloseTime" value="16:00">
+      </div>
     </div>
     <div class="sset-modal-actions">
       <button class="sset-modal-btn-delete" id="ssetModalDelete" onclick="ssetModalDelete()" style="display:none;">🗑 Удалить</button>
