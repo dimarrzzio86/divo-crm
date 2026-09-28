@@ -297,17 +297,17 @@
   background: #18181b; border: 1.5px solid #27272a; border-radius: 16px;
   padding: 24px; max-width: 520px; width: 100%; max-height: 85vh; overflow-y: auto;
 }
-.sch-popup-title { font-size: 20px; font-weight: 800; color: #fafafa; margin-bottom: 4px; }
-.sch-popup-sub { font-size: 13px; color: #a1a1aa; margin-bottom: 20px; }
+.sch-popup-title { font-size: 22px; font-weight: 800; color: #fafafa; margin-bottom: 6px; }
+.sch-popup-sub { font-size: 15px; color: #a1a1aa; margin-bottom: 20px; }
 .sch-popup-section-title {
-  font-size: 11px; font-weight: 700; color: #71717a;
+  font-size: 14px; font-weight: 700; color: #71717a;
   text-transform: uppercase; letter-spacing: 1.5px;
   margin: 20px 0 10px; padding-bottom: 6px; border-bottom: 1px solid #27272a;
 }
 .sch-popup-task {
   display: flex; align-items: center; gap: 12px;
-  padding: 12px 14px; background: #0a0a0a; border: 1px solid #27272a;
-  border-radius: 10px; margin-bottom: 6px; font-size: 14px; color: #d4d4d8;
+  padding: 14px 16px; background: #0a0a0a; border: 1px solid #27272a;
+  border-radius: 10px; margin-bottom: 8px; font-size: 16px; color: #d4d4d8;
   transition: border-color .15s;
 }
 .sch-popup-task:hover { border-color: #3f3f46; }
@@ -327,8 +327,8 @@
   padding: 14px; background: #0a0a0a; border-radius: 10px; margin-bottom: 8px;
   border-left: 4px solid var(--car-color, #3b82f6);
 }
-.sch-popup-car-name { font-weight: 700; color: #fafafa; font-size: 15px; }
-.sch-popup-car-meta { font-size: 12px; color: #a1a1aa; margin-top: 4px; }
+.sch-popup-car-name { font-weight: 700; color: #fafafa; font-size: 18px; }
+.sch-popup-car-meta { font-size: 14px; color: #a1a1aa; margin-top: 6px; }
 .sch-popup-close {
   margin-top: 20px; width: 100%; padding: 12px;
   background: #27272a; color: #a1a1aa; border: 1.5px solid #3f3f46;
@@ -1107,8 +1107,8 @@ function openPopup(dateStr){
     tasks.forEach(function(t) {
       var timeStr = t.time ? '<span style="color:#fbbf24;font-weight:700;margin-right:6px;">'+t.time.substring(0,5)+'</span>' : '';
       var doneCls = t.done ? ' style="opacity:0.5;text-decoration:line-through;"' : '';
-      html += '<div'+doneCls+' style="font-size:12px;color:#d4d4d8;padding:4px 0;display:flex;align-items:center;gap:4px;">'+
-                '<div style="width:16px;height:16px;border-radius:4px;border:1.5px solid '+(t.done?'#22c55e':'#3f3f46')+';background:'+(t.done?'#22c55e':'transparent')+';flex-shrink:0;"></div>'+
+      html += '<div'+doneCls+' style="font-size:15px;color:#d4d4d8;padding:6px 0;display:flex;align-items:center;gap:8px;">'+
+                '<div style="width:20px;height:20px;border-radius:5px;border:2px solid '+(t.done?'#22c55e':'#3f3f46')+';background:'+(t.done?'#22c55e':'transparent')+';flex-shrink:0;"></div>'+
                 timeStr + '<span>'+t.text+'</span>'+
               '</div>';
     });
@@ -1123,7 +1123,7 @@ function openPopup(dateStr){
       if (car.services && car.services.length) {
         svcsHtml = car.services.map(function(s){
           var tag = s.outsource ? ' <span class="sch-svc-tag">АУТСОРС</span>' : '';
-          return '<div style="font-size:12px;color:#a1a1aa;padding:2px 0;">• '+s.name+tag+' <span style="color:#52525b;">'+s.price+'</span></div>';
+          return '<div style="font-size:15px;color:#a1a1aa;padding:4px 0;">• '+s.name+tag+' <span style="color:#52525b;">'+s.price+'</span></div>';
         }).join('');
       }
       // Контакты (контрагенты из расчётов)
@@ -1131,27 +1131,27 @@ function openPopup(dateStr){
       var contrHtml = '';
       if (contractors.length) {
         contrHtml = '<div style="margin-top:8px;padding-top:8px;border-top:1px dashed #27272a;">'+
-                    '<div style="font-size:11px;font-weight:700;color:#60a5fa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">👥 Контакты ('+contractors.length+')</div>';
+                    '<div style="font-size:13px;font-weight:700;color:#60a5fa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">👥 Контакты ('+contractors.length+')</div>';
         contractors.forEach(function(contr) {
           var part = contr.part || '';
-          contrHtml += '<div style="font-size:12px;color:#d4d4d8;padding:3px 0;">'+
+          contrHtml += '<div style="font-size:15px;color:#d4d4d8;padding:5px 0;">'+
                          '👤 '+contr.name+
                          (part ? ' <span style="color:#71717a;">— '+part+'</span>' : '')+
                        '</div>';
         });
         contrHtml += '</div>';
       } else {
-        contrHtml = '<div style="margin-top:8px;padding-top:8px;border-top:1px dashed #27272a;font-size:11px;color:#52525b;font-style:italic;">Контакты не указаны</div>';
+        contrHtml = '<div style="margin-top:8px;padding-top:8px;border-top:1px dashed #27272a;font-size:14px;color:#71717a;font-style:italic;">Контакты не указаны</div>';
       }
-      html += '<div style="background:#18181b;border:1px solid #27272a;border-radius:8px;padding:10px;margin-bottom:8px;border-left:4px solid '+car.color+';">'+
-                '<div style="font-weight:700;color:#fafafa;font-size:14px;">'+car.name+'</div>'+
-                '<div style="font-size:11px;color:#71717a;margin-bottom:6px;">Пост '+car.post+(car.number?' · #'+car.number:'')+' · '+statusLabel+(car.price>0?' · '+car.price.toLocaleString('ru-RU')+' ₽':'')+'</div>'+
+      html += '<div style="background:#18181b;border:1px solid #27272a;border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid '+car.color+';">'+
+                '<div style="font-weight:700;color:#fafafa;font-size:17px;">'+car.name+'</div>'+
+                '<div style="font-size:13px;color:#a1a1aa;margin-bottom:8px;">Пост '+car.post+(car.number?' · #'+car.number:'')+' · '+statusLabel+(car.price>0?' · '+car.price.toLocaleString('ru-RU')+' ₽':'')+'</div>'+
                 svcsHtml+
                 contrHtml+
               '</div>';
     });
   } else {
-    html += '<div style="color:#52525b;font-size:14px;padding:16px;text-align:center;">Нет записей на этот день<br><span style="font-size:12px;">Посты свободны</span></div>';
+    html += '<div style="color:#71717a;font-size:16px;padding:20px;text-align:center;">Нет записей на этот день<br><span style="font-size:14px;">Посты свободны</span></div>';
   }
 
   document.getElementById('popupContent').innerHTML = html;
