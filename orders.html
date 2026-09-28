@@ -480,8 +480,8 @@ function ordInvalidateCache() { ORD_CACHE = null; }
 // Проверка пересечения диапазонов времени (HH:MM)
 function ordTimeOverlap(s1, e1, s2, e2) {
   // s1-e1 и s2-e2 в формате "HH:MM"
-  if (!s1 || !e1 || !s2 || !e2) return false; // если нет времени — нет конфликта по времени
-  // Если время начала первого >= времени окончания второго — не пересекаются
+  // Если время не указано — считаем что машина занимает ВЕСЬ день (конфликт)
+  if (!s1 || !e1 || !s2 || !e2) return true;
   if (s1 >= e2) return false;
   if (s2 >= e1) return false;
   return true;
@@ -489,6 +489,8 @@ function ordTimeOverlap(s1, e1, s2, e2) {
 
 function ordFindFreePost(dateIn, dateOut, timeIn, timeOut, excludeId, orders) {
   if (!dateIn || !dateOut) return 1;
+  // Считаем количество занятых постов на дату заезда
+  // На одну дату (день заезда) максимум 4 авто — по одному на пост
   for (var post = 1; post <= 4; post++) {
     var isFree = true;
     for (var i = 0; i < orders.length; i++) {
@@ -498,22 +500,27 @@ function ordFindFreePost(dateIn, dateOut, timeIn, timeOut, excludeId, orders) {
       if (!o.dateIn || !o.dateOut) continue;
       // Проверяем пересечение по датам
       if (dateIn <= o.dateOut && dateOut >= o.dateIn) {
-        // Даты пересекаются — проверяем время (только если это один и тот же день)
-        if (dateIn === o.dateIn && dateOut === o.dateOut) {
-          // Тот же день — проверяем по времени
-          if (ordTimeOverlap(timeIn || '', timeOut || '', o.timeIn || '', o.timeOut || '')) {
+        // Даты пересекаются. Проверяем время ТОЛЬКО если:
+        // - это заказ-наряд на тот же день заезда
+        // - у обоих есть время
+        // Иначе — считаем конфликт (машина на посту)
+        var sameDayIn = (dateIn === o.dateIn);
+        var bothHaveTime = (timeIn && timeOut && o.timeIn && o.timeOut);
+        if (sameDayIn && bothHaveTime) {
+          // Тот же день, у обоих есть время — проверяем пересечение
+          if (ordTimeOverlap(timeIn, timeOut, o.timeIn, o.timeOut)) {
             isFree = false; break;
           }
           // Время не пересекается — пост свободен для этого слота
         } else {
-          // Разные даты (многодневный) — конфликт
+          // Разные даты или нет времени — конфликт (машина на посту)
           isFree = false; break;
         }
       }
     }
     if (isFree) return post;
   }
-  return 1;
+  return 0; // все посты заняты
 }
 
 // === РЕНДЕР СПИСКА ===
@@ -1044,11 +1051,41 @@ function ordSave() {
 
   if (post === 'auto') {
     ordGetAll(function(orders) {
-      post = String(ordFindFreePost(dateIn, dateOut, timeIn, timeOut, ORD_EDITING_ID, orders));
+      var freePost = ordFindFreePost(dateIn, dateOut, timeIn, timeOut, ORD_EDITING_ID, orders);
+      if (!freePost) {
+        alert('⚠️ Все 4 поста заняты на эту дату!\n\nВыберите другую дату или время.');
+        return;
+      }
+      post = String(freePost);
       ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, timeIn, timeOut, status, post, note, totalPrice, services);
     });
   } else {
-    ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, timeIn, timeOut, status, post, note, totalPrice, services);
+    // Проверяем конфликт при ручном выборе поста
+    ordGetAll(function(orders) {
+      var hasConflict = false;
+      for (var i = 0; i < orders.length; i++) {
+        var o = orders[i];
+        if (o.id === ORD_EDITING_ID) continue;
+        if (String(o.post) !== String(post)) continue;
+        if (!o.dateIn || !o.dateOut) continue;
+        if (dateIn <= o.dateOut && dateOut >= o.dateIn) {
+          var sameDayIn = (dateIn === o.dateIn);
+          var bothHaveTime = (timeIn && timeOut && o.timeIn && o.timeOut);
+          if (sameDayIn && bothHaveTime) {
+            if (ordTimeOverlap(timeIn, timeOut, o.timeIn, o.timeOut)) {
+              hasConflict = true; break;
+            }
+          } else {
+            hasConflict = true; break;
+          }
+        }
+      }
+      if (hasConflict) {
+        alert('⚠️ Этот пост уже занят на выбранную дату/время!\n\nВыберите другой пост или измените время.');
+        return;
+      }
+      ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, timeIn, timeOut, status, post, note, totalPrice, services);
+    });
   }
 }
 
