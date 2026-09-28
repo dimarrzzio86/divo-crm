@@ -358,7 +358,7 @@
       <div class="sch-dev-banner">
         <span style="font-size:18px;">🚧</span>
         <span><b>РАЗДЕЛ В РАЗРАБОТКЕ</b> · это превью для оценки визуала</span>
-        <span class="sch-soon" style="margin-left:auto;">СКОРО</span>
+        <span class="sch-soon" style="margin-left:auto; background:#22c55e;">LIVE</span>
       </div>
 
       <!-- Заголовок -->
@@ -366,7 +366,7 @@
         <div>
           <div class="sch-title">
             📅 График записей
-            <span class="sch-soon">СКОРО</span>
+  
           </div>
           <div class="sch-subtitle">Управление 4 постами и автомобилями в студии</div>
         </div>
@@ -493,33 +493,70 @@ function divoInitSchedule() {
   }
 }
 
-// === ТЕСТОВЫЕ ДАННЫЕ ===
-var CARS = [
-  { id:1, name:'Honda Civic',  client:'Алексей П.',  color:'#3b82f6', start:'2026-09-22', end:'2026-09-26', post:1,
-    services:[
-      {name:'Полировка кузова', price:'45 000 ₽', outsource:false},
-      {name:'Керамика 9H',      price:'30 000 ₽', outsource:false},
-      {name:'Шумоизоляция',      price:'60 000 ₽', outsource:true,  contractor:'ИП Звуков'}
-    ]},
-  { id:2, name:'Mazda CX-5',   client:'Мария К.',   color:'#22c55e', start:'2026-09-23', end:'2026-09-25', post:2,
-    services:[
-      {name:'Оклейка плёнкой', price:'120 000 ₽', outsource:false}
-    ]},
-  { id:3, name:'BMW X5',       client:'Дмитрий С.', color:'#f97316', start:'2026-09-24', end:'2026-09-28', post:3,
-    services:[
-      {name:'Полировка + керамика', price:'75 000 ₽', outsource:false},
-      {name:'Антидождь',             price:'8 000 ₽', outsource:false}
-    ]},
-  { id:4, name:'Toyota Camry', client:'Игорь В.',   color:'#a855f7', start:'2026-09-28', end:'2026-10-02', post:1,
-    services:[
-      {name:'Химчистка салона', price:'35 000 ₽', outsource:true, contractor:'ЧистоСервис'}
-    ]},
-  { id:5, name:'Kia Sportage', client:'Сергей Л.',  color:'#ec4899', start:'2026-09-29', end:'2026-10-01', post:2,
-    services:[
-      {name:'Керамика 9H Pro', price:'45 000 ₽', outsource:false},
-      {name:'Полировка фар',    price:'6 000 ₽', outsource:false}
-    ]}
-];
+// === SUPABASE ===
+var SCH_SUPABASE_URL = (typeof SUPABASE_URL !== 'undefined') ? SUPABASE_URL : 'https://jnbqzngsglnjzzpsvvgn.supabase.co';
+var SCH_SUPABASE_KEY = (typeof SUPABASE_KEY !== 'undefined') ? SUPABASE_KEY : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuYnF6bmdzZ2xuanp6cHN2dmduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyMzIwOTEsImV4cCI6MjEwNDgwODA5MX0.uHVMUKBtO0326KB3bAHQ8rywBvBms7WvfaxPrhm3_Y0';
+
+// === ДАННЫЕ (загружаются из Supabase) ===
+var CARS = []; // пустой массив, заполнится после загрузки из БД
+var SCH_CACHE = null; // кэш заказ-нарядов
+
+// Загрузить заказ-наряды из Supabase и заполнить CARS
+function loadScheduleOrders() {
+  return fetch(SCH_SUPABASE_URL + '/rest/v1/orders?select=*&order=created_at.desc', {
+    headers: {
+      'apikey': SCH_SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SCH_SUPABASE_KEY
+    }
+  })
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(data) {
+      SCH_CACHE = data || [];
+      // Маппим orders → формат CARS
+      CARS = SCH_CACHE.map(function(o) {
+        // Услуги
+        var services = [];
+        if (o.services && Array.isArray(o.services)) {
+          services = o.services.map(function(s) {
+            return {
+              name: s.name || s.serviceName || 'Услуга',
+              price: s.price ? (s.price.toLocaleString('ru-RU') + ' ₽') : '—',
+              outsource: !!s.outsource,
+              contractor: s.contractor || s.contractorName || ''
+            };
+          });
+        }
+        // Имя авто: марка + госномер
+        var carName = (o.car_brand || 'Авто') + (o.car_plate ? ' ' + o.car_plate : '');
+        // Цвет (по умолчанию серый)
+        var carColor = o.car_color || '#525252';
+        return {
+          id: o.id,
+          number: o.number || '',
+          name: carName,
+          carPlate: o.car_plate || '',
+          carBrand: o.car_brand || '',
+          client: o.note ? o.note.substring(0, 50) : '', // заметка как "клиент"
+          note: o.note || '',
+          color: carColor,
+          start: o.date_in || todayStr(),
+          end: o.date_out || o.date_in || todayStr(),
+          post: Number(o.post) || 1,
+          status: o.status || 'new',
+          price: o.price || 0,
+          services: services
+        };
+      });
+      // Перерисовываем график
+      updateStats();
+      renderView();
+    })
+    .catch(function(e) {
+      console.error('Ошибка загрузки заказ-нарядов для графика:', e);
+    });
+}
+
+
 
 var HOLIDAYS = { '2026-09-30': true };
 
@@ -546,8 +583,11 @@ var currentDate = new Date(2026, 8, 24);
 var currentView = 'month';
 
 function initScheduleCalendar(){
+  // Сначала рисуем пустой график
   updateStats();
   renderView();
+  // Затем загружаем заказ-наряды из Supabase
+  loadScheduleOrders();
 
   document.querySelectorAll('.sch-view-btn').forEach(function(btn){
     btn.addEventListener('click', function(){
@@ -783,11 +823,12 @@ function renderDay(){
                  '<div class="sch-svc-price">'+s.price+'</div>'+
                '</div>';
       }).join('');
+      var statusLabel = car.status === 'done' ? '✅ ' : (car.status === 'in_progress' ? '🔧 ' : (car.status === 'issued' ? '🚗 ' : '🆕 '));
       html += '<div class="sch-post-card occupied" style="--car-color:'+car.color+';border-left-color:'+car.color+'">'+
         '<div class="sch-post-num" style="--car-color:'+car.color+'">'+post+'</div>'+
         '<div class="sch-post-info">'+
-          '<div class="sch-post-car">'+car.name+' <span style="color:#a1a1aa;font-weight:500;font-size:13px;">· '+car.client+'</span></div>'+
-          '<div class="sch-post-meta">Заезд '+car.start.split('-').reverse().join('.')+' · Выезд '+car.end.split('-').reverse().join('.')+'</div>'+
+          '<div class="sch-post-car">'+statusLabel+car.name+(car.number?' <span style="color:#71717a;font-size:12px;">#'+car.number+'</span>':'')+'</div>'+
+          '<div class="sch-post-meta">Заезд '+(car.start?car.start.split('-').reverse().join('.'):'—')+' · Выезд '+(car.end?car.end.split('-').reverse().join('.'):'—')+(car.price>0?' · '+car.price.toLocaleString('ru-RU')+' ₽':'')+'</div>'+
           '<div class="sch-services">'+svcs+'</div>'+
         '</div>'+
       '</div>';
