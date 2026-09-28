@@ -586,7 +586,7 @@ var DOW_FULL = ['воскресенье','понедельник','вторни�
 function pad(n){ return n<10?'0'+n:''+n; }
 function fmtDate(y,m,d){ return y+'-'+pad(m+1)+'-'+pad(d); }
 function parseDate(s){ var p=s.split('-'); return new Date(p[0],p[1]-1,p[2]); }
-function isWeekend(dow){ return dow===0 || dow===1; }
+function isWeekend(dow){ return dow===0 || dow===6; } // ВС (0) и СБ (6)
 function isHoliday(dateStr){ return !!HOLIDAYS[dateStr]; }
 function carOnPost(car, dateStr){
   var s=parseDate(car.start), e=parseDate(car.end), d=parseDate(dateStr);
