@@ -246,6 +246,21 @@
   font-size: 17px; font-weight: 700; color: #fafafa;
 }
 .sch-post-free-label { font-size: 17px; font-weight: 700; color: #52525b; }
+/* Слоты по времени */
+.sch-time-slots { display: flex; flex-direction: column; gap: 4px; }
+.sch-time-slot { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: all .15s; }
+.sch-time-slot.occupied { border-left: 4px solid var(--car-color, #3b82f6); background: #18181b; }
+.sch-time-slot.occupied:hover { background: #1f1f23; transform: translateX(2px); }
+.sch-time-slot.free { border: 1.5px dashed #3f3f46; background: #0a0a0a; }
+.sch-time-slot.weekend { border-left: 4px solid #52525b; background: #14141a; opacity: 0.6; cursor: default; }
+.sch-time-slot.weekend:hover { background: #14141a; transform: none; }
+.sch-time-range { font-size: 12px; font-weight: 700; color: #fbbf24; min-width: 110px; white-space: nowrap; }
+.sch-time-slot.weekend .sch-time-range { color: #71717a; }
+.sch-time-car { font-size: 13px; color: #fafafa; font-weight: 600; }
+.sch-time-slot.weekend .sch-time-car { color: #71717a; }
+.sch-time-num { font-size: 11px; color: #71717a; margin-left: auto; }
+.sch-time-free-label { font-size: 12px; color: #52525b; font-style: italic; }
+.sch-time-duration { font-size: 10px; color: #3f3f46; margin-left: 4px; }
 .sch-post-meta { font-size: 12px; color: #a1a1aa; margin-top: 3px; }
 .sch-post-services { font-size: 12px; color: #71717a; margin-top: 6px; }
 .sch-services { margin-top: 10px; display: flex; flex-direction: column; gap: 5px; }
@@ -541,6 +556,8 @@ function loadScheduleOrders() {
           color: carColor,
           start: o.date_in || todayStr(),
           end: o.date_out || o.date_in || todayStr(),
+          timeIn: o.time_in || '',
+          timeOut: o.time_out || '',
           post: Number(o.post) || 1,
           status: o.status || 'new',
           price: o.price || 0,
@@ -774,8 +791,12 @@ function renderGantt(days){
         if(isEnd) cls+=' end';
         if(!isStart) cls+=' continue';
         cls += ' occupied';
-        var label = isStart ? car.name.split(' ')[0] : '↳';
-        cells += '<div class="'+cls+'" style="--car-color:'+car.color+'" onclick="openPopup(\''+dateStr+'\')" title="'+car.name+'">'+label+'</div>';
+        // В выходной — серая ячейка, не кликабельная
+        var cellDow = parseDate(dateStr).getDay();
+        var cellIsWeekend = isWeekend(cellDow) || isHoliday(dateStr);
+        var cellColor = cellIsWeekend ? '#52525b' : car.color;
+        var cellClick = cellIsWeekend ? '' : ' onclick="openPopup(\''+dateStr+'\')"';
+        cells += '<div class="'+cls+'" style="--car-color:'+cellColor+'"'+cellClick+' title="'+car.name+'">'+label+'</div>';
       } else {
         cells += '<div class="'+cls+' free" onclick="openPopup(\''+dateStr+'\')">+</div>';
       }
@@ -799,42 +820,40 @@ function renderGantt(days){
 }
 
 // === РЕНДЕР: ДЕНЬ ===
+function timeToMin(t) {
+  if (!t) return null;
+  var p = t.split(':');
+  return Number(p[0]) * 60 + Number(p[1]);
+}
+
+function minToTime(m) {
+  var h = Math.floor(m / 60), mm = m % 60;
+  return (h < 10 ? '0' + h : h) + ':' + (mm < 10 ? '0' + mm : mm);
+}
+
+// Студия работает с 9:00 до 21:00 (будет настраиваться)
+var STUDIO_OPEN = 9 * 60;   // 540 мин
+var STUDIO_CLOSE = 21 * 60;  // 1260 мин
+
 function renderDay(){
   var y=currentDate.getFullYear(), m=currentDate.getMonth(), d=currentDate.getDate();
   var dateStr = fmtDate(y,m,d);
   var dow = currentDate.getDay();
-  document.getElementById('periodLabel').textContent = d+' '+MONTHS[m]+' '+y+' · '+DOW_FULL[dow];
+  var isWeekendDay = isWeekend(dow) || isHoliday(dateStr);
+  document.getElementById('periodLabel').textContent = d+' '+MONTHS[m]+' '+y+' · '+DOW_FULL[dow]+(isWeekendDay?' (выходной)':'');
 
   var cars = CARS.filter(function(car){ return carOnPost(car, dateStr); });
   var html = '<div class="sch-day-view">'+
     '<div class="sch-day-title">📋 Записи на '+d+' '+MONTHS[m].toLowerCase()+'</div>'+
-    '<div class="sch-day-sub">'+DOW_FULL[dow]+', '+(cars.length)+' авто из 4 постов</div>'+
+    '<div class="sch-day-sub">'+DOW_FULL[dow]+(isWeekendDay?' · выходной · машины не кликабельны':'')+', '+cars.length+' авто из 4 постов</div>'+
     '<div class="sch-posts-list">';
 
   for(var post=1; post<=4; post++){
-    var car = cars.find(function(c){ return c.post===post; });
-    if(car){
-      var svcs = car.services.map(function(s){
-        var cls = s.outsource ? 'sch-svc outsource' : 'sch-svc';
-        var contractor = s.outsource ? ' · <b>'+s.contractor+'</b>' : '';
-        var tag = s.outsource ? '<span class="sch-svc-tag">АУТСОРС</span>' : '';
-        return '<div class="'+cls+'">'+
-                 '<div class="sch-svc-bullet"></div>'+
-                 '<div class="sch-svc-name">'+s.name+contractor+'</div>'+
-                 tag+
-                 '<div class="sch-svc-price">'+s.price+'</div>'+
-               '</div>';
-      }).join('');
-      var statusLabel = car.status === 'done' ? '✅ ' : (car.status === 'in_progress' ? '🔧 ' : (car.status === 'issued' ? '🚗 ' : '🆕 '));
-      html += '<div class="sch-post-card occupied" style="--car-color:'+car.color+';border-left-color:'+car.color+';cursor:pointer;" onclick="openPopup(\''+dateStr+'\')">'+
-        '<div class="sch-post-num" style="--car-color:'+car.color+'">'+post+'</div>'+
-        '<div class="sch-post-info">'+
-          '<div class="sch-post-car">'+statusLabel+car.name+(car.number?' <span style="color:#71717a;font-size:12px;">#'+car.number+'</span>':'')+'</div>'+
-          '<div class="sch-post-meta">Заезд '+(car.start?car.start.split('-').reverse().join('.'):'—')+' · Выезд '+(car.end?car.end.split('-').reverse().join('.'):'—')+(car.price>0?' · '+car.price.toLocaleString('ru-RU')+' ₽':'')+'</div>'+
-          '<div class="sch-services">'+svcs+'</div>'+
-        '</div>'+
-      '</div>';
-    } else {
+    var postCars = cars.filter(function(c){ return c.post===post; });
+    // Сортируем по времени заезда
+    postCars.sort(function(a,b){ return (a.timeIn||'99:99') < (b.timeIn||'99:99') ? -1 : 1; });
+    
+    if (postCars.length === 0) {
       html += '<div class="sch-post-card free">'+
         '<div class="sch-post-num">'+post+'</div>'+
         '<div class="sch-post-info">'+
@@ -842,6 +861,49 @@ function renderDay(){
           '<div class="sch-post-meta">Можно записать автомобиль</div>'+
         '</div>'+
       '</div>';
+    } else {
+      html += '<div style="background:#0a0a0a;border:1.5px solid #27272a;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:4px;">';
+      html += '<div style="font-size:13px;font-weight:700;color:#71717a;margin-bottom:6px;padding-left:4px;">Пост '+post+'</div>';
+      html += '<div class="sch-time-slots">';
+      
+      var prevEnd = STUDIO_OPEN;
+      for (var ci = 0; ci < postCars.length; ci++) {
+        var car = postCars[ci];
+        var carStart = timeToMin(car.timeIn) || STUDIO_OPEN;
+        var carEnd = timeToMin(car.timeOut) || STUDIO_CLOSE;
+        
+        // Свободный слот перед машиной (если есть зазор > 15 мин)
+        if (carStart > prevEnd + 15) {
+          var freeDur = carStart - prevEnd;
+          html += '<div class="sch-time-slot free" onclick="openPopup(\''+dateStr+'\')">'+
+                    '<span class="sch-time-range">'+minToTime(prevEnd)+'—'+minToTime(carStart)+'</span>'+
+                    '<span class="sch-time-free-label">свободно ('+Math.round(freeDur/60)+' ч '+(freeDur%60)+' мин)</span>'+
+                  '</div>';
+        }
+        
+        // Машина
+        var statusLabel = car.status === 'done' ? '✅' : (car.status === 'in_progress' ? '🔧' : (car.status === 'issued' ? '🚗' : '🆕'));
+        var timeRange = (car.timeIn ? car.timeIn : '--:--') + '—' + (car.timeOut ? car.timeOut : '--:--');
+        var slotClass = isWeekendDay ? 'sch-time-slot weekend' : 'sch-time-slot occupied';
+        var clickAttr = isWeekendDay ? '' : ' onclick="openPopup(\''+dateStr+'\')"';
+        html += '<div class="'+slotClass+'" style="--car-color:'+car.color+'"'+clickAttr+'>'+
+                  '<span class="sch-time-range">'+timeRange+'</span>'+
+                  '<span class="sch-time-car">'+statusLabel+' '+car.name+(car.number?' <span style="color:#71717a;font-size:11px;">#'+car.number+'</span>':'')+'</span>'+
+                  '<span class="sch-time-num"></span>'+
+                '</div>';
+        prevEnd = carEnd;
+      }
+      
+      // Свободный слот после последней машины (до закрытия)
+      if (prevEnd < STUDIO_CLOSE - 15) {
+        var freeDur2 = STUDIO_CLOSE - prevEnd;
+        html += '<div class="sch-time-slot free" onclick="openPopup(\''+dateStr+'\')">'+
+                  '<span class="sch-time-range">'+minToTime(prevEnd)+'—'+minToTime(STUDIO_CLOSE)+'</span>'+
+                  '<span class="sch-time-free-label">свободно ('+Math.round(freeDur2/60)+' ч '+(freeDur2%60)+' мин)</span>'+
+                '</div>';
+      }
+      
+      html += '</div></div>';
     }
   }
   html += '</div></div>';

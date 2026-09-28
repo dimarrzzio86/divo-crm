@@ -261,8 +261,16 @@
               <input type="date" class="ord-form-input" id="ordField-dateIn">
             </div>
             <div class="ord-form-group">
+              <label class="ord-form-label">Время заезда</label>
+              <input type="time" class="ord-form-input" id="ordField-timeIn" placeholder="--:--">
+            </div>
+            <div class="ord-form-group">
               <label class="ord-form-label">Дата выезда *</label>
               <input type="date" class="ord-form-input" id="ordField-dateOut">
+            </div>
+            <div class="ord-form-group">
+              <label class="ord-form-label">Время выезда</label>
+              <input type="time" class="ord-form-input" id="ordField-timeOut" placeholder="--:--">
             </div>
             <div class="ord-form-group">
               <label class="ord-form-label">Цвет авто</label>
@@ -415,6 +423,8 @@ function ordFromDb(row) {
     carColor: row.car_color || '#525252',
     dateIn: row.date_in || '',
     dateOut: row.date_out || '',
+    timeIn: row.time_in || '',
+    timeOut: row.time_out || '',
     status: row.status || 'new',
     post: String(row.post || '1'),
     note: row.note || '',
@@ -467,7 +477,17 @@ function ordGetAll(callback) {
 function ordInvalidateCache() { ORD_CACHE = null; }
 
 // Поиск свободного поста
-function ordFindFreePost(dateIn, dateOut, excludeId, orders) {
+// Проверка пересечения диапазонов времени (HH:MM)
+function ordTimeOverlap(s1, e1, s2, e2) {
+  // s1-e1 и s2-e2 в формате "HH:MM"
+  if (!s1 || !e1 || !s2 || !e2) return false; // если нет времени — нет конфликта по времени
+  // Если время начала первого >= времени окончания второго — не пересекаются
+  if (s1 >= e2) return false;
+  if (s2 >= e1) return false;
+  return true;
+}
+
+function ordFindFreePost(dateIn, dateOut, timeIn, timeOut, excludeId, orders) {
   if (!dateIn || !dateOut) return 1;
   for (var post = 1; post <= 4; post++) {
     var isFree = true;
@@ -476,7 +496,20 @@ function ordFindFreePost(dateIn, dateOut, excludeId, orders) {
       if (excludeId && o.id === excludeId) continue;
       if (String(o.post) !== String(post)) continue;
       if (!o.dateIn || !o.dateOut) continue;
-      if (dateIn <= o.dateOut && dateOut >= o.dateIn) { isFree = false; break; }
+      // Проверяем пересечение по датам
+      if (dateIn <= o.dateOut && dateOut >= o.dateIn) {
+        // Даты пересекаются — проверяем время (только если это один и тот же день)
+        if (dateIn === o.dateIn && dateOut === o.dateOut) {
+          // Тот же день — проверяем по времени
+          if (ordTimeOverlap(timeIn || '', timeOut || '', o.timeIn || '', o.timeOut || '')) {
+            isFree = false; break;
+          }
+          // Время не пересекается — пост свободен для этого слота
+        } else {
+          // Разные даты (многодневный) — конфликт
+          isFree = false; break;
+        }
+      }
     }
     if (isFree) return post;
   }
@@ -719,7 +752,9 @@ function ordFillForm(o) {
   document.getElementById('ordField-carBrand').value = o ? (o.carBrand || '') : '';
   document.getElementById('ordField-carPlate').value = o ? (o.carPlate || '') : '';
   document.getElementById('ordField-dateIn').value = o ? (o.dateIn || '') : '';
+  document.getElementById('ordField-timeIn').value = o ? (o.timeIn || '') : '';
   document.getElementById('ordField-dateOut').value = o ? (o.dateOut || '') : '';
+  document.getElementById('ordField-timeOut').value = o ? (o.timeOut || '') : '';
   document.getElementById('ordField-status').value = o ? (o.status || 'new') : 'new';
   document.getElementById('ordField-note').value = o ? (o.note || '') : '';
   document.getElementById('ordField-post').value = o ? (o.post || 'auto') : 'auto';
@@ -987,6 +1022,8 @@ function ordSave() {
   var carPlate = document.getElementById('ordField-carPlate').value.trim().toUpperCase();
   var dateIn = document.getElementById('ordField-dateIn').value;
   var dateOut = document.getElementById('ordField-dateOut').value;
+  var timeIn = document.getElementById('ordField-timeIn').value;
+  var timeOut = document.getElementById('ordField-timeOut').value;
   var status = document.getElementById('ordField-status').value;
   var post = document.getElementById('ordField-post').value;
   var note = document.getElementById('ordField-note').value.trim();
@@ -1007,18 +1044,19 @@ function ordSave() {
 
   if (post === 'auto') {
     ordGetAll(function(orders) {
-      post = String(ordFindFreePost(dateIn, dateOut, ORD_EDITING_ID, orders));
-      ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, status, post, note, totalPrice, services);
+      post = String(ordFindFreePost(dateIn, dateOut, timeIn, timeOut, ORD_EDITING_ID, orders));
+      ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, timeIn, timeOut, status, post, note, totalPrice, services);
     });
   } else {
-    ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, status, post, note, totalPrice, services);
+    ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, timeIn, timeOut, status, post, note, totalPrice, services);
   }
 }
 
-function ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, status, post, note, price, services) {
+function ordDoSave(number, carBrand, carPlate, carColor, dateIn, dateOut, timeIn, timeOut, status, post, note, price, services) {
   var data = {
     number: number, car_brand: carBrand, car_plate: carPlate, car_color: carColor,
-    date_in: dateIn, date_out: dateOut, status: status, post: post,
+    date_in: dateIn, date_out: dateOut, time_in: timeIn || null, time_out: timeOut || null,
+    status: status, post: post,
     note: note || '', price: Number(price) || 0, services: services
   };
 
