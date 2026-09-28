@@ -856,6 +856,7 @@ function renderGantt(days){
         if(isEnd) cls+=' end';
         if(!isStart) cls+=' continue';
         cls += ' occupied';
+        var label = isStart ? (car.name.split(' ')[0] || car.name) : '↳';
         // В выходной — серая ячейка, не кликабельная
         var cellDow = parseDate(dateStr).getDay();
         var cellIsWeekend = isWeekend(cellDow) || isDayOff(dateStr);
