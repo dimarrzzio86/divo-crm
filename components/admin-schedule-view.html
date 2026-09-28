@@ -1,0 +1,516 @@
+<!-- Раздел: Настройки графика (админ) -->
+<!-- Уровень: 5 (админ) -->
+
+<style>
+/* === СТИЛИ СТРАНИЦЫ НАСТРОЙКИ ГРАФИКА === */
+.sset-page { padding: 0; }
+
+.sset-top {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 16px; flex-wrap: wrap; margin-bottom: 20px;
+}
+.sset-title {
+  font-size: 24px; font-weight: 800; color: #fafafa;
+  display: flex; align-items: center; gap: 10px;
+}
+.sset-subtitle { font-size: 13px; color: #a1a1aa; margin-top: 4px; }
+
+/* --- Блоки --- */
+.sset-card {
+  background: #18181b; border: 1.5px solid #27272a; border-radius: 12px;
+  padding: 20px; margin-bottom: 16px;
+}
+.sset-card-title {
+  font-size: 16px; font-weight: 800; color: #fafafa; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.sset-card-desc { font-size: 12px; color: #71717a; margin-bottom: 16px; }
+
+/* --- Часы работы --- */
+.sset-hours-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.sset-hours-field { display: flex; flex-direction: column; gap: 4px; }
+.sset-hours-label { font-size: 11px; font-weight: 700; color: #71717a; text-transform: uppercase; letter-spacing: 1px; }
+.sset-hours-input {
+  background: #0a0a0a; border: 1.5px solid #27272a; border-radius: 8px;
+  padding: 10px 14px; color: #fbbf24; font-size: 18px; font-weight: 800;
+  font-family: inherit; width: 100px;
+}
+.sset-hours-input:focus { outline: none; border-color: #fbbf24; }
+.sset-hours-sep { font-size: 20px; color: #52525b; font-weight: 700; }
+.sset-hours-save {
+  background: #22c55e; color: #0a0a0a; border: none; padding: 10px 22px;
+  border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 14px;
+  font-family: inherit; transition: all .15s; margin-left: auto;
+}
+.sset-hours-save:hover { background: #16a34a; transform: translateY(-1px); }
+.sset-hours-save:disabled { background: #3f3f46; color: #71717a; cursor: not-allowed; transform: none; }
+
+/* --- Рабочие дни недели --- */
+.sset-dow-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+.sset-dow-btn {
+  padding: 12px 8px; background: #0a0a0a; border: 1.5px solid #27272a;
+  border-radius: 8px; cursor: pointer; text-align: center; transition: all .15s;
+  font-family: inherit;
+}
+.sset-dow-btn:hover { border-color: #3f3f46; }
+.sset-dow-btn.working { background: #14532d; border-color: #22c55e; }
+.sset-dow-btn.weekend { background: #2a1010; border-color: #ef4444; }
+.sset-dow-name { font-size: 13px; font-weight: 700; color: #fafafa; }
+.sset-dow-btn.working .sset-dow-name { color: #4ade80; }
+.sset-dow-btn.weekend .sset-dow-name { color: #f87171; }
+.sset-dow-status { font-size: 10px; font-weight: 600; margin-top: 2px; }
+.sset-dow-btn.working .sset-dow-status { color: #4ade80; }
+.sset-dow-btn.weekend .sset-dow-status { color: #f87171; }
+
+/* --- Календарь выходных --- */
+.sset-cal-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.sset-cal-nav-btn {
+  padding: 8px 14px; background: #27272a; color: #a1a1aa;
+  border: none; border-radius: 8px; font-size: 14px; font-family: inherit;
+  cursor: pointer; transition: all .15s; font-weight: 600;
+}
+.sset-cal-nav-btn:hover { background: #3f3f46; color: #fafafa; }
+.sset-cal-label { color: #fafafa; font-weight: 700; font-size: 16px; padding: 0 12px; }
+
+.sset-cal-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px;
+  min-width: 600px;
+}
+.sset-cal-dow {
+  text-align: center; font-size: 11px; font-weight: 700; color: #71717a;
+  text-transform: uppercase; letter-spacing: 1px; padding: 8px 4px;
+  border-bottom: 1.5px solid #27272a; margin-bottom: 4px;
+}
+.sset-cal-day {
+  background: #0a0a0a; border: 1.5px solid #27272a; border-radius: 8px;
+  padding: 8px; min-height: 50px; cursor: pointer; transition: all .15s;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; color: #fafafa;
+}
+.sset-cal-day:hover { border-color: #3f3f46; transform: scale(1.03); }
+.sset-cal-day.off { opacity: 0.3; }
+.sset-cal-day.holiday { background: #2a1010; border-color: #ef4444; color: #f87171; }
+.sset-cal-day.holiday::after { content: '🎉'; font-size: 12px; margin-top: 2px; }
+.sset-cal-day.weekend-default { background: #1a1410; border-color: #3f2d1a; color: #fbbf24; }
+.sset-cal-day.today { border-color: #3b82f6; box-shadow: 0 0 0 1.5px #3b82f6; }
+
+.sset-cal-hint {
+  font-size: 12px; color: #71717a; margin-top: 12px; padding: 10px;
+  background: #0a0a0a; border-radius: 8px; border: 1px solid #27272a;
+}
+.sset-cal-hint b { color: #fafafa; }
+
+/* --- Статус --- */
+.sset-status {
+  padding: 10px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  margin-bottom: 16px; display: none;
+}
+.sset-status.show { display: block; }
+.sset-status.success { background: #14532d; color: #4ade80; border: 1px solid #22c55e; }
+.sset-status.error { background: #2a1010; color: #f87171; border: 1px solid #ef4444; }
+.sset-status.loading { background: #1e3a8a; color: #93c5fd; border: 1px solid #3b82f6; }
+
+/* --- Праздничные дни (список) --- */
+.sset-holidays-list { display: flex; flex-direction: column; gap: 6px; max-height: 300px; overflow-y: auto; }
+.sset-holiday-row {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  background: #0a0a0a; border: 1px solid #27272a; border-radius: 8px;
+}
+.sset-holiday-date { font-size: 13px; font-weight: 700; color: #f87171; min-width: 100px; }
+.sset-holiday-name { font-size: 13px; color: #d4d4d8; flex: 1; }
+.sset-holiday-del {
+  background: #27272a; border: none; color: #a1a1aa; padding: 6px 10px;
+  border-radius: 6px; cursor: pointer; font-size: 12px; font-family: inherit;
+}
+.sset-holiday-del:hover { background: #ef4444; color: #fafafa; }
+.sset-holiday-empty { text-align: center; color: #52525b; font-size: 13px; padding: 20px; font-style: italic; }
+
+/* --- Добавление праздника --- */
+.sset-holiday-add { display: flex; gap: 8px; margin-top: 12px; }
+.sset-holiday-input {
+  background: #0a0a0a; border: 1.5px solid #27272a; border-radius: 8px;
+  padding: 10px 12px; color: #fafafa; font-size: 13px; font-family: inherit;
+}
+.sset-holiday-input:focus { outline: none; border-color: #ef4444; }
+.sset-holiday-add-btn {
+  background: #ef4444; color: #fafafa; border: none; padding: 10px 18px;
+  border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px;
+  font-family: inherit; transition: all .15s;
+}
+.sset-holiday-add-btn:hover { background: #dc2626; }
+
+@media (max-width: 768px) {
+  .sset-dow-grid { grid-template-columns: repeat(4, 1fr); }
+  .sset-cal-grid { min-width: auto; }
+}
+</style>
+
+<div class="sset-page">
+  <div class="sset-top">
+    <div>
+      <h1 class="sset-title">⚙️ Настройки графика</h1>
+      <div class="sset-subtitle">Рабочие дни, часы работы студии и праздничные дни</div>
+    </div>
+  </div>
+
+  <div class="sset-status" id="ssetStatus"></div>
+
+  <!-- Часы работы -->
+  <div class="sset-card">
+    <div class="sset-card-title">🕐 Часы работы студии</div>
+    <div class="sset-card-desc">Время, когда студия открыта. График записей показывает слоты только в этом диапазоне.</div>
+    <div class="sset-hours-row">
+      <div class="sset-hours-field">
+        <span class="sset-hours-label">Открытие</span>
+        <input type="time" class="sset-hours-input" id="ssetOpenTime" value="11:00">
+      </div>
+      <span class="sset-hours-sep">—</span>
+      <div class="sset-hours-field">
+        <span class="sset-hours-label">Закрытие</span>
+        <input type="time" class="sset-hours-input" id="ssetCloseTime" value="20:00">
+      </div>
+      <button class="sset-hours-save" id="ssetSaveHours" onclick="ssetSaveHours()">💾 Сохранить</button>
+    </div>
+  </div>
+
+  <!-- Рабочие дни недели -->
+  <div class="sset-card">
+    <div class="sset-card-title">📅 Рабочие дни недели</div>
+    <div class="sset-card-desc">Кликните по дню, чтобы переключить рабочий/выходной. По умолчанию воскресенье — выходной.</div>
+    <div class="sset-dow-grid">
+      <button class="sset-dow-btn" id="ssetDowMon" onclick="ssetToggleDow('mon')">
+        <div class="sset-dow-name">Пн</div>
+        <div class="sset-dow-status"></div>
+      </button>
+      <button class="sset-dow-btn" id="ssetDowTue" onclick="ssetToggleDow('tue')">
+        <div class="sset-dow-name">Вт</div>
+        <div class="sset-dow-status"></div>
+      </button>
+      <button class="sset-dow-btn" id="ssetDowWed" onclick="ssetToggleDow('wed')">
+        <div class="sset-dow-name">Ср</div>
+        <div class="sset-dow-status"></div>
+      </button>
+      <button class="sset-dow-btn" id="ssetDowThu" onclick="ssetToggleDow('thu')">
+        <div class="sset-dow-name">Чт</div>
+        <div class="sset-dow-status"></div>
+      </button>
+      <button class="sset-dow-btn" id="ssetDowFri" onclick="ssetToggleDow('fri')">
+        <div class="sset-dow-name">Пт</div>
+        <div class="sset-dow-status"></div>
+      </button>
+      <button class="sset-dow-btn" id="ssetDowSat" onclick="ssetToggleDow('sat')">
+        <div class="sset-dow-name">Сб</div>
+        <div class="sset-dow-status"></div>
+      </button>
+      <button class="sset-dow-btn" id="ssetDowSun" onclick="ssetToggleDow('sun')">
+        <div class="sset-dow-name">Вс</div>
+        <div class="sset-dow-status"></div>
+      </button>
+    </div>
+    <button class="sset-hours-save" style="margin-top: 12px; margin-left: 0;" onclick="ssetSaveDow()">💾 Сохранить дни недели</button>
+  </div>
+
+  <!-- Календарь выходных -->
+  <div class="sset-card">
+    <div class="sset-card-title">🗓️ Календарь праздничных дней</div>
+    <div class="sset-card-desc">Кликните по дате, чтобы добавить или убрать праздничный день. Праздничные дни — выходные, но машины в работе остаются (серые).</div>
+    <div class="sset-cal-nav">
+      <button class="sset-cal-nav-btn" onclick="ssetCalPrev()">←</button>
+      <span class="sset-cal-label" id="ssetCalLabel">—</span>
+      <button class="sset-cal-nav-btn" onclick="ssetCalNext()">→</button>
+      <button class="sset-cal-nav-btn" onclick="ssetCalToday()" style="margin-left: auto;">Сегодня</button>
+    </div>
+    <div style="overflow-x: auto;">
+      <div class="sset-cal-grid" id="ssetCalGrid"></div>
+    </div>
+    <div class="sset-cal-hint">
+      <b>🟢 Рабочий день</b> — студия работает в обычном режиме<br>
+      <b>🟡 Выходной по расписанию</b> — воскресенье (или другой день, отключенный выше)<br>
+      <b>🔴 Праздничный день</b> — кликните по дате, чтобы добавить/убрать
+    </div>
+  </div>
+
+  <!-- Список праздничных дней -->
+  <div class="sset-card">
+    <div class="sset-card-title">🎉 Праздничные дни</div>
+    <div class="sset-holidays-list" id="ssetHolidaysList">
+      <div class="sset-holiday-empty">Загрузка...</div>
+    </div>
+    <div class="sset-holiday-add">
+      <input type="date" class="sset-holiday-input" id="ssetNewHolidayDate">
+      <input type="text" class="sset-holiday-input" id="ssetNewHolidayName" placeholder="Название (необязательно)" style="flex:1;">
+      <button class="sset-holiday-add-btn" onclick="ssetAddHoliday()">➕ Добавить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// === SUPABASE ===
+var SSET_SUPABASE_URL = (typeof SUPABASE_URL !== 'undefined') ? SUPABASE_URL : 'https://jnbqzngsglnjzzpsvvgn.supabase.co';
+var SSET_SUPABASE_KEY = (typeof SUPABASE_KEY !== 'undefined') ? SUPABASE_KEY : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuYnF6bmdzZ2xuanp6cHN2dmduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyMzIwOTEsImV4cCI6MjEwNDgwODA5MX0.uHVMUKBtO0326KB3bAHQ8rywBvBms7WvfaxPrhm3_Y0';
+
+// === ДАННЫЕ ===
+var ssetSettings = null; // { mon, tue, wed, thu, fri, sat, sun, open_time, close_time }
+var ssetHolidays = {};   // { '2026-01-01': { name: 'Новый год' }, ... }
+var ssetCalDate = new Date(); // текущий месяц календаря
+
+var SSET_DOW_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+var SSET_DOW_NAMES_RU = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+var SSET_MONTHS_RU = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+
+function ssetHeaders() {
+  return { 'apikey': SSET_SUPABASE_KEY, 'Authorization': 'Bearer ' + SSET_SUPABASE_KEY, 'Content-Type': 'application/json' };
+}
+
+function ssetShowStatus(msg, type) {
+  var s = document.getElementById('ssetStatus');
+  s.textContent = msg;
+  s.className = 'sset-status show ' + type;
+  if (type !== 'loading') setTimeout(function() { s.className = 'sset-status'; }, 3000);
+}
+
+function ssetPad(n) { return n < 10 ? '0' + n : '' + n; }
+function ssetFmtDate(y, m, d) { return y + '-' + ssetPad(m + 1) + '-' + ssetPad(d); }
+function ssetTodayStr() { var d = new Date(); return ssetFmtDate(d.getFullYear(), d.getMonth(), d.getDate()); }
+function ssetParseDate(s) { var p = s.split('-'); return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])); }
+
+// === ЗАГРУЗКА ===
+function ssetLoadAll() {
+  ssetShowStatus('Загрузка настроек...', 'loading');
+  Promise.all([
+    fetch(SSET_SUPABASE_URL + '/rest/v1/studio_settings?select=*&id=eq.1', { headers: ssetHeaders() }).then(function(r) { return r.json(); }),
+    fetch(SSET_SUPABASE_URL + '/rest/v1/holidays?select=*&order=holiday_date.asc', { headers: ssetHeaders() }).then(function(r) { return r.json(); })
+  ]).then(function(results) {
+    var settings = results[0];
+    var holidays = results[1] || [];
+    ssetSettings = settings && settings.length ? settings[0] : { mon: true, tue: true, wed: true, thu: true, fri: true, sat: true, sun: false, open_time: '11:00', close_time: '20:00' };
+    ssetHolidays = {};
+    for (var i = 0; i < holidays.length; i++) {
+      ssetHolidays[holidays[i].holiday_date] = { id: holidays[i].id, name: holidays[i].name || '' };
+    }
+    ssetRenderHours();
+    ssetRenderDow();
+    ssetRenderCalendar();
+    ssetRenderHolidaysList();
+    document.getElementById('ssetStatus').className = 'sset-status';
+  }).catch(function(e) {
+    ssetShowStatus('Ошибка загрузки: ' + e.message, 'error');
+  });
+}
+
+// === ЧАСЫ РАБОТЫ ===
+function ssetRenderHours() {
+  document.getElementById('ssetOpenTime').value = (ssetSettings.open_time || '11:00').substring(0, 5);
+  document.getElementById('ssetCloseTime').value = (ssetSettings.close_time || '20:00').substring(0, 5);
+}
+
+function ssetSaveHours() {
+  var openTime = document.getElementById('ssetOpenTime').value;
+  var closeTime = document.getElementById('ssetCloseTime').value;
+  if (!openTime || !closeTime) { ssetShowStatus('Укажите время открытия и закрытия', 'error'); return; }
+  if (openTime >= closeTime) { ssetShowStatus('Время открытия должно быть раньше закрытия', 'error'); return; }
+
+  ssetShowStatus('Сохранение...', 'loading');
+  fetch(SSET_SUPABASE_URL + '/rest/v1/studio_settings?id=eq.1', {
+    method: 'PATCH',
+    headers: Object.assign(ssetHeaders(), { 'Prefer': 'return=minimal' }),
+    body: JSON.stringify({ open_time: openTime, close_time: closeTime, updated_at: new Date().toISOString() })
+  }).then(function(r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    ssetSettings.open_time = openTime;
+    ssetSettings.close_time = closeTime;
+    ssetShowStatus('✅ Часы работы сохранены', 'success');
+  }).catch(function(e) {
+    ssetShowStatus('Ошибка: ' + e.message, 'error');
+  });
+}
+
+// === РАБОЧИЕ ДНИ НЕДЕЛИ ===
+function ssetRenderDow() {
+  var btns = document.querySelectorAll('.sset-dow-btn');
+  for (var i = 0; i < btns.length; i++) {
+    var key = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'][i];
+    var btn = btns[i];
+    btn.classList.remove('working', 'weekend');
+    btn.classList.add(ssetSettings[key] ? 'working' : 'weekend');
+    btn.querySelector('.sset-dow-status').textContent = ssetSettings[key] ? 'рабочий' : 'выходной';
+  }
+}
+
+function ssetToggleDow(key) {
+  ssetSettings[key] = !ssetSettings[key];
+  ssetRenderDow();
+}
+
+function ssetSaveDow() {
+  ssetShowStatus('Сохранение...', 'loading');
+  var data = {};
+  var keys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+  for (var i = 0; i < keys.length; i++) data[keys[i]] = ssetSettings[keys[i]];
+  data.updated_at = new Date().toISOString();
+
+  fetch(SSET_SUPABASE_URL + '/rest/v1/studio_settings?id=eq.1', {
+    method: 'PATCH',
+    headers: Object.assign(ssetHeaders(), { 'Prefer': 'return=minimal' }),
+    body: JSON.stringify(data)
+  }).then(function(r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    ssetShowStatus('✅ Дни недели сохранены', 'success');
+    ssetRenderCalendar();
+  }).catch(function(e) {
+    ssetShowStatus('Ошибка: ' + e.message, 'error');
+  });
+}
+
+// === КАЛЕНДАРЬ ПРАЗДНИЧНЫХ ДНЕЙ ===
+function ssetIsWeekendByDow(dow) {
+  var key = SSET_DOW_KEYS[dow];
+  return !ssetSettings[key];
+}
+
+function ssetIsHoliday(dateStr) {
+  return !!ssetHolidays[dateStr];
+}
+
+function ssetRenderCalendar() {
+  var y = ssetCalDate.getFullYear(), m = ssetCalDate.getMonth();
+  document.getElementById('ssetCalLabel').textContent = SSET_MONTHS_RU[m] + ' ' + y;
+
+  var firstDay = new Date(y, m, 1);
+  var startDow = firstDay.getDay(); // 0=вс
+  var daysInMonth = new Date(y, m + 1, 0).getDate();
+  var prevMonthDays = new Date(y, m, 0).getDate();
+  var today = ssetTodayStr();
+
+  var html = '';
+  // Заголовки дней недели
+  var dowShort = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+  for (var d = 0; d < 7; d++) html += '<div class="sset-cal-dow">' + dowShort[d] + '</div>';
+
+  // Дни предыдущего месяца
+  for (var i = startDow - 1; i >= 0; i--) {
+    html += '<div class="sset-cal-day off">' + (prevMonthDays - i) + '</div>';
+  }
+
+  // Дни текущего месяца
+  for (var day = 1; day <= daysInMonth; day++) {
+    var dateStr = ssetFmtDate(y, m, day);
+    var dow = new Date(y, m, day).getDay();
+    var cls = 'sset-cal-day';
+    if (dateStr === today) cls += ' today';
+    if (ssetIsHoliday(dateStr)) cls += ' holiday';
+    else if (ssetIsWeekendByDow(dow)) cls += ' weekend-default';
+    html += '<div class="' + cls + '" onclick="ssetToggleHoliday(\'' + dateStr + '\')">' + day + '</div>';
+  }
+
+  // Дни следующего месяца
+  var next = 1;
+  while ((startDow + daysInMonth + next - 1) % 7 !== 6) {
+    html += '<div class="sset-cal-day off">' + next + '</div>';
+    next++;
+  }
+
+  document.getElementById('ssetCalGrid').innerHTML = html;
+}
+
+function ssetCalPrev() {
+  ssetCalDate.setMonth(ssetCalDate.getMonth() - 1);
+  ssetRenderCalendar();
+}
+
+function ssetCalNext() {
+  ssetCalDate.setMonth(ssetCalDate.getMonth() + 1);
+  ssetRenderCalendar();
+}
+
+function ssetCalToday() {
+  ssetCalDate = new Date();
+  ssetRenderCalendar();
+}
+
+// === ПРАЗДНИЧНЫЕ ДНИ ===
+function ssetToggleHoliday(dateStr) {
+  if (ssetHolidays[dateStr]) {
+    // Удалить
+    ssetShowStatus('Удаление праздника...', 'loading');
+    fetch(SSET_SUPABASE_URL + '/rest/v1/holidays?holiday_date=eq.' + dateStr, {
+      method: 'DELETE',
+      headers: ssetHeaders()
+    }).then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      delete ssetHolidays[dateStr];
+      ssetRenderCalendar();
+      ssetRenderHolidaysList();
+      ssetShowStatus('✅ Праздник удалён', 'success');
+    }).catch(function(e) {
+      ssetShowStatus('Ошибка: ' + e.message, 'error');
+    });
+  } else {
+    // Добавить
+    ssetShowStatus('Добавление праздника...', 'loading');
+    fetch(SSET_SUPABASE_URL + '/rest/v1/holidays', {
+      method: 'POST',
+      headers: Object.assign(ssetHeaders(), { 'Prefer': 'return=minimal' }),
+      body: JSON.stringify({ holiday_date: dateStr, name: '' })
+    }).then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      ssetHolidays[dateStr] = { name: '' };
+      ssetRenderCalendar();
+      ssetRenderHolidaysList();
+      ssetShowStatus('✅ Праздник добавлен', 'success');
+    }).catch(function(e) {
+      ssetShowStatus('Ошибка: ' + e.message, 'error');
+    });
+  }
+}
+
+function ssetRenderHolidaysList() {
+  var list = document.getElementById('ssetHolidaysList');
+  var dates = Object.keys(ssetHolidays).sort();
+  if (!dates.length) {
+    list.innerHTML = '<div class="sset-holiday-empty">Праздничных дней пока нет. Кликните по дате в календаре выше.</div>';
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < dates.length; i++) {
+    var dateStr = dates[i];
+    var h = ssetHolidays[dateStr];
+    var d = ssetParseDate(dateStr);
+    var dateLabel = ssetPad(d.getDate()) + '.' + ssetPad(d.getMonth() + 1) + '.' + d.getFullYear();
+    var dayName = SSET_DOW_NAMES_RU[d.getDay()];
+    html += '<div class="sset-holiday-row">' +
+              '<span class="sset-holiday-date">' + dateLabel + '</span>' +
+              '<span class="sset-holiday-name">' + (h.name || dayName) + '</span>' +
+              '<button class="sset-holiday-del" onclick="ssetToggleHoliday(\'' + dateStr + '\')">✕</button>' +
+            '</div>';
+  }
+  list.innerHTML = html;
+}
+
+function ssetAddHoliday() {
+  var dateStr = document.getElementById('ssetNewHolidayDate').value;
+  var name = document.getElementById('ssetNewHolidayName').value.trim();
+  if (!dateStr) { ssetShowStatus('Выберите дату', 'error'); return; }
+  if (ssetHolidays[dateStr]) { ssetShowStatus('Этот день уже праздничный', 'error'); return; }
+
+  ssetShowStatus('Добавление...', 'loading');
+  fetch(SSET_SUPABASE_URL + '/rest/v1/holidays', {
+    method: 'POST',
+    headers: Object.assign(ssetHeaders(), { 'Prefer': 'return=minimal' }),
+    body: JSON.stringify({ holiday_date: dateStr, name: name })
+  }).then(function(r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    ssetHolidays[dateStr] = { name: name };
+    document.getElementById('ssetNewHolidayDate').value = '';
+    document.getElementById('ssetNewHolidayName').value = '';
+    ssetRenderCalendar();
+    ssetRenderHolidaysList();
+    ssetShowStatus('✅ Праздник добавлен', 'success');
+  }).catch(function(e) {
+    ssetShowStatus('Ошибка: ' + e.message, 'error');
+  });
+}
+
+// === ИНИЦИАЛИЗАЦИЯ ===
+ssetLoadAll();
+</script>
