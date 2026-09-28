@@ -826,7 +826,7 @@ function renderDay(){
                '</div>';
       }).join('');
       var statusLabel = car.status === 'done' ? '✅ ' : (car.status === 'in_progress' ? '🔧 ' : (car.status === 'issued' ? '🚗 ' : '🆕 '));
-      html += '<div class="sch-post-card occupied" style="--car-color:'+car.color+';border-left-color:'+car.color+';cursor:pointer;" onclick="openPopup(\\''+dateStr+'\\')">'+
+      html += '<div class="sch-post-card occupied" style="--car-color:'+car.color+';border-left-color:'+car.color+';cursor:pointer;" onclick="openPopup(\''+dateStr+'\')">'+
         '<div class="sch-post-num" style="--car-color:'+car.color+'">'+post+'</div>'+
         '<div class="sch-post-info">'+
           '<div class="sch-post-car">'+statusLabel+car.name+(car.number?' <span style="color:#71717a;font-size:12px;">#'+car.number+'</span>':'')+'</div>'+
