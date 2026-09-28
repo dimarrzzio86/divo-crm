@@ -133,6 +133,7 @@
 .sch-day.off { opacity: 0.35; }
 .sch-day.today { border-color: #22c55e; box-shadow: 0 0 0 1.5px #22c55e; }
 .sch-day.holiday { background: #2a1010; border-color: #7f1d1d; }
+.sch-day.shortday { background: #1a1410; border-color: #3f2d1a; border-style: dashed; }
 .sch-day-num {
   font-size: 14px; font-weight: 800; color: #fafafa;
 }
@@ -774,7 +775,8 @@ function renderMonth(){
     var cls = 'sch-day';
     if(c.off) cls+=' off';
     if(isWeekend(dow)) cls+=' weekend';
-    if(isHoliday(c.dateStr)) cls='sch-day holiday';
+    if(isDayOff(c.dateStr)) cls='sch-day holiday';
+    else if(isHoliday(c.dateStr)) cls+=' shortday';
     if(c.dateStr===today) cls+=' today';
 
     var cars = CARS.filter(function(car){ return carOnPost(car, c.dateStr); });
@@ -856,7 +858,7 @@ function renderGantt(days){
         cls += ' occupied';
         // В выходной — серая ячейка, не кликабельная
         var cellDow = parseDate(dateStr).getDay();
-        var cellIsWeekend = isWeekend(cellDow) || isHoliday(dateStr);
+        var cellIsWeekend = isWeekend(cellDow) || isDayOff(dateStr);
         var cellColor = cellIsWeekend ? '#52525b' : car.color;
         var cellClick = cellIsWeekend ? '' : ' onclick="openPopup(\''+dateStr+'\')"';
         cells += '<div class="'+cls+'" style="--car-color:'+cellColor+'"'+cellClick+' title="'+car.name+'">'+label+'</div>';
@@ -864,7 +866,7 @@ function renderGantt(days){
         var freeDow = parseDate(dateStr).getDay();
         var freeIsWeekend = isWeekend(freeDow) || isDayOff(dateStr);
         var freeClick = freeIsWeekend ? '' : ' onclick="openPopup(\''+dateStr+'\')"';
-        cells += '<div class="'+cls+' free"'+freeClick+'>'+(freeIsWeekend?'':'+')+'</div>';
+        cells += '<div class="'+cls+' free"'+freeClick+'>'+(freeIsWeekend?'':'·')+'</div>';
       }
     });
     rows += '<div class="sch-gantt-row">'+
