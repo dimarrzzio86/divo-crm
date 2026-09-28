@@ -569,6 +569,8 @@ function loadScheduleOrders() {
       renderView();
       // Загружаем контакты (контрагентов) из расчётов
       loadScheduleContractors();
+      // Загружаем задачи на день
+      loadScheduleTasks();
     })
     .catch(function(e) {
       console.error('Ошибка загрузки заказ-нарядов для графика:', e);
@@ -577,7 +579,45 @@ function loadScheduleOrders() {
 
 
 
-var HOLIDAYS = { '2026-09-30': true };
+// Настройки студии (загружаются из БД)
+var HOLIDAYS = {}; // { '2026-09-30': { is_day_off: true, open_time: null, close_time: null } }
+var STUDIO_OPEN = 11 * 60;   // 660 мин (11:00) — будет из БД
+var STUDIO_CLOSE = 20 * 60;  // 1200 мин (20:00) — будет из БД
+var STUDIO_DOW = { mon: true, tue: true, wed: true, thu: true, fri: true, sat: true, sun: false };
+
+// Загрузить настройки студии и праздники из БД
+function loadStudioSettings() {
+  return Promise.all([
+    fetch(SCH_SUPABASE_URL + '/rest/v1/studio_settings?select=*&id=eq.1', {
+      headers: { 'apikey': SCH_SUPABASE_KEY, 'Authorization': 'Bearer ' + SCH_SUPABASE_KEY }
+    }).then(function(r) { return r.json(); }),
+    fetch(SCH_SUPABASE_URL + '/rest/v1/holidays?select=*&order=holiday_date.asc', {
+      headers: { 'apikey': SCH_SUPABASE_KEY, 'Authorization': 'Bearer ' + SCH_SUPABASE_KEY }
+    }).then(function(r) { return r.json(); })
+  ]).then(function(results) {
+    var settings = results[0];
+    var holidays = results[1] || [];
+    if (settings && settings.length) {
+      var s = settings[0];
+      STUDIO_DOW = { mon: !!s.mon, tue: !!s.tue, wed: !!s.wed, thu: !!s.thu, fri: !!s.fri, sat: !!s.sat, sun: !!s.sun };
+      if (s.open_time) {
+        var op = s.open_time.substring(0, 5).split(':');
+        STUDIO_OPEN = Number(op[0]) * 60 + Number(op[1]);
+      }
+      if (s.close_time) {
+        var cp = s.close_time.substring(0, 5).split(':');
+        STUDIO_CLOSE = Number(cp[0]) * 60 + Number(cp[1]);
+      }
+    }
+    HOLIDAYS = {};
+    for (var i = 0; i < holidays.length; i++) {
+      var h = holidays[i];
+      HOLIDAYS[h.holiday_date] = { is_day_off: !!h.is_day_off, open_time: h.open_time, close_time: h.close_time };
+    }
+  }).catch(function(e) {
+    console.error('Ошибка загрузки настроек студии:', e);
+  });
+}
 
 var MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 var DOW_SHORT = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
@@ -586,8 +626,25 @@ var DOW_FULL = ['воскресенье','понедельник','вторни�
 function pad(n){ return n<10?'0'+n:''+n; }
 function fmtDate(y,m,d){ return y+'-'+pad(m+1)+'-'+pad(d); }
 function parseDate(s){ var p=s.split('-'); return new Date(p[0],p[1]-1,p[2]); }
-function isWeekend(dow){ return dow===0 || dow===6; } // ВС (0) и СБ (6)
+// Дни недели: 0=Вс, 1=Пн, 2=Вт, 3=Ср, 4=Чт, 5=Пт, 6=Сб
+var DOW_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+function isWeekend(dow){ return !STUDIO_DOW[DOW_KEYS[dow]]; }
 function isHoliday(dateStr){ return !!HOLIDAYS[dateStr]; }
+// Особый день — полный выходной
+function isDayOff(dateStr){ var h = HOLIDAYS[dateStr]; return h && h.is_day_off; }
+// Получить часы работы для конкретной даты (с учётом особых дней)
+function getDayHours(dateStr) {
+  var h = HOLIDAYS[dateStr];
+  if (h) {
+    if (h.is_day_off) return null; // закрыто
+    if (h.open_time && h.close_time) {
+      var op = h.open_time.substring(0, 5).split(':');
+      var cp = h.close_time.substring(0, 5).split(':');
+      return { open: Number(op[0]) * 60 + Number(op[1]), close: Number(cp[0]) * 60 + Number(cp[1]) };
+    }
+  }
+  return { open: STUDIO_OPEN, close: STUDIO_CLOSE };
+}
 function carOnPost(car, dateStr){
   var s=parseDate(car.start), e=parseDate(car.end), d=parseDate(dateStr);
   return d>=s && d<=e;
@@ -605,8 +662,10 @@ function initScheduleCalendar(){
   // Сначала рисуем пустой график
   updateStats();
   renderView();
-  // Затем загружаем заказ-наряды из Supabase
-  loadScheduleOrders();
+  // Загружаем настройки студии, потом заказы (нужны часы работы)
+  loadStudioSettings().then(function() {
+    loadScheduleOrders();
+  });
 
   document.querySelectorAll('.sch-view-btn').forEach(function(btn){
     btn.addEventListener('click', function(){
@@ -719,11 +778,14 @@ function renderMonth(){
     if(c.dateStr===today) cls+=' today';
 
     var cars = CARS.filter(function(car){ return carOnPost(car, c.dateStr); });
+    var dayIsWeekend = isWeekend(dow) || isDayOff(c.dateStr);
     var bars = '';
     if(cars.length){
       bars = '<div class="sch-day-bars">';
       cars.forEach(function(car){
-        bars += '<div class="sch-bar" style="background:'+car.color+';color:#0a0a0a;">'+car.name+'</div>';
+        var barColor = dayIsWeekend ? '#52525b' : car.color;
+        var barText = dayIsWeekend ? '#a1a1aa' : '#0a0a0a';
+        bars += '<div class="sch-bar" style="background:'+barColor+';color:'+barText+';">'+car.name+'</div>';
       });
       bars += '</div>';
     } else if(!c.off){
@@ -731,8 +793,9 @@ function renderMonth(){
     }
 
     var dayLabel = c.off ? '<span style="color:#52525b;">'+c.day+'</span>' : c.day;
+    var clickAttr = dayIsWeekend ? '' : ' onclick="openPopup(\''+c.dateStr+'\')"';
 
-    html += '<div class="'+cls+'" onclick="openPopup(\''+c.dateStr+'\')">'+
+    html += '<div class="'+cls+'"'+clickAttr+'>'+
               '<div class="sch-day-num">'+dayLabel+'</div>'+
               bars+
             '</div>';
@@ -798,7 +861,10 @@ function renderGantt(days){
         var cellClick = cellIsWeekend ? '' : ' onclick="openPopup(\''+dateStr+'\')"';
         cells += '<div class="'+cls+'" style="--car-color:'+cellColor+'"'+cellClick+' title="'+car.name+'">'+label+'</div>';
       } else {
-        cells += '<div class="'+cls+' free" onclick="openPopup(\''+dateStr+'\')">+</div>';
+        var freeDow = parseDate(dateStr).getDay();
+        var freeIsWeekend = isWeekend(freeDow) || isDayOff(dateStr);
+        var freeClick = freeIsWeekend ? '' : ' onclick="openPopup(\''+dateStr+'\')"';
+        cells += '<div class="'+cls+' free"'+freeClick+'>'+(freeIsWeekend?'':'+')+'</div>';
       }
     });
     rows += '<div class="sch-gantt-row">'+
@@ -831,15 +897,16 @@ function minToTime(m) {
   return (h < 10 ? '0' + h : h) + ':' + (mm < 10 ? '0' + mm : mm);
 }
 
-// Студия работает с 9:00 до 21:00 (будет настраиваться)
-var STUDIO_OPEN = 9 * 60;   // 540 мин
-var STUDIO_CLOSE = 21 * 60;  // 1260 мин
+// Часы работы — загружаются из БД (loadStudioSettings)
 
 function renderDay(){
   var y=currentDate.getFullYear(), m=currentDate.getMonth(), d=currentDate.getDate();
   var dateStr = fmtDate(y,m,d);
   var dow = currentDate.getDay();
-  var isWeekendDay = isWeekend(dow) || isHoliday(dateStr);
+  var isWeekendDay = isWeekend(dow) || isDayOff(dateStr);
+  var dayHours = getDayHours(dateStr);
+  var dayOpen = dayHours ? dayHours.open : 0;
+  var dayClose = dayHours ? dayHours.close : 0;
   document.getElementById('periodLabel').textContent = d+' '+MONTHS[m]+' '+y+' · '+DOW_FULL[dow]+(isWeekendDay?' (выходной)':'');
 
   var cars = CARS.filter(function(car){ return carOnPost(car, dateStr); });
@@ -866,11 +933,11 @@ function renderDay(){
       html += '<div style="font-size:13px;font-weight:700;color:#71717a;margin-bottom:6px;padding-left:4px;">Пост '+post+'</div>';
       html += '<div class="sch-time-slots">';
       
-      var prevEnd = STUDIO_OPEN;
+      var prevEnd = dayOpen;
       for (var ci = 0; ci < postCars.length; ci++) {
         var car = postCars[ci];
-        var carStart = timeToMin(car.timeIn) || STUDIO_OPEN;
-        var carEnd = timeToMin(car.timeOut) || STUDIO_CLOSE;
+        var carStart = timeToMin(car.timeIn) || dayOpen;
+        var carEnd = timeToMin(car.timeOut) || dayClose;
         
         // Свободный слот перед машиной (если есть зазор > 15 мин)
         if (carStart > prevEnd + 15) {
@@ -895,10 +962,10 @@ function renderDay(){
       }
       
       // Свободный слот после последней машины (до закрытия)
-      if (prevEnd < STUDIO_CLOSE - 15) {
-        var freeDur2 = STUDIO_CLOSE - prevEnd;
+      if (prevEnd < dayClose - 15) {
+        var freeDur2 = dayClose - prevEnd;
         html += '<div class="sch-time-slot free" onclick="openPopup(\''+dateStr+'\')">'+
-                  '<span class="sch-time-range">'+minToTime(prevEnd)+'—'+minToTime(STUDIO_CLOSE)+'</span>'+
+                  '<span class="sch-time-range">'+minToTime(prevEnd)+'—'+minToTime(dayClose)+'</span>'+
                   '<span class="sch-time-free-label">свободно ('+Math.round(freeDur2/60)+' ч '+(freeDur2%60)+' мин)</span>'+
                 '</div>';
       }
@@ -916,6 +983,39 @@ function renderView(){
   else if(currentView==='biweek') renderGantt(14);
   else if(currentView==='day') renderDay();
   updateStats();
+}
+
+// === ЗАДАЧИ ===
+var SCH_TASKS_CACHE = {}; // { '2026-09-26': [{ id, text, done, time }] }
+
+function loadScheduleTasks() {
+  return fetch(SCH_SUPABASE_URL + '/rest/v1/tasks?select=id,task_text,task_date,is_done,task_time&order=task_date.asc', {
+    headers: { 'apikey': SCH_SUPABASE_KEY, 'Authorization': 'Bearer ' + SCH_SUPABASE_KEY }
+  })
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(data) {
+      SCH_TASKS_CACHE = {};
+      if (!data || !data.length) return;
+      for (var i = 0; i < data.length; i++) {
+        var t = data[i];
+        var dateStr = t.task_date;
+        if (!dateStr) continue;
+        if (!SCH_TASKS_CACHE[dateStr]) SCH_TASKS_CACHE[dateStr] = [];
+        SCH_TASKS_CACHE[dateStr].push({
+          id: t.id,
+          text: t.task_text || '',
+          done: !!t.is_done,
+          time: t.task_time || ''
+        });
+      }
+    })
+    .catch(function(e) {
+      console.error('Ошибка загрузки задач для графика:', e);
+    });
+}
+
+function getTasksForDate(dateStr) {
+  return SCH_TASKS_CACHE[dateStr] || [];
 }
 
 // === POPUP ===
@@ -996,6 +1096,21 @@ function openPopup(dateStr){
   var cars = CARS.filter(function(car){ return carOnPost(car, dateStr); });
 
   var html = '';
+
+  // Задачи на день
+  var tasks = getTasksForDate(dateStr);
+  if (tasks.length) {
+    html += '<div class="sch-popup-section-title">📝 Задачи ('+tasks.length+')</div>';
+    tasks.forEach(function(t) {
+      var timeStr = t.time ? '<span style="color:#fbbf24;font-weight:700;margin-right:6px;">'+t.time.substring(0,5)+'</span>' : '';
+      var doneCls = t.done ? ' style="opacity:0.5;text-decoration:line-through;"' : '';
+      html += '<div'+doneCls+' style="font-size:12px;color:#d4d4d8;padding:4px 0;display:flex;align-items:center;gap:4px;">'+
+                '<div style="width:16px;height:16px;border-radius:4px;border:1.5px solid '+(t.done?'#22c55e':'#3f3f46')+';background:'+(t.done?'#22c55e':'transparent')+';flex-shrink:0;"></div>'+
+                timeStr + '<span>'+t.text+'</span>'+
+              '</div>';
+    });
+  }
+
   if(cars.length){
     html += '<div class="sch-popup-section-title">🚗 Авто на постах ('+cars.length+')</div>';
     cars.forEach(function(car){
