@@ -550,6 +550,8 @@ function loadScheduleOrders() {
       // Перерисовываем график
       updateStats();
       renderView();
+      // Загружаем контакты (контрагентов) из расчётов
+      loadScheduleContractors();
     })
     .catch(function(e) {
       console.error('Ошибка загрузки заказ-нарядов для графика:', e);
@@ -824,7 +826,7 @@ function renderDay(){
                '</div>';
       }).join('');
       var statusLabel = car.status === 'done' ? '✅ ' : (car.status === 'in_progress' ? '🔧 ' : (car.status === 'issued' ? '🚗 ' : '🆕 '));
-      html += '<div class="sch-post-card occupied" style="--car-color:'+car.color+';border-left-color:'+car.color+'">'+
+      html += '<div class="sch-post-card occupied" style="--car-color:'+car.color+';border-left-color:'+car.color+';cursor:pointer;" onclick="openPopup(\\''+dateStr+'\\')">'+
         '<div class="sch-post-num" style="--car-color:'+car.color+'">'+post+'</div>'+
         '<div class="sch-post-info">'+
           '<div class="sch-post-car">'+statusLabel+car.name+(car.number?' <span style="color:#71717a;font-size:12px;">#'+car.number+'</span>':'')+'</div>'+
@@ -855,44 +857,97 @@ function renderView(){
 }
 
 // === POPUP ===
+// Кэш контактов по заказ-нарядам: { orderNumber: [{name, amount, comments}] }
+var SCH_CONTRACTORS_CACHE = {};
+
+// Загрузить контакты (контрагентов) из таблицы entries
+function loadScheduleContractors() {
+  return fetch(SCH_SUPABASE_URL + '/rest/v1/entries?select=name,amount,comments,contractor_id&contractor_id=not.is.null&order=id.desc', {
+    headers: {
+      'apikey': SCH_SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SCH_SUPABASE_KEY
+    }
+  })
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(data) {
+      SCH_CONTRACTORS_CACHE = {};
+      if (!data || !data.length) return;
+      for (var i = 0; i < data.length; i++) {
+        var e = data[i];
+        var match = (e.comments || '').match(/Заказ #(\d+)/);
+        if (!match) continue;
+        var orderNum = match[1];
+        if (!SCH_CONTRACTORS_CACHE[orderNum]) SCH_CONTRACTORS_CACHE[orderNum] = [];
+        SCH_CONTRACTORS_CACHE[orderNum].push({
+          name: e.name || '—',
+          amount: Number(e.amount) || 0,
+          comments: e.comments || ''
+        });
+      }
+    })
+    .catch(function(e) {
+      console.error('Ошибка загрузки контактов для графика:', e);
+    });
+}
+
+// Получить контакты для конкретного заказ-наряда
+function getContractorsForOrder(orderNumber) {
+  if (!orderNumber) return [];
+  return SCH_CONTRACTORS_CACHE[String(orderNumber)] || [];
+}
+
 function openPopup(dateStr){
   var d = parseDate(dateStr);
   var dow = d.getDay();
   document.getElementById('popupTitle').textContent = d.getDate()+' '+MONTHS[d.getMonth()].toLowerCase()+' '+d.getFullYear();
-  document.getElementById('popupSub').textContent = DOW_FULL[dow]+' · задачи и записи';
+  document.getElementById('popupSub').textContent = DOW_FULL[dow]+' · заказ-наряды и контакты';
 
   var cars = CARS.filter(function(car){ return carOnPost(car, dateStr); });
-  var tasks = [
-    {text:'Заказать расходники (полироль, круги)', done:true},
-    {text:'Позвонить клиенту Алексею (Honda Civic)', done:false},
-    {text:'Забрать плёнку со склада', done:false}
-  ];
 
   var html = '';
-  html += '<div class="sch-popup-section-title">📝 Задачи на день</div>';
-  tasks.forEach(function(t){
-    html += '<div class="sch-popup-task'+(t.done?' done':'')+'">'+
-              '<div class="sch-popup-task-check'+(t.done?' done':'')+'"></div>'+
-              '<span>'+t.text+'</span>'+
-            '</div>';
-  });
-
   if(cars.length){
     html += '<div class="sch-popup-section-title">🚗 Авто на постах ('+cars.length+')</div>';
     cars.forEach(function(car){
-      var svcs = car.services.map(function(s){
-        var tag = s.outsource ? ' <span class="sch-svc-tag">АУТСОРС</span>' : '';
-        return '<div style="font-size:12px;color:#a1a1aa;padding:3px 0;">• '+s.name+tag+' — '+s.price+'</div>';
-      }).join('');
-      html += '<div class="sch-popup-car" style="--car-color:'+car.color+'">'+
-                '<div class="sch-popup-car-name">'+car.name+' · Пост '+car.post+'</div>'+
-                '<div class="sch-popup-car-meta">'+car.client+' · '+car.start.split('-').reverse().join('.')+' → '+car.end.split('-').reverse().join('.')+'</div>'+
-                svcs+
+      var statusLabel = car.status === 'done' ? '✅ Готово' : (car.status === 'in_progress' ? '🔧 В работе' : (car.status === 'issued' ? '🚗 Выдано' : '🆕 Новый'));
+      // Услуги
+      var svcsHtml = '';
+      if (car.services && car.services.length) {
+        svcsHtml = car.services.map(function(s){
+          var tag = s.outsource ? ' <span class="sch-svc-tag">АУТСОРС</span>' : '';
+          return '<div style="font-size:12px;color:#a1a1aa;padding:2px 0;">• '+s.name+tag+' <span style="color:#52525b;">'+s.price+'</span></div>';
+        }).join('');
+      }
+      // Контакты (контрагенты из расчётов)
+      var contractors = getContractorsForOrder(car.number);
+      var contrHtml = '';
+      if (contractors.length) {
+        var totalContr = 0;
+        for (var ci = 0; ci < contractors.length; ci++) totalContr += contractors[ci].amount;
+        contrHtml = '<div style="margin-top:8px;padding-top:8px;border-top:1px dashed #27272a;">'+
+                    '<div style="font-size:11px;font-weight:700;color:#60a5fa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">👥 Контакты ('+contractors.length+') · '+totalContr.toLocaleString('ru-RU')+' ₽</div>';
+        contractors.forEach(function(contr) {
+          var part = contr.comments || '';
+          var dotIdx = part.indexOf('• ');
+          if (dotIdx !== -1) part = part.substring(dotIdx + 2);
+          contrHtml += '<div style="font-size:12px;color:#d4d4d8;padding:3px 0;display:flex;justify-content:space-between;gap:8px;">'+
+                         '<span>👤 '+contr.name+'</span>'+
+                         '<span style="color:#fbbf24;font-weight:700;white-space:nowrap;">'+contr.amount.toLocaleString('ru-RU')+' ₽</span>'+
+                       '</div>'+
+                       '<div style="font-size:11px;color:#52525b;padding:0 0 4px 0;">'+part+'</div>';
+        });
+        contrHtml += '</div>';
+      } else {
+        contrHtml = '<div style="margin-top:8px;padding-top:8px;border-top:1px dashed #27272a;font-size:11px;color:#52525b;font-style:italic;">Контакты не указаны</div>';
+      }
+      html += '<div style="background:#18181b;border:1px solid #27272a;border-radius:8px;padding:10px;margin-bottom:8px;border-left:4px solid '+car.color+';">'+
+                '<div style="font-weight:700;color:#fafafa;font-size:14px;">'+car.name+'</div>'+
+                '<div style="font-size:11px;color:#71717a;margin-bottom:6px;">Пост '+car.post+(car.number?' · #'+car.number:'')+' · '+statusLabel+(car.price>0?' · '+car.price.toLocaleString('ru-RU')+' ₽':'')+'</div>'+
+                svcsHtml+
+                contrHtml+
               '</div>';
     });
   } else {
-    html += '<div class="sch-popup-section-title">🚗 Авто на постах</div>'+
-            '<div style="color:#52525b;font-size:14px;padding:16px;text-align:center;">Нет записей на этот день<br><span style="font-size:12px;">Посты свободны</span></div>';
+    html += '<div style="color:#52525b;font-size:14px;padding:16px;text-align:center;">Нет записей на этот день<br><span style="font-size:12px;">Посты свободны</span></div>';
   }
 
   document.getElementById('popupContent').innerHTML = html;
