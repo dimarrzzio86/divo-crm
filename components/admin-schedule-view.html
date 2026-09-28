@@ -345,12 +345,21 @@ function ssetOpenDayModal(dateStr) {
   document.getElementById('ssetModalTitle').textContent = ssetPad(d.getDate()) + '.' + ssetPad(d.getMonth() + 1) + '.' + d.getFullYear();
   document.getElementById('ssetModalSub').textContent = SSET_DOW_NAMES_RU[dow];
 
+  // Базовое время — обычное рабочее время студии
+  var defaultOpen = (ssetSettings.open_time || '11:00').substring(0, 5);
+  var defaultClose = (ssetSettings.close_time || '20:00').substring(0, 5);
+  document.getElementById('ssetModalOpenTime').value = defaultOpen;
+  document.getElementById('ssetModalCloseTime').value = defaultClose;
+
   var h = ssetHolidays[dateStr];
   var type = 'normal';
   if (h) {
     type = h.is_day_off ? 'dayoff' : 'short';
-    if (!h.is_day_off && h.open_time) document.getElementById('ssetModalOpenTime').value = h.open_time.substring(0, 5);
-    if (!h.is_day_off && h.close_time) document.getElementById('ssetModalCloseTime').value = h.close_time.substring(0, 5);
+    // Если сокращённый день с особыми часами — подставляем их
+    if (!h.is_day_off) {
+      if (h.open_time) document.getElementById('ssetModalOpenTime').value = h.open_time.substring(0, 5);
+      if (h.close_time) document.getElementById('ssetModalCloseTime').value = h.close_time.substring(0, 5);
+    }
   }
   document.querySelector('input[name=dayType][value="' + type + '"]').checked = true;
   ssetModalTypeChange(type);
