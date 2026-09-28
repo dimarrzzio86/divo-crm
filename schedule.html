@@ -950,17 +950,14 @@ function openPopup(dateStr){
       var contractors = getContractorsForOrder(car.id);
       var contrHtml = '';
       if (contractors.length) {
-        var totalContr = 0;
-        for (var ci = 0; ci < contractors.length; ci++) totalContr += contractors[ci].amount;
         contrHtml = '<div style="margin-top:8px;padding-top:8px;border-top:1px dashed #27272a;">'+
-                    '<div style="font-size:11px;font-weight:700;color:#60a5fa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">👥 Контакты ('+contractors.length+') · '+totalContr.toLocaleString('ru-RU')+' ₽</div>';
+                    '<div style="font-size:11px;font-weight:700;color:#60a5fa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">👥 Контакты ('+contractors.length+')</div>';
         contractors.forEach(function(contr) {
           var part = contr.part || '';
-          contrHtml += '<div style="font-size:12px;color:#d4d4d8;padding:3px 0;display:flex;justify-content:space-between;gap:8px;">'+
-                         '<span>👤 '+contr.name+'</span>'+
-                         '<span style="color:#fbbf24;font-weight:700;white-space:nowrap;">'+contr.amount.toLocaleString('ru-RU')+' ₽</span>'+
-                       '</div>'+
-                       '<div style="font-size:11px;color:#52525b;padding:0 0 4px 0;">'+part+'</div>';
+          contrHtml += '<div style="font-size:12px;color:#d4d4d8;padding:3px 0;">'+
+                         '👤 '+contr.name+
+                         (part ? ' <span style="color:#71717a;">— '+part+'</span>' : '')+
+                       '</div>';
         });
         contrHtml += '</div>';
       } else {
