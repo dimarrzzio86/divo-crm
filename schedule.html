@@ -992,7 +992,7 @@ function renderView(){
 var SCH_TASKS_CACHE = {}; // { '2026-09-26': [{ id, text, done, time }] }
 
 function loadScheduleTasks() {
-  return fetch(SCH_SUPABASE_URL + '/rest/v1/tasks?select=id,task_text,task_date,is_done,task_time&order=task_date.asc', {
+  return fetch(SCH_SUPABASE_URL + '/rest/v1/daily_tasks?select=id,task_text,task_date,is_done,task_time&order=task_date.asc', {
     headers: { 'apikey': SCH_SUPABASE_KEY, 'Authorization': 'Bearer ' + SCH_SUPABASE_KEY }
   })
     .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
