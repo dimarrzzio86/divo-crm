@@ -38,6 +38,11 @@ export default {
       return handleSendPush(request);
     }
 
+    // API endpoint: /api/clean-subs (очистка старых подписок)
+    if (path === '/api/clean-subs' && request.method === 'POST') {
+      return handleCleanSubs(request);
+    }
+
     // Всё остальное — отдаём статику через Pages assets
     if (env.ASSETS) {
       return env.ASSETS.fetch(request);
@@ -46,6 +51,28 @@ export default {
     return new Response('Not found', { status: 404 });
   }
 };
+
+async function handleCleanSubs(request) {
+  try {
+    const data = await request.json();
+    if (data.secret !== PUSH_SECRET) {
+      return json({ error: 'Unauthorized' }, 401);
+    }
+    const cutoff = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/push_subscriptions?created_at=lt.${encodeURIComponent(cutoff)}`, {
+      method: 'DELETE',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Prefer': 'return=representation'
+      }
+    });
+    const deleted = await resp.json();
+    return json({ deleted: Array.isArray(deleted) ? deleted.length : 0 });
+  } catch (e) {
+    return json({ error: e.message }, 500);
+  }
+}
 
 async function handleSendPush(request) {
   try {
