@@ -2,7 +2,7 @@
    DIVO CRM v2 — ЛОГИКА КОМПОНЕНТОВ
    ========================================== */
 
-var DIVO_VERSION = 'v164';
+var DIVO_VERSION = 'v165';
 
 var SUPABASE_URL = 'https://jnbqzngsglnjzzpsvvgn.supabase.co';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuYnF6bmdzZ2xuanp6cHN2dmduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyMzIwOTEsImV4cCI6MjEwNDgwODA5MX0.uHVMUKBtO0326KB3bAHQ8rywBvBms7WvfaxPrhm3_Y0';
@@ -463,20 +463,19 @@ function divoPushIsSubscribed() {
 function divoPushSubscribe(username) {
   return navigator.serviceWorker.ready
     .then(function(reg) {
-      // СНАЧАЛА — отписаться от старой подписки (принудительно создаём новую)
+      // 1. Отписаться от старой подписки в браузере (если есть)
       return reg.pushManager.getSubscription().then(function(oldSub) {
         if (oldSub) {
-          return oldSub.unsubscribe().then(function() {
-            // Удаляем старую из БД
-            var oldEndpoint = oldSub.endpoint;
-            return fetch(SUPABASE_URL + '/rest/v1/push_subscriptions?endpoint=eq.' + encodeURIComponent(oldEndpoint), {
-              method: 'DELETE',
-              headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
-            });
-          });
+          return oldSub.unsubscribe();
         }
       }).then(function() {
-        // ТЕПЕРЬ — новая подписка с новым VAPID ключом
+        // 2. Удалить ВСЕ старые подписки этого пользователя из БД (по user_email)
+        return fetch(SUPABASE_URL + '/rest/v1/push_subscriptions?user_email=eq.' + encodeURIComponent(username), {
+          method: 'DELETE',
+          headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+        });
+      }).then(function() {
+        // 3. Создать НОВУЮ подписку с актуальным VAPID ключом
         var opts = {
           userVisibleOnly: true,
           applicationServerKey: divoUrlBase64ToUint8Array(VAPID_PUBLIC_KEY)
@@ -486,30 +485,26 @@ function divoPushSubscribe(username) {
     })
     .then(function(sub) {
       var subJson = sub.toJSON();
-      // Удаляем дубликат по endpoint (на всякий случай)
-      return fetch(SUPABASE_URL + '/rest/v1/push_subscriptions?endpoint=eq.' + encodeURIComponent(subJson.endpoint), {
-        method: 'DELETE',
-        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
-      }).then(function() {
-        return fetch(SUPABASE_URL + '/rest/v1/push_subscriptions', {
-          method: 'POST',
-          headers: {
-            'apikey': SUPABASE_KEY,
-            'Authorization': 'Bearer ' + SUPABASE_KEY,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=minimal'
-          },
-          body: JSON.stringify({
-            user_email: username,
-            endpoint: subJson.endpoint,
-            p256dh: subJson.keys.p256dh,
-            auth: subJson.keys.auth
-          })
-        });
+      // 4. Сохранить новую подписку в БД
+      return fetch(SUPABASE_URL + '/rest/v1/push_subscriptions', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+          user_email: username,
+          endpoint: subJson.endpoint,
+          p256dh: subJson.keys.p256dh,
+          auth: subJson.keys.auth
+        })
       });
     })
     .then(function(r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
+      console.log('Push подписка обновлена для:', username);
     });
 }
 
