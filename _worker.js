@@ -86,7 +86,7 @@ async function handleSendPush(request) {
 
     // Получаем подписки из Supabase
     // Берём только последнюю подписку каждого пользователя (чтобы не было дубликатов)
-    const subsResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_latest_subs`, {
+    const subsResponse = await fetch(`${SUPABASE_URL}/rest/v1/push_subscriptions?select=*&order=created_at.desc`, {
       headers: {
         'apikey': SUPABASE_KEY,
         'Authorization': 'Bearer ' + SUPABASE_KEY
