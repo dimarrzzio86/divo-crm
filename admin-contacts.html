@@ -4,8 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — Контакты (админка)</title>
-<link rel="stylesheet" href="/assets/style.css?v=162">
-<link rel="stylesheet" href="/assets/auth.css?v=162">
+<link rel="stylesheet" href="/assets/style.css?v=169">
+<link rel="stylesheet" href="/assets/auth.css?v=169">
+<link rel="stylesheet" href="/assets/contacts.css?v=169">
   <link rel="manifest" href="/manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -17,31 +18,23 @@
 <div id="divoAuthContainer"></div>
 
 <div class="divo-layout" id="divoMainLayout" style="display:none;">
-
   <header class="divo-header" id="divo-header"></header>
-
   <div class="divo-body">
-
     <aside class="divo-sidebar" id="divo-sidebar"></aside>
-
     <main class="divo-content" id="divoContent"></main>
-
   </div>
-
   <div class="divo-footer">© Диво Детейлинг • 2026</div>
-
 </div>
 
-<script src="/components/components.js?v=162"></script>
+<script src="/components/components.js?v=169"></script>
+<script src="/components/access-config.js?v=169"></script>
 <script>
-function divoCheckAuthAndInit() {
+function divoInitAdminContacts() {
   var user = divoGetUser();
-
   if (!user) {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-
-    fetch('/components/auth-form.html?v=162')
+    fetch('/components/auth-form.html?v=169')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
@@ -58,37 +51,44 @@ function divoCheckAuthAndInit() {
     return;
   }
 
-  // Доступ: уровень 4 (админ+)
-  if (!divoCheckPageAccess(4)) return;
+  // СНАЧАЛА грузим конфиг доступов, ПОТОМ проверяем доступ
+  divoLoadAccessConfig(function(config) {
+    if (!divoHasAccessToSection('admin-contacts')) {
+      location.href = 'index.html';
+      return;
+    }
 
-  var mainLayout = document.getElementById('divoMainLayout');
-  if (mainLayout) mainLayout.style.display = 'flex';
+    // Доступ есть — показываем страницу
+    var mainLayout = document.getElementById('divoMainLayout');
+    if (mainLayout) mainLayout.style.display = 'flex';
+    var authContainer = document.getElementById('divoAuthContainer');
+    if (authContainer) authContainer.innerHTML = '';
 
-  var authContainer = document.getElementById('divoAuthContainer');
-  if (authContainer) authContainer.innerHTML = '';
+    divoInit();
 
-  divoInit();
-
-  fetch('/components/admin-contacts.html?v=162')
-    .then(function(r) { return r.text(); })
-    .then(function(html) {
-      var content = document.getElementById('divoContent');
-      if (content) {
-        content.innerHTML = html;
-        var scripts = content.querySelectorAll('script');
-        for (var i = 0; i < scripts.length; i++) {
-          var s = document.createElement('script');
-          s.textContent = scripts[i].textContent;
-          content.appendChild(s);
+    // Грузим компонент с контактами (тот же что и в обычной версии)
+    fetch('/components/contacts-view.html?v=169')
+      .then(function(r) { return r.text(); })
+      .then(function(html) {
+        var content = document.getElementById('divoContent');
+        if (content) {
+          content.innerHTML = html;
+          // Выполняем скрипты из компонента
+          var scripts = content.querySelectorAll('script');
+          for (var i = 0; i < scripts.length; i++) {
+            var s = document.createElement('script');
+            s.textContent = scripts[i].textContent;
+            content.appendChild(s);
+          }
         }
-      }
-    });
+      });
+  });
 }
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', divoCheckAuthAndInit);
+  document.addEventListener('DOMContentLoaded', divoInitAdminContacts);
 } else {
-  divoCheckAuthAndInit();
+  divoInitAdminContacts();
 }
 </script>
 </body>
