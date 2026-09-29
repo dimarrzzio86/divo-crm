@@ -56,14 +56,38 @@ function divoGetLevel() {
     return Number(user.level) || 1;
   }
 
-  // 2. Если нет — ищем в DIVO_USERS (для старых сессий)
+  // 2. Если нет — ищем в DIVO_USERS
   for (var i = 0; i < DIVO_USERS.length; i++) {
     if (DIVO_USERS[i].username === user.username) {
       return DIVO_USERS[i].level;
     }
   }
 
-  // 3. Если не нашли — даём минимальный уровень
+  // 3. Асинхронно подгружаем уровень из БД (если не нашли выше)
+  // Чтобы не блокировать — даём временный уровень, а потом обновим
+  if (!window._divoLevelLoading) {
+    window._divoLevelLoading = true;
+    fetch(SUPABASE_URL + '/rest/v1/users?select=level&username=eq.' + encodeURIComponent(user.username) + '&limit=1', {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+    })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data && data.length) {
+          var lvl = Number(data[0].level) || 1;
+          // Обновляем localStorage
+          user.level = lvl;
+          localStorage.setItem('divo_auth', JSON.stringify(user));
+          // Перезагружаем меню если уровень изменился
+          if (typeof divoFilterMenuByLevel === 'function') {
+            divoFilterMenuByLevel();
+          }
+        }
+      })
+      .catch(function() {});
+  }
+
+  // Временно — для admin даём 5, для остальных 1
+  if (user.username === 'admin') return 5;
   return 1;
 }
 
