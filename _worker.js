@@ -85,7 +85,8 @@ async function handleSendPush(request) {
     const { title, body, url: clickUrl } = data;
 
     // Получаем подписки из Supabase
-    const subsResponse = await fetch(`${SUPABASE_URL}/rest/v1/push_subscriptions?select=*`, {
+    // Берём только последнюю подписку каждого пользователя (чтобы не было дубликатов)
+    const subsResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_latest_subs`, {
       headers: {
         'apikey': SUPABASE_KEY,
         'Authorization': 'Bearer ' + SUPABASE_KEY
@@ -106,7 +107,18 @@ async function handleSendPush(request) {
     let failed = 0;
     let errors = [];
 
+    // Дедупликация: только последняя подписка для каждого пользователя
+    const seenUsers = new Set();
+    const uniqueSubs = [];
     for (const sub of subscriptions) {
+      const key = sub.user_email || sub.endpoint;
+      if (!seenUsers.has(key)) {
+        seenUsers.add(key);
+        uniqueSubs.push(sub);
+      }
+    }
+
+    for (const sub of uniqueSubs) {
       try {
         const payload = JSON.stringify({
           title: title || 'DIVO CRM',
@@ -133,7 +145,7 @@ async function handleSendPush(request) {
       }
     }
 
-    return json({ sent, failed, total: subscriptions.length, errors: errors.slice(0, 3) });
+    return json({ sent, failed, total: uniqueSubs.length, duplicates: subscriptions.length - uniqueSubs.length, errors: errors.slice(0, 3) });
   } catch (e) {
     return json({ error: e.message }, 500);
   }
