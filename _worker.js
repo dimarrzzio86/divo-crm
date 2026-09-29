@@ -141,14 +141,28 @@ async function sendWebPush(sub, payload) {
 }
 
 async function importVapidKey(privateKeyBase64) {
-  const keyData = base64UrlDecode(privateKeyBase64);
-  return crypto.subtle.importKey(
-    'pkcs8',
-    keyData,
+  // VAPID private key хранится как raw 32 байта (d) в base64url
+  // Импортируем через JWK (WebCrypto не принимает raw bytes как pkcs8 для P-256)
+  const d = privateKeyBase64.replace(/=/g, '');
+  const jwk = {
+    kty: 'EC',
+    crv: 'P-256',
+    d: d,
+    x: '',  // x и y не нужны для private key
+    y: '',
+    ext: true
+  };
+  // Нужно вычислить x, y из d — используем deriveBits
+  // На самом деле WebCrypto позволяет импортировать private key без x,y
+  // через формат 'jwk' с только полем d
+  const key = await crypto.subtle.importKey(
+    'jwk',
+    { kty: 'EC', crv: 'P-256', d: d, ext: true },
     { name: 'ECDSA', namedCurve: 'P-256' },
     false,
     ['sign']
   );
+  return key;
 }
 
 async function encryptPayload(payload, p256dhBase64, authBase64) {
