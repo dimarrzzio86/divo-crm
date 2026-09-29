@@ -1,8 +1,15 @@
 // DIVO CRM — Cloudflare Pages Advanced Mode (_worker.js)
 // Обрабатывает все запросы: статика + /api/* функции
 
-const VAPID_PRIVATE_KEY = '1GywpgDoD_dhL65Zr7MJJLjDFid1ZAlTuIgUjsojDUo';
-const VAPID_PUBLIC_KEY = 'BKzY2hG8ojeZSExtE8dR0HiY0yQ79c6MVIoBC-mCqulYb4vCO20mT5upQzFvfhjDjw5HRQbsOPgrQHlhfSre1Ek';
+const VAPID_PRIVATE_JWK = {
+  kty: 'EC',
+  crv: 'P-256',
+  d: 'kEoDJEkzy7UJRWxYgxcMjg9wstv8VivWh4KvHdIjPpw',
+  x: 'GbvATwZ4yUe2pDdWJLkyWUjYp1AVhyd9U40NsNkn-Ws',
+  y: 'OJKKEV9vIdsbC8XCMMi-mZNJ1AU2fIa2HXc7VLDHZ3g',
+  ext: true
+};
+const VAPID_PUBLIC_KEY = 'BBm7wE8GeMlHtqQ3ViS5MllI2KdQFYcnfVONDbDZJ_lrOJKKEV9vIdsbC8XCMMi-mZNJ1AU2fIa2HXc7VLDHZ3g';
 const VAPID_SUBJECT = 'mailto:admin@divo-crm.pages.dev';
 
 const SUPABASE_URL = 'https://jnbqzngsglnjzzpsvvgn.supabase.co';
@@ -111,7 +118,7 @@ async function sendWebPush(sub, payload) {
   const encPayload = base64UrlEncode(new TextEncoder().encode(JSON.stringify(jwtPayload)));
   const data = `${encHeader}.${encPayload}`;
 
-  const key = await importVapidKey(VAPID_PRIVATE_KEY);
+  const key = await importVapidKey();
   const signature = await crypto.subtle.sign(
     { name: 'ECDSA', hash: 'SHA-256' },
     key,
@@ -140,35 +147,11 @@ async function sendWebPush(sub, payload) {
   }
 }
 
-async function importVapidKey(privateKeyBase64) {
-  // VAPID private key — raw 32 байта (d) в base64url
-  const d = privateKeyBase64.replace(/=/g, '');
-  
-  // Импортируем как ECDH (принимает только d, вычисляет публичный ключ сам)
-  const ecdhKeyPair = await crypto.subtle.importKey(
-    'jwk',
-    { kty: 'EC', crv: 'P-256', d: d, ext: true },
-    { name: 'ECDH', namedCurve: 'P-256' },
-    true,
-    ['deriveBits', 'deriveKey']
-  );
-  
-  // Пробуем экспортировать как spki (SubjectPublicKeyInfo) — стандартный формат
-  // Если importKey вернул KeyPair, берём publicKey
-  let publicKey = ecdhKeyPair;
-  if (ecdhKeyPair.publicKey) publicKey = ecdhKeyPair.publicKey;
-  
-  // Экспорт raw (65 байт: 0x04 || x || y)
-  const rawPublic = await crypto.subtle.exportKey('raw', publicKey);
-  const rawBytes = new Uint8Array(rawPublic);
-  
-  const x = base64UrlEncode(rawBytes.slice(1, 33));
-  const y = base64UrlEncode(rawBytes.slice(33, 65));
-  
-  // Импорт как ECDSA с полным JWK
+async function importVapidKey() {
+  // Импортируем приватный ключ из полного JWK (с x,y,d)
   return crypto.subtle.importKey(
     'jwk',
-    { kty: 'EC', crv: 'P-256', d: d, x: x, y: y, ext: true },
+    VAPID_PRIVATE_JWK,
     { name: 'ECDSA', namedCurve: 'P-256' },
     false,
     ['sign']

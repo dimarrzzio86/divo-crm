@@ -8,7 +8,7 @@ var SUPABASE_URL = 'https://jnbqzngsglnjzzpsvvgn.supabase.co';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuYnF6bmdzZ2xuanp6cHN2dmduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyMzIwOTEsImV4cCI6MjEwNDgwODA5MX0.uHVMUKBtO0326KB3bAHQ8rywBvBms7WvfaxPrhm3_Y0';
 
 // VAPID ключи для Web Push уведомлений
-var VAPID_PUBLIC_KEY = 'BKzY2hG8ojeZSExtE8dR0HiY0yQ79c6MVIoBC-mCqulYb4vCO20mT5upQzFvfhjDjw5HRQbsOPgrQHlhfSre1Ek';
+var VAPID_PUBLIC_KEY = 'BBm7wE8GeMlHtqQ3ViS5MllI2KdQFYcnfVONDbDZJ_lrOJKKEV9vIdsbC8XCMMi-mZNJ1AU2fIa2HXc7VLDHZ3g';
 
 // URL Cloudflare Pages Function для отправки push
 var PUSH_WORKER_URL = 'https://divo-crm.pages.dev';
