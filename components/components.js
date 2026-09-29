@@ -375,15 +375,16 @@ function divoInitPushStatus() {
   // Проверяем подписку
   divoPushIsSubscribed().then(function(subscribed) {
     divoUpdatePushUI(subscribed);
-    // АВТО-ПОДПИСКА: если разрешение уже granted, но подписки нет — создаём автоматически
-    if (!subscribed && Notification.permission === 'granted') {
+    // АВТО-ОБНОВЛЕНИЕ: при каждом логине пересоздаём подписку (гарантирует актуальный VAPID ключ)
+    // divoPushSubscribe сам отпишет от старой и создаст новую
+    if (Notification.permission === 'granted') {
       var user = divoGetUser();
       if (user) {
         divoPushSubscribe(user.username).then(function() {
           divoUpdatePushUI(true);
-          console.log('✅ Авто-подписка на push выполнена');
+          console.log('✅ Push подписка обновлена при логине');
         }).catch(function(e) {
-          console.error('Авто-подписка не удалась:', e.message);
+          console.error('Обновление подписки не удалось:', e.message);
         });
       }
     }
@@ -469,13 +470,7 @@ function divoPushSubscribe(username) {
           return oldSub.unsubscribe();
         }
       }).then(function() {
-        // 2. Удалить ВСЕ старые подписки этого пользователя из БД (по user_email)
-        return fetch(SUPABASE_URL + '/rest/v1/push_subscriptions?user_email=eq.' + encodeURIComponent(username), {
-          method: 'DELETE',
-          headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
-        });
-      }).then(function() {
-        // 3. Создать НОВУЮ подписку с актуальным VAPID ключом
+        // 2. Создать НОВУЮ подписку с актуальным VAPID ключом
         var opts = {
           userVisibleOnly: true,
           applicationServerKey: divoUrlBase64ToUint8Array(VAPID_PUBLIC_KEY)
@@ -485,14 +480,14 @@ function divoPushSubscribe(username) {
     })
     .then(function(sub) {
       var subJson = sub.toJSON();
-      // 4. Сохранить новую подписку в БД
-      return fetch(SUPABASE_URL + '/rest/v1/push_subscriptions', {
+      // 3. UPSERT через on_conflict=endpoint — если endpoint уже есть, обновляем; иначе создаём
+      return fetch(SUPABASE_URL + '/rest/v1/push_subscriptions?on_conflict=endpoint', {
         method: 'POST',
         headers: {
           'apikey': SUPABASE_KEY,
           'Authorization': 'Bearer ' + SUPABASE_KEY,
           'Content-Type': 'application/json',
-          'Prefer': 'return=minimal'
+          'Prefer': 'resolution=merge-duplicates,return=minimal'
         },
         body: JSON.stringify({
           user_email: username,

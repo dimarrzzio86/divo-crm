@@ -156,15 +156,13 @@ async function sendWebPush(sub, payload) {
   const data = `${encHeader}.${encPayload}`;
 
   const key = await importVapidKey();
-  const rawSig = new Uint8Array(await crypto.subtle.sign(
+  // WebCrypto ECDSA возвращает raw r||s (64 байта) — это и есть формат JWT ES256 (RFC 7518)
+  const signature = await crypto.subtle.sign(
     { name: 'ECDSA', hash: 'SHA-256' },
     key,
     new TextEncoder().encode(data)
-  ));
-  // WebCrypto ECDSA возвращает raw r||s (64 байта)
-  // JWT ES256 требует DER-encoded ASN.1: SEQUENCE { INTEGER r, INTEGER s }
-  const derSig = rawSignatureToDER(rawSig);
-  const encSignature = base64UrlEncode(derSig);
+  );
+  const encSignature = base64UrlEncode(new Uint8Array(signature));
   const jwt = `${data}.${encSignature}`;
 
   const encrypted = await encryptPayload(payload, subscription.keys.p256dh, subscription.keys.auth);
@@ -186,34 +184,6 @@ async function sendWebPush(sub, payload) {
   }
 }
 
-
-// Конвертация raw r||s (64 байта) в DER-encoded ASN.1
-function rawSignatureToDER(rawSig) {
-  const r = rawSig.slice(0, 32);
-  const s = rawSig.slice(32, 64);
-  let rBytes = trimLeadingZeros(r);
-  let sBytes = trimLeadingZeros(s);
-  if (rBytes[0] & 0x80) rBytes = prependZero(rBytes);
-  if (sBytes[0] & 0x80) sBytes = prependZero(sBytes);
-  const rLen = rBytes.length, sLen = sBytes.length;
-  const totalLen = 2 + rLen + 2 + sLen;
-  const result = new Uint8Array(2 + totalLen);
-  let o = 0;
-  result[o++] = 0x30; result[o++] = totalLen;
-  result[o++] = 0x02; result[o++] = rLen; result.set(rBytes, o); o += rLen;
-  result[o++] = 0x02; result[o++] = sLen; result.set(sBytes, o);
-  return result;
-}
-function trimLeadingZeros(bytes) {
-  let i = 0;
-  while (i < bytes.length - 1 && bytes[i] === 0) i++;
-  return bytes.slice(i);
-}
-function prependZero(bytes) {
-  const result = new Uint8Array(bytes.length + 1);
-  result[0] = 0x00; result.set(bytes, 1);
-  return result;
-}
 
 async function importVapidKey() {
   // Импортируем приватный ключ из полного JWK (с x,y,d)
