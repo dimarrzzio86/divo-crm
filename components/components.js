@@ -51,14 +51,19 @@ function divoGetLevel() {
   var user = divoGetUser();
   if (!user) return 0;  // не залогинен
 
-  // Сначала ищем в DIVO_USERS
+  // 1. Сначала — из localStorage (сохраняется при логине из БД)
+  if (user.level !== undefined && user.level !== null) {
+    return Number(user.level) || 1;
+  }
+
+  // 2. Если нет — ищем в DIVO_USERS (для старых сессий)
   for (var i = 0; i < DIVO_USERS.length; i++) {
     if (DIVO_USERS[i].username === user.username) {
       return DIVO_USERS[i].level;
     }
   }
 
-  // Если не нашли — даём минимальный уровень
+  // 3. Если не нашли — даём минимальный уровень
   return 1;
 }
 
@@ -74,7 +79,8 @@ function divoGetRole() {
 
 function divoGetUsername() {
   var user = divoGetUser();
-  return user ? user.username : 'Гость';
+  if (!user) return 'Гость';
+  return user.displayName || user.username;
 }
 
 // Имя уровня (для интерфейса)
@@ -142,12 +148,37 @@ function divoDoLogin() {
         try {
           var result = JSON.parse(xhr.responseText);
           if (result === true) {
-            localStorage.setItem('divo_auth', JSON.stringify({
-              username: loginVal,
-              password: passVal
-            }));
-            divoShowAuthStatus('Успех! Загрузка...');
-            setTimeout(function() { location.reload(); }, 500);
+            // Загружаем уровень пользователя из БД
+            var userUrl = SUPABASE_URL + '/rest/v1/users?select=level,display_name&username=eq.' + encodeURIComponent(loginVal) + '&limit=1';
+            var userXhr = new XMLHttpRequest();
+            userXhr.open('GET', userUrl, true);
+            userXhr.setRequestHeader('apikey', SUPABASE_KEY);
+            userXhr.setRequestHeader('Authorization', 'Bearer ' + SUPABASE_KEY);
+            userXhr.onreadystatechange = function() {
+              if (userXhr.readyState === 4) {
+                var userLevel = 1;
+                var displayName = loginVal;
+                try {
+                  if (userXhr.status === 200) {
+                    var userData = JSON.parse(userXhr.responseText);
+                    if (userData && userData.length) {
+                      userLevel = Number(userData[0].level) || 1;
+                      displayName = userData[0].display_name || loginVal;
+                    }
+                  }
+                } catch(e) {}
+                localStorage.setItem('divo_auth', JSON.stringify({
+                  username: loginVal,
+                  password: passVal,
+                  level: userLevel,
+                  displayName: displayName
+                }));
+                divoShowAuthStatus('Успех! Загрузка...');
+                setTimeout(function() { location.reload(); }, 500);
+              }
+            };
+            userXhr.send();
+            return;
           } else {
             divoShowAuthStatus('Неверный логин или пароль');
           }

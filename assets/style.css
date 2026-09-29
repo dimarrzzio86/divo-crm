@@ -81,6 +81,30 @@ html, body {
   color: #22c55e;
   font-weight: 700;
 }
+.divo-greeting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.divo-logout-btn {
+  background: #27272a;
+  border: 1px solid #3f3f46;
+  color: #a1a1aa;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.divo-logout-btn:hover {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: #fafafa;
+}
 
 /* --- Меню разделов --- */
 .divo-sidebar-menu {
