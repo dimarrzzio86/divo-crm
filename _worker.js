@@ -142,28 +142,30 @@ async function sendWebPush(sub, payload) {
 
 async function importVapidKey(privateKeyBase64) {
   // VAPID private key — raw 32 байта (d) в base64url
-  // WebCrypto требует x,y для JWK ECDSA, но принимает только d для ECDH.
-  // Поэтому: импортируем как ECDH → экспортируем raw (65 байт: 04||x||y) → импортируем как ECDSA
   const d = privateKeyBase64.replace(/=/g, '');
   
-  // 1. Импорт как ECDH (принимает только d)
-  const ecdhKey = await crypto.subtle.importKey(
+  // Импортируем как ECDH (принимает только d, вычисляет публичный ключ сам)
+  const ecdhKeyPair = await crypto.subtle.importKey(
     'jwk',
     { kty: 'EC', crv: 'P-256', d: d, ext: true },
     { name: 'ECDH', namedCurve: 'P-256' },
     true,
-    ['deriveBits']
+    ['deriveBits', 'deriveKey']
   );
   
-  // 2. Экспорт raw публичного ключа (65 байт: 0x04 || x || y)
-  const rawPublic = await crypto.subtle.exportKey('raw', ecdhKey.publicKey);
+  // Пробуем экспортировать как spki (SubjectPublicKeyInfo) — стандартный формат
+  // Если importKey вернул KeyPair, берём publicKey
+  let publicKey = ecdhKeyPair;
+  if (ecdhKeyPair.publicKey) publicKey = ecdhKeyPair.publicKey;
+  
+  // Экспорт raw (65 байт: 0x04 || x || y)
+  const rawPublic = await crypto.subtle.exportKey('raw', publicKey);
   const rawBytes = new Uint8Array(rawPublic);
   
-  // 3. Конвертация в base64url
   const x = base64UrlEncode(rawBytes.slice(1, 33));
   const y = base64UrlEncode(rawBytes.slice(33, 65));
   
-  // 4. Импорт как ECDSA с полным JWK
+  // Импорт как ECDSA с полным JWK
   return crypto.subtle.importKey(
     'jwk',
     { kty: 'EC', crv: 'P-256', d: d, x: x, y: y, ext: true },
