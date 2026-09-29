@@ -83,11 +83,12 @@ async function handleSendPush(request) {
         sent++;
       } catch (e) {
         console.error('Push failed for', sub.user_email, e.message);
+        errors.push({ user: sub.user_email, endpoint: sub.endpoint.substring(0, 50), error: e.message });
         failed++;
       }
     }
 
-    return json({ sent, failed, total: subscriptions.length });
+    return json({ sent, failed, total: subscriptions.length, errors: errors.slice(0, 3) });
   } catch (e) {
     return json({ error: e.message }, 500);
   }
@@ -133,7 +134,8 @@ async function sendWebPush(sub, payload) {
   });
 
   if (!response.ok && response.status !== 201 && response.status !== 202) {
-    throw new Error('Push failed: ' + response.status);
+    const errText = await response.text().catch(() => '');
+    throw new Error('Push failed: ' + response.status + ' ' + errText.substring(0, 200));
   }
 }
 
