@@ -2,7 +2,7 @@
    DIVO CRM v2 — ЛОГИКА КОМПОНЕНТОВ
    ========================================== */
 
-var DIVO_VERSION = 'v156';
+var DIVO_VERSION = 'v158';
 
 var SUPABASE_URL = 'https://jnbqzngsglnjzzpsvvgn.supabase.co';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuYnF6bmdzZ2xuanp6cHN2dmduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyMzIwOTEsImV4cCI6MjEwNDgwODA5MX0.uHVMUKBtO0326KB3bAHQ8rywBvBms7WvfaxPrhm3_Y0';
@@ -205,6 +205,39 @@ function divoLogout() {
 }
 
 // ============ ЗАГРУЗКА КОМПОНЕНТОВ ============
+
+// Загрузка компонента с выполнением inline-скриптов (для pages с <script> в компоненте)
+function divoLoadComponentWithScripts(url, target, callback) {
+  var fullUrl = url + '?v=' + DIVO_VERSION;
+  fetch(fullUrl)
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.text();
+    })
+    .then(function(html) {
+      var el = document.getElementById(target);
+      if (!el) return;
+      // Убираем <script> теги из HTML перед innerHTML
+      var cleanHtml = html.replace(/<script[\s\S]*?<\/script>/gi, '');
+      el.innerHTML = cleanHtml;
+      // Извлекаем и выполняем скрипты через eval
+      var scripts = html.match(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi) || [];
+      for (var i = 0; i < scripts.length; i++) {
+        var code = scripts[i].replace(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/i, '$1');
+        if (code.trim()) {
+          try {
+            (0, eval)(code);
+          } catch(e) {
+            console.error('Script error in ' + url + ':', e.message);
+          }
+        }
+      }
+      if (callback) callback();
+    })
+    .catch(function(e) {
+      console.error('Error loading ' + url + ':', e);
+    });
+}
 
 function divoLoadComponent(url, target, callback) {
   var fullUrl = url + '?v=' + DIVO_VERSION;
