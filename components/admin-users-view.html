@@ -1,160 +1,301 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Диво Детейлинг — CRM</title>
-<link rel="stylesheet" href="/assets/style.css?v=160">
-<link rel="stylesheet" href="/assets/dashboard.css?v=160">
-<link rel="stylesheet" href="/assets/auth.css?v=160">
-</head>
-<body>
+<!-- Раздел: Пользователи (управление) -->
+<!-- Уровень: 5 (владелец) -->
 
-<div id="divoAuthContainer"></div>
-
-<div class="divo-layout" id="divoMainLayout" style="display:none;">
-
-  <header class="divo-header" id="divo-header"></header>
-
-  <div class="divo-body">
-
-    <aside class="divo-sidebar" id="divo-sidebar"></aside>
-
-    <main class="divo-content">
-      <div class="divo-dashboard">
-
-        <div class="divo-dashboard-card" data-level="3" onclick="location.href='contacts.html'" style="cursor:pointer;">
-          <div class="divo-dashboard-head">
-            <div class="divo-dashboard-title-block">
-              <span class="divo-dashboard-icon">📇</span>
-              <div>
-                <div class="divo-dashboard-title">Контакты</div>
-                <div class="divo-dashboard-desc">Контрагенты и телефоны</div>
-              </div>
-            </div>
-          </div>
-          <div class="divo-dashboard-body">
-            <div class="divo-dashboard-placeholder">
-              <span class="divo-dashboard-placeholder-icon">👥</span>
-              <span>Список контрагентов</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="divo-dashboard-card" data-level="3" onclick="location.href='warehouse.html'" style="cursor:pointer;">
-          <div class="divo-dashboard-head">
-            <div class="divo-dashboard-title-block">
-              <span class="divo-dashboard-icon">📦</span>
-              <div>
-                <div class="divo-dashboard-title">Склад</div>
-                <div class="divo-dashboard-desc">Учёт остатков</div>
-              </div>
-            </div>
-          </div>
-          <div class="divo-dashboard-body">
-            <div class="divo-dashboard-placeholder">
-              <span class="divo-dashboard-placeholder-icon">📊</span>
-              <span>Остатки и минимумы</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="divo-dashboard-card" data-level="3" onclick="location.href='cash.html'" style="cursor:pointer;">
-          <div class="divo-dashboard-head">
-            <div class="divo-dashboard-title-block">
-              <span class="divo-dashboard-icon">💰</span>
-              <div>
-                <div class="divo-dashboard-title">Расчёты</div>
-                <div class="divo-dashboard-desc">Долги и оплаты</div>
-              </div>
-            </div>
-          </div>
-          <div class="divo-dashboard-body">
-            <div class="divo-dashboard-placeholder">
-              <span class="divo-dashboard-placeholder-icon">💵</span>
-              <span>Расчёты появятся здесь</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="divo-dashboard-card" data-level="3" onclick="location.href='prices.html'" style="cursor:pointer;">
-          <div class="divo-dashboard-head">
-            <div class="divo-dashboard-title-block">
-              <span class="divo-dashboard-icon">📋</span>
-              <div>
-                <div class="divo-dashboard-title">Прайсы</div>
-                <div class="divo-dashboard-desc">Услуги и цены</div>
-              </div>
-            </div>
-          </div>
-          <div class="divo-dashboard-body">
-            <div class="divo-dashboard-placeholder">
-              <span class="divo-dashboard-placeholder-icon">💲</span>
-              <span>Прайс-лист услуг</span>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </main>
-
+<div class="au-page">
+  <div class="au-header">
+    <div>
+      <h1 class="au-title">👥 Пользователи</h1>
+      <div class="au-subtitle">Управление доступом сотрудников</div>
+    </div>
+    <button class="au-add-btn" id="auAddBtn">➕ Добавить</button>
   </div>
 
-  <div class="divo-footer">© Диво Детейлинг • 2026</div>
+  <div class="au-status" id="auStatus"></div>
 
+  <div class="au-list" id="auList">
+    <div class="au-loading">Загрузка пользователей...</div>
+  </div>
 </div>
 
-<script src="/components/components.js?v=160"></script>
+<!-- Модальное окно -->
+<div class="au-modal-overlay" id="auModalOverlay" style="display:none;">
+  <div class="au-modal">
+    <h2 class="au-modal-title" id="auModalTitle">Новый пользователь</h2>
+    <label class="au-label">Имя (логин)</label>
+    <input type="text" class="au-input" id="auUsername" placeholder="например: Vika">
+    <label class="au-label">Отображаемое имя</label>
+    <input type="text" class="au-input" id="auDisplayName" placeholder="например: Маська">
+    <label class="au-label">Пароль</label>
+    <input type="text" class="au-input" id="auPassword" placeholder="пароль">
+    <label class="au-label">Уровень доступа</label>
+    <select class="au-input" id="auLevel">
+      <option value="1">1 — Гость</option>
+      <option value="2">2 — Мастер</option>
+      <option value="3">3 — Менеджер</option>
+      <option value="4">4 — Администратор</option>
+      <option value="5">5 — Владелец</option>
+    </select>
+    <div class="au-modal-btns">
+      <button class="au-btn-cancel" id="auCancelBtn">Отмена</button>
+      <button class="au-btn-save" id="auSaveBtn">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.au-page { font-family: inherit; }
+.au-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 16px; }
+.au-title { font-size: 28px; font-weight: 800; color: #fafafa; margin: 0; }
+.au-subtitle { font-size: 14px; color: #71717a; margin-top: 4px; }
+.au-add-btn {
+  padding: 10px 20px; background: #1e3a8a; border: 1.5px solid #3b82f6; color: #93c5fd;
+  border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .15s;
+}
+.au-add-btn:hover { background: #3b82f6; color: #0a0a0a; }
+
+.au-status { display: none; padding: 12px 16px; border-radius: 10px; margin-bottom: 12px; font-size: 14px; }
+.au-status.show { display: block; }
+.au-status.success { background: #14532d; color: #4ade80; }
+.au-status.error { background: #7f1d1d; color: #fca5a5; }
+
+.au-list { display: flex; flex-direction: column; gap: 8px; }
+.au-loading, .au-empty { text-align: center; padding: 40px; color: #71717a; }
+
+.au-item {
+  display: flex; align-items: center; gap: 16px; background: #18181b; border: 1.5px solid #27272a;
+  border-radius: 12px; padding: 16px 20px; transition: all .15s;
+}
+.au-item:hover { border-color: #3b82f6; background: #1f1f23; }
+.au-item-avatar {
+  width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+  font-size: 20px; font-weight: 800; flex-shrink: 0;
+}
+.au-item-body { flex: 1; min-width: 0; }
+.au-item-name { font-size: 18px; font-weight: 700; color: #fafafa; }
+.au-item-login { font-size: 13px; color: #71717a; margin-top: 2px; }
+.au-item-level {
+  display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; margin-top: 6px;
+}
+.au-item-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.au-icon-btn {
+  width: 36px; height: 36px; border-radius: 8px; border: 1.5px solid #27272a; background: #0a0a0a;
+  color: #a1a1aa; cursor: pointer; font-size: 16px; font-family: inherit; transition: all .15s;
+}
+.au-icon-btn:hover { border-color: #3b82f6; color: #60a5fa; }
+.au-icon-btn.danger:hover { border-color: #ef4444; color: #f87171; }
+
+.au-modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center;
+  z-index: 200; padding: 16px;
+}
+.au-modal {
+  background: #18181b; border: 1.5px solid #27272a; border-radius: 16px; padding: 28px;
+  max-width: 420px; width: 100%;
+}
+.au-modal-title { font-size: 22px; font-weight: 800; color: #fafafa; margin: 0 0 20px; }
+.au-label { display: block; font-size: 12px; color: #71717a; text-transform: uppercase; letter-spacing: 1px; margin: 12px 0 6px; font-weight: 600; }
+.au-input {
+  width: 100%; box-sizing: border-box; padding: 10px 14px; background: #0a0a0a; border: 1.5px solid #27272a;
+  border-radius: 10px; color: #fafafa; font-size: 15px; font-family: inherit; outline: none;
+}
+.au-input:focus { border-color: #3b82f6; }
+.au-modal-btns { display: flex; gap: 10px; margin-top: 24px; }
+.au-btn-cancel {
+  flex: 1; padding: 12px; background: #27272a; color: #a1a1aa; border: 1.5px solid #3f3f46;
+  border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit;
+}
+.au-btn-save {
+  flex: 1; padding: 12px; background: #1e3a8a; color: #93c5fd; border: 1.5px solid #3b82f6;
+  border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit;
+}
+.au-btn-save:hover { background: #3b82f6; color: #0a0a0a; }
+
+@media (max-width: 600px) {
+  .au-item { flex-wrap: wrap; }
+}
+</style>
+
 <script>
-function divoCheckAuthAndInit() {
-  var user = divoGetUser();
+(function() {
+  var users = [];
+  var editingId = null;
 
-  if (!user) {
-    var mainLayout = document.getElementById('divoMainLayout');
-    if (mainLayout) mainLayout.style.display = 'none';
+  var LEVEL_COLORS = {
+    5: { bg: '#422006', color: '#fbbf24', icon: '👑', name: 'Владелец' },
+    4: { bg: '#2e1065', color: '#a78bfa', icon: '🛡️', name: 'Администратор' },
+    3: { bg: '#14532d', color: '#4ade80', icon: '📋', name: 'Менеджер' },
+    2: { bg: '#1e3a8a', color: '#60a5fa', icon: '🔧', name: 'Мастер' },
+    1: { bg: '#27272a', color: '#a1a1aa', icon: '👁️', name: 'Гость' }
+  };
 
-    fetch('/components/auth-form.html?v=160')
-      .then(function(r) { return r.text(); })
-      .then(function(html) {
-        var c = document.getElementById('divoAuthContainer');
-        if (c) {
-          c.innerHTML = html;
-          var btn = document.getElementById('divoAuthBtn');
-          if (btn) btn.addEventListener('click', divoDoLogin);
-          var pass = document.getElementById('divoAuthPassword');
-          if (pass) pass.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') divoDoLogin();
-          });
-        }
+  function $(id) { return document.getElementById(id); }
+  function getHeaders() { return { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' }; }
+  function showStatus(msg, type) { var s = $('auStatus'); s.textContent = msg; s.className = 'au-status show ' + type; }
+  function hideStatus() { $('auStatus').className = 'au-status'; }
+  function escapeHtml(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; }
+
+  function loadUsers() {
+    fetch(SUPABASE_URL + '/rest/v1/users?select=*&order=level.desc,username.asc', { headers: getHeaders() })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function(data) {
+        users = data || [];
+        renderList();
+      })
+      .catch(function(e) {
+        $('auList').innerHTML = '<div class="au-empty">⚠️ Ошибка загрузки: ' + escapeHtml(e.message) + '</div>';
       });
-    return;
   }
 
-  // Залогинен — показываем layout
-  var mainLayout = document.getElementById('divoMainLayout');
-  if (mainLayout) mainLayout.style.display = 'flex';
+  function renderList() {
+    var list = $('auList');
+    if (!users.length) {
+      list.innerHTML = '<div class="au-empty">Пользователей нет. Нажмите «Добавить».</div>';
+      return;
+    }
+    var html = '';
+    for (var i = 0; i < users.length; i++) {
+      var u = users[i];
+      var lv = LEVEL_COLORS[u.level] || LEVEL_COLORS[1];
+      var initial = (u.display_name || u.username || '?').charAt(0).toUpperCase();
+      html += '<div class="au-item">' +
+        '<div class="au-item-avatar" style="background:' + lv.bg + ';color:' + lv.color + '">' + escapeHtml(initial) + '</div>' +
+        '<div class="au-item-body">' +
+          '<div class="au-item-name">' + escapeHtml(u.display_name || u.username) + '</div>' +
+          '<div class="au-item-login">@' + escapeHtml(u.username) + '</div>' +
+          '<span class="au-item-level" style="background:' + lv.bg + ';color:' + lv.color + '">' + lv.icon + ' ' + lv.name + ' (уровень ' + u.level + ')</span>' +
+        '</div>' +
+        '<div class="au-item-actions">' +
+          '<button class="au-icon-btn" onclick="window.auEdit(' + u.id + ')" title="Редактировать">✏️</button>' +
+          '<button class="au-icon-btn danger" onclick="window.auDelete(' + u.id + ')" title="Удалить">🗑️</button>' +
+        '</div>' +
+      '</div>';
+    }
+    list.innerHTML = html;
+  }
 
-  var authContainer = document.getElementById('divoAuthContainer');
-  if (authContainer) authContainer.innerHTML = '';
+  function openModal(id) {
+    editingId = id || null;
+    if (id) {
+      var u = users.find(function(x) { return x.id === id; });
+      if (!u) return;
+      $('auModalTitle').textContent = 'Редактировать пользователя';
+      $('auUsername').value = u.username || '';
+      $('auDisplayName').value = u.display_name || '';
+      $('auPassword').value = u.password || '';
+      $('auLevel').value = u.level || 1;
+    } else {
+      $('auModalTitle').textContent = 'Новый пользователь';
+      $('auUsername').value = '';
+      $('auDisplayName').value = '';
+      $('auPassword').value = '';
+      $('auLevel').value = 2;
+    }
+    $('auModalOverlay').style.display = 'flex';
+  }
 
-  divoInit();
+  function closeModal() {
+    $('auModalOverlay').style.display = 'none';
+    editingId = null;
+  }
 
-  // Скрываем карточки по уровню
-  var userLevel = divoGetLevel();
-  var cards = document.querySelectorAll('.divo-dashboard-card[data-level]');
-  for (var i = 0; i < cards.length; i++) {
-    var reqLevel = parseInt(cards[i].getAttribute('data-level'), 10);
-    if (!isNaN(reqLevel) && userLevel < reqLevel) {
-      cards[i].style.display = 'none';
+  function save() {
+    var username = $('auUsername').value.trim();
+    var displayName = $('auDisplayName').value.trim();
+    var password = $('auPassword').value.trim();
+    var level = parseInt($('auLevel').value, 10) || 1;
+
+    if (!username || !password) {
+      showStatus('Введите логин и пароль', 'error');
+      setTimeout(hideStatus, 3000);
+      return;
+    }
+
+    var body = JSON.stringify({
+      username: username,
+      display_name: displayName || username,
+      password: password,
+      password_hash: password,
+      level: level
+    });
+
+    if (editingId) {
+      // UPDATE
+      fetch(SUPABASE_URL + '/rest/v1/users?id=eq.' + editingId, {
+        method: 'PATCH',
+        headers: getHeaders(),
+        body: body
+      })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+      .then(function() {
+        closeModal();
+        showStatus('✅ Сохранено', 'success');
+        setTimeout(hideStatus, 2000);
+        loadUsers();
+      })
+      .catch(function(e) {
+        showStatus('❌ Ошибка: ' + e.message, 'error');
+        setTimeout(hideStatus, 4000);
+      });
+    } else {
+      // INSERT
+      fetch(SUPABASE_URL + '/rest/v1/users', {
+        method: 'POST',
+        headers: getHeaders(),
+        body: body,
+        Prefer: 'return=representation'
+      })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function() {
+        closeModal();
+        showStatus('✅ Пользователь добавлен', 'success');
+        setTimeout(hideStatus, 2000);
+        loadUsers();
+      })
+      .catch(function(e) {
+        showStatus('❌ Ошибка: ' + e.message + ' (возможно, логин занят)', 'error');
+        setTimeout(hideStatus, 4000);
+      });
     }
   }
-}
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', divoCheckAuthAndInit);
-} else {
-  divoCheckAuthAndInit();
-}
+  function del(id) {
+    var u = users.find(function(x) { return x.id === id; });
+    if (!u) return;
+    if (u.level === 5) {
+      showStatus('❌ Нельзя удалить владельца', 'error');
+      setTimeout(hideStatus, 3000);
+      return;
+    }
+    if (!confirm('Удалить пользователя "' + (u.display_name || u.username) + '"?')) return;
+    fetch(SUPABASE_URL + '/rest/v1/users?id=eq.' + id, {
+      method: 'DELETE',
+      headers: getHeaders()
+    })
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+    .then(function() {
+      showStatus('🗑️ Удалён', 'success');
+      setTimeout(hideStatus, 2000);
+      loadUsers();
+    })
+    .catch(function(e) {
+      showStatus('❌ Ошибка: ' + e.message, 'error');
+      setTimeout(hideStatus, 4000);
+    });
+  }
+
+  // Экспорт
+  window.auEdit = openModal;
+  window.auDelete = del;
+
+  // События
+  $('auAddBtn').addEventListener('click', function() { openModal(null); });
+  $('auCancelBtn').addEventListener('click', closeModal);
+  $('auSaveBtn').addEventListener('click', save);
+  $('auModalOverlay').addEventListener('click', function(e) {
+    if (e.target === $('auModalOverlay')) closeModal();
+  });
+
+  // Старт
+  loadUsers();
+})();
 </script>
-</body>
-</html>

@@ -65,13 +65,12 @@ function divoCheckAuthAndInit() {
   divoInit();
 
   // Грузим контент страницы пользователей
-  fetch('/components/admin-users.html?v=160')
+  fetch('/components/admin-users-view.html?v=' + DIVO_VERSION)
     .then(function(r) { return r.text(); })
     .then(function(html) {
       var content = document.getElementById('divoContent');
       if (content) {
         content.innerHTML = html;
-        // Выполняем скрипты
         var scripts = content.querySelectorAll('script');
         for (var i = 0; i < scripts.length; i++) {
           var s = document.createElement('script');
