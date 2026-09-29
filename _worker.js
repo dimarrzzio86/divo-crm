@@ -1,9 +1,8 @@
 // DIVO CRM — Cloudflare Pages Advanced Mode (_worker.js)
-// Обрабатывает все запросы: статика + /api/* функции
+// Web Push по RFC 8291 (aes128gcm) + VAPID (RFC 8292)
 
 const VAPID_PRIVATE_JWK = {
-  kty: 'EC',
-  crv: 'P-256',
+  kty: 'EC', crv: 'P-256',
   d: 'kEoDJEkzy7UJRWxYgxcMjg9wstv8VivWh4KvHdIjPpw',
   x: 'GbvATwZ4yUe2pDdWJLkyWUjYp1AVhyd9U40NsNkn-Ws',
   y: 'OJKKEV9vIdsbC8XCMMi-mZNJ1AU2fIa2HXc7VLDHZ3g',
@@ -28,22 +27,14 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
-    // CORS preflight
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: CORS });
     }
 
-    // API endpoint: /api/send-push
     if (path === '/api/send-push' && request.method === 'POST') {
       return handleSendPush(request);
     }
 
-    // API endpoint: /api/clean-subs (очистка старых подписок)
-    if (path === '/api/clean-subs' && request.method === 'POST') {
-      return handleCleanSubs(request);
-    }
-
-    // Всё остальное — отдаём статику через Pages assets
     if (env.ASSETS) {
       return env.ASSETS.fetch(request);
     }
@@ -51,28 +42,6 @@ export default {
     return new Response('Not found', { status: 404 });
   }
 };
-
-async function handleCleanSubs(request) {
-  try {
-    const data = await request.json();
-    if (data.secret !== PUSH_SECRET) {
-      return json({ error: 'Unauthorized' }, 401);
-    }
-    const cutoff = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
-    const resp = await fetch(`${SUPABASE_URL}/rest/v1/push_subscriptions?created_at=lt.${encodeURIComponent(cutoff)}`, {
-      method: 'DELETE',
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_KEY,
-        'Prefer': 'return=representation'
-      }
-    });
-    const deleted = await resp.json();
-    return json({ deleted: Array.isArray(deleted) ? deleted.length : 0 });
-  } catch (e) {
-    return json({ error: e.message }, 500);
-  }
-}
 
 async function handleSendPush(request) {
   try {
@@ -84,39 +53,35 @@ async function handleSendPush(request) {
 
     const { title, body, url: clickUrl } = data;
 
-    // Получаем подписки из Supabase
-    // Берём только последнюю подписку каждого пользователя (чтобы не было дубликатов)
+    // Берём все подписки, отсортированные по дате (новые первыми)
     const subsResponse = await fetch(`${SUPABASE_URL}/rest/v1/push_subscriptions?select=*&order=created_at.desc`, {
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_KEY
-      }
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
     });
 
     if (!subsResponse.ok) {
       throw new Error('Supabase error: ' + subsResponse.status);
     }
 
-    const subscriptions = await subsResponse.json();
+    const allSubs = await subsResponse.json();
 
-    if (!subscriptions.length) {
+    if (!allSubs.length) {
       return json({ sent: 0, message: 'Нет подписок' });
     }
 
-    let sent = 0;
-    let failed = 0;
-    let errors = [];
-
-    // Дедупликация: только последняя подписка для каждого пользователя
+    // Дедупликация: только последняя подписка каждого пользователя
     const seenUsers = new Set();
     const uniqueSubs = [];
-    for (const sub of subscriptions) {
+    for (const sub of allSubs) {
       const key = sub.user_email || sub.endpoint;
       if (!seenUsers.has(key)) {
         seenUsers.add(key);
         uniqueSubs.push(sub);
       }
     }
+
+    let sent = 0;
+    let failed = 0;
+    let errors = [];
 
     for (const sub of uniqueSubs) {
       try {
@@ -130,34 +95,26 @@ async function handleSendPush(request) {
         sent++;
       } catch (e) {
         console.error('Push failed for', sub.user_email, e.message);
-        errors.push({ user: sub.user_email, endpoint: sub.endpoint.substring(0, 50), error: e.message });
-        // Авто-удаление нерабочих подписок (VapidPkHashMismatch, 410 expired, 404)
-        if (e.message.includes('VapidPkHashMismatch') || e.message.includes('410') || e.message.includes('404') || e.message.includes('unsubscribed')) {
-          try {
-            await fetch(`${SUPABASE_URL}/rest/v1/push_subscriptions?id=eq.${sub.id}`, {
-              method: 'DELETE',
-              headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
-            });
-            console.log('Auto-deleted stale subscription:', sub.id);
-          } catch (delErr) {}
-        }
+        errors.push({ user: sub.user_email, error: e.message });
         failed++;
       }
     }
 
-    return json({ sent, failed, total: uniqueSubs.length, duplicates: subscriptions.length - uniqueSubs.length, errors: errors.slice(0, 3) });
+    return json({ sent, failed, total: uniqueSubs.length, duplicates: allSubs.length - uniqueSubs.length, errors: errors.slice(0, 3) });
   } catch (e) {
     return json({ error: e.message }, 500);
   }
 }
 
-async function sendWebPush(sub, payload) {
-  const subscription = {
-    endpoint: sub.endpoint,
-    keys: { p256dh: sub.p256dh, auth: sub.auth }
-  };
+// ============ Web Push по RFC 8291 + VAPID ============
 
-  const audience = new URL(subscription.endpoint).origin;
+async function sendWebPush(sub, payload) {
+  const endpoint = sub.endpoint;
+  const p256dh = sub.p256dh;
+  const auth = sub.auth;
+
+  // 1. JWT для VAPID
+  const audience = new URL(endpoint).origin;
   const expiry = Math.floor(Date.now() / 1000) + 12 * 60 * 60;
 
   const header = { typ: 'JWT', alg: 'ES256' };
@@ -168,7 +125,6 @@ async function sendWebPush(sub, payload) {
   const data = `${encHeader}.${encPayload}`;
 
   const key = await importVapidKey();
-  // WebCrypto ECDSA возвращает raw r||s (64 байта) — это и есть формат JWT ES256 (RFC 7518)
   const signature = await crypto.subtle.sign(
     { name: 'ECDSA', hash: 'SHA-256' },
     key,
@@ -177,12 +133,15 @@ async function sendWebPush(sub, payload) {
   const encSignature = base64UrlEncode(new Uint8Array(signature));
   const jwt = `${data}.${encSignature}`;
 
-  const encrypted = await encryptPayload(payload, subscription.keys.p256dh, subscription.keys.auth);
+  // 2. Шифруем payload (RFC 8291)
+  const encrypted = await encryptPayload(payload, p256dh, auth);
 
-  const response = await fetch(subscription.endpoint, {
+  // 3. Отправляем
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
       'TTL': '86400',
+      'Urgency': 'high',
       'Content-Encoding': 'aes128gcm',
       'Authorization': `vapid t=${jwt}, k=${VAPID_PUBLIC_KEY}`,
       'Crypto-Key': `p256ecdsa=${VAPID_PUBLIC_KEY.replace(/=/g, '')}`
@@ -196,9 +155,7 @@ async function sendWebPush(sub, payload) {
   }
 }
 
-
 async function importVapidKey() {
-  // Импортируем приватный ключ из полного JWK (с x,y,d)
   return crypto.subtle.importKey(
     'jwk',
     VAPID_PRIVATE_JWK,
@@ -208,42 +165,74 @@ async function importVapidKey() {
   );
 }
 
-async function encryptPayload(payload, p256dhBase64, authBase64) {
-  const p256dh = base64UrlDecode(p256dhBase64);
-  const auth = base64UrlDecode(authBase64);
+// ============ Шифрование payload (RFC 8291) ============
 
+async function encryptPayload(payload, p256dhBase64, authBase64) {
+  const uaPublicKey = base64UrlDecode(p256dhBase64);  // 65 bytes (0x04 + 32 + 32)
+  const authSecret = base64UrlDecode(authBase64);     // 16 bytes
+
+  // 1. Генерируем ключевую пару сервера (ECDH P-256)
   const serverKeyPair = await crypto.subtle.generateKey(
     { name: 'ECDH', namedCurve: 'P-256' },
     true,
     ['deriveBits']
   );
 
+  // 2. Импортируем публичный ключ пользователя (UA public key)
   const userPublicKey = await crypto.subtle.importKey(
     'raw',
-    p256dh,
+    uaPublicKey,
     { name: 'ECDH', namedCurve: 'P-256' },
     false,
     []
   );
 
-  const sharedSecret = await crypto.subtle.deriveBits(
+  // 3. ECDH shared secret (ecdh_secret)
+  const ecdhSecret = await crypto.subtle.deriveBits(
     { name: 'ECDH', public: userPublicKey },
     serverKeyPair.privateKey,
     256
   );
 
-  const serverPublicKeyRaw = await crypto.subtle.exportKey('raw', serverKeyPair.publicKey);
+  // 4. AS public key (raw, 65 bytes)
+  const asPublicKey = await crypto.subtle.exportKey('raw', serverKeyPair.publicKey);
 
+  // 5. PRK_key = HMAC-SHA-256(auth_secret, ecdh_secret)  [RFC 8291 §3.3]
+  //    Это HKDF-Extract с salt=auth_secret, IKM=ecdh_secret
+  const prkKey = await hmacSha256(authSecret, new Uint8Array(ecdhSecret));
+
+  // 6. key_info = "WebPush: info" || 0x00 || ua_public || as_public  [RFC 8291 §3.3]
+  const keyInfoBase = new TextEncoder().encode('WebPush: info\0');
+  const keyInfo = new Uint8Array(keyInfoBase.length + uaPublicKey.length + asPublicKey.byteLength);
+  keyInfo.set(keyInfoBase, 0);
+  keyInfo.set(uaPublicKey, keyInfoBase.length);
+  keyInfo.set(new Uint8Array(asPublicKey), keyInfoBase.length + uaPublicKey.length);
+
+  // 7. IKM = HMAC-SHA-256(PRK_key, key_info || 0x01)  → HKDF-Expand(PRK_key, key_info, 32)
+  const ikm = await hmacSha256(prkKey, keyInfo, 0x01);
+
+  // 8. Случайная соль (16 bytes)
+  const salt = new Uint8Array(16);
+  crypto.getRandomValues(salt);
+
+  // 9. PRK = HMAC-SHA-256(salt, IKM)  → HKDF-Extract(salt, IKM)
+  const prk = await hmacSha256(salt, ikm);
+
+  // 10. cek_info = "Content-Encoding: aes128gcm" || 0x00  [RFC 8188]
+  //     CEK = HKDF-Expand(PRK, cek_info, 16)
   const cekInfo = new TextEncoder().encode('Content-Encoding: aes128gcm\0');
+  const cek = (await hmacSha256(prk, cekInfo, 0x01)).slice(0, 16);
+
+  // 11. nonce_info = "Content-Encoding: nonce" || 0x00
+  //     NONCE = HKDF-Expand(PRK, nonce_info, 12)
   const nonceInfo = new TextEncoder().encode('Content-Encoding: nonce\0');
+  const nonce = (await hmacSha256(prk, nonceInfo, 0x01)).slice(0, 12);
 
-  const prkKey = await hkdfExtract(new Uint8Array(0), new Uint8Array(sharedSecret));
-  const cek = await hkdfExpand(prkKey, cekInfo, 16);
-  const nonce = await hkdfExpand(prkKey, nonceInfo, 12);
-
+  // 12. Шифруем payload + padding (RFC 8188: padding delimiter = 0x02)
   const plaintext = new TextEncoder().encode(payload);
   const paddedPayload = new Uint8Array(plaintext.length + 1);
   paddedPayload.set(plaintext, 0);
+  paddedPayload[plaintext.length] = 0x02;
 
   const encrypted = await crypto.subtle.encrypt(
     { name: 'AES-GCM', iv: nonce },
@@ -251,13 +240,19 @@ async function encryptPayload(payload, p256dhBase64, authBase64) {
     paddedPayload
   );
 
-  const headerSize = 21 + 65;
+  // 13. Формируем заголовок RFC 8188 (aes128gcm):
+  //     salt (16) + rs (4, big-endian) + idlen (1) + as_public_key (65)
+  const idLen = 65;
+  const headerSize = 16 + 4 + 1 + idLen;  // 86 bytes
   const header = new Uint8Array(headerSize);
   const dv = new DataView(header.buffer);
-  dv.setUint8(16, 65);
-  header.set(new Uint8Array(serverPublicKeyRaw), 17);
-  dv.setUint32(17 + 65, 4096);
 
+  header.set(salt, 0);                          // bytes 0-15: salt
+  dv.setUint32(16, 4096);                       // bytes 16-19: rs (record size) = 4096
+  dv.setUint8(20, idLen);                       // byte 20: idlen
+  header.set(new Uint8Array(asPublicKey), 21);  // bytes 21-85: AS public key
+
+  // 14. Склеиваем header + encrypted (ciphertext + auth tag)
   const result = new Uint8Array(header.length + encrypted.byteLength);
   result.set(header, 0);
   result.set(new Uint8Array(encrypted), header.length);
@@ -265,43 +260,21 @@ async function encryptPayload(payload, p256dhBase64, authBase64) {
   return result;
 }
 
-async function hkdfExtract(salt, ikm) {
-  // Если соль пустая — используем строку из 32 нулей (стандарт RFC 5869)
-  let saltBytes = salt;
-  if (!salt || salt.length === 0) {
-    saltBytes = new Uint8Array(32);
+// HMAC-SHA-256 с опциональным suffix-байтом (как в RFC 8291: info || 0x01)
+async function hmacSha256(keyBytes, dataBytes, suffixByte) {
+  const data = suffixByte !== undefined
+    ? new Uint8Array(dataBytes.length + 1)
+    : dataBytes;
+  if (suffixByte !== undefined) {
+    data.set(dataBytes, 0);
+    data[dataBytes.length] = suffixByte;
   }
-  const key = await crypto.subtle.importKey('raw', saltBytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-  const result = await crypto.subtle.sign('HMAC', key, ikm);
+  const key = await crypto.subtle.importKey('raw', keyBytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const result = await crypto.subtle.sign('HMAC', key, data);
   return new Uint8Array(result);
 }
 
-async function hkdfExpand(prk, info, length) {
-  const key = await crypto.subtle.importKey('raw', prk, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-  const blocks = [];
-  let prev = new Uint8Array(0);
-  let i = 0;
-
-  while (blocks.reduce((a, b) => a + b.length, 0) < length) {
-    const input = new Uint8Array(prev.length + info.length + 1);
-    input.set(prev, 0);
-    input.set(info, prev.length);
-    input[input.length - 1] = ++i;
-
-    const result = await crypto.subtle.sign('HMAC', key, input);
-    prev = new Uint8Array(result);
-    blocks.push(prev);
-  }
-
-  const output = new Uint8Array(blocks.reduce((a, b) => a + b.length, 0));
-  let offset = 0;
-  for (const block of blocks) {
-    output.set(block, offset);
-    offset += block.length;
-  }
-
-  return output.slice(0, length);
-}
+// ============ Base64URL ============
 
 function base64UrlEncode(bytes) {
   const arr = new Uint8Array(bytes);
