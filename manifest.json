@@ -3,6 +3,7 @@
   "short_name": "DIVO",
   "description": "CRM система для Диво Детейлинг",
   "start_url": "/?source=pwa",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0a0a0a",
   "theme_color": "#0a0a0a",
@@ -16,10 +17,16 @@
       "purpose": "any maskable"
     },
     {
-      "src": "/assets/push-icon.png",
+      "src": "/assets/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
   "screenshots": []
