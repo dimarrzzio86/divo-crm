@@ -66,8 +66,8 @@ function divoInitAdminContacts() {
 
     divoInit();
 
-    // Грузим компонент с контактами (тот же что и в обычной версии)
-    fetch('/components/contacts-view.html?v=169')
+    // Грузим админский компонент с CRUD (добавить/изменить/удалить)
+    fetch('/components/admin-contacts-view.html?v=169')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var content = document.getElementById('divoContent');
