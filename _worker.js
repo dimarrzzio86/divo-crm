@@ -92,6 +92,16 @@ async function handleSendPush(request) {
       } catch (e) {
         console.error('Push failed for', sub.user_email, e.message);
         errors.push({ user: sub.user_email, endpoint: sub.endpoint.substring(0, 50), error: e.message });
+        // Авто-удаление нерабочих подписок (VapidPkHashMismatch, 410 expired, 404)
+        if (e.message.includes('VapidPkHashMismatch') || e.message.includes('410') || e.message.includes('404') || e.message.includes('unsubscribed')) {
+          try {
+            await fetch(`${SUPABASE_URL}/rest/v1/push_subscriptions?id=eq.${sub.id}`, {
+              method: 'DELETE',
+              headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+            });
+            console.log('Auto-deleted stale subscription:', sub.id);
+          } catch (delErr) {}
+        }
         failed++;
       }
     }

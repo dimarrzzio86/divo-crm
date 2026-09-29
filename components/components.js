@@ -2,7 +2,7 @@
    DIVO CRM v2 — ЛОГИКА КОМПОНЕНТОВ
    ========================================== */
 
-var DIVO_VERSION = 'v161';
+var DIVO_VERSION = 'v162';
 
 var SUPABASE_URL = 'https://jnbqzngsglnjzzpsvvgn.supabase.co';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuYnF6bmdzZ2xuanp6cHN2dmduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyMzIwOTEsImV4cCI6MjEwNDgwODA5MX0.uHVMUKBtO0326KB3bAHQ8rywBvBms7WvfaxPrhm3_Y0';
@@ -451,21 +451,33 @@ function divoPushIsSubscribed() {
 function divoPushSubscribe(username) {
   return navigator.serviceWorker.ready
     .then(function(reg) {
-      var opts = {
-        userVisibleOnly: true,
-        applicationServerKey: divoUrlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-      };
-      return reg.pushManager.subscribe(opts);
+      // СНАЧАЛА — отписаться от старой подписки (принудительно создаём новую)
+      return reg.pushManager.getSubscription().then(function(oldSub) {
+        if (oldSub) {
+          return oldSub.unsubscribe().then(function() {
+            // Удаляем старую из БД
+            var oldEndpoint = oldSub.endpoint;
+            return fetch(SUPABASE_URL + '/rest/v1/push_subscriptions?endpoint=eq.' + encodeURIComponent(oldEndpoint), {
+              method: 'DELETE',
+              headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+            });
+          });
+        }
+      }).then(function() {
+        // ТЕПЕРЬ — новая подписка с новым VAPID ключом
+        var opts = {
+          userVisibleOnly: true,
+          applicationServerKey: divoUrlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+        };
+        return reg.pushManager.subscribe(opts);
+      });
     })
     .then(function(sub) {
       var subJson = sub.toJSON();
-      // Сначала удаляем старую подписку с этим endpoint (UPSERT через delete+insert)
+      // Удаляем дубликат по endpoint (на всякий случай)
       return fetch(SUPABASE_URL + '/rest/v1/push_subscriptions?endpoint=eq.' + encodeURIComponent(subJson.endpoint), {
         method: 'DELETE',
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': 'Bearer ' + SUPABASE_KEY
-        }
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
       }).then(function() {
         return fetch(SUPABASE_URL + '/rest/v1/push_subscriptions', {
           method: 'POST',
