@@ -401,22 +401,30 @@ function divoPushSubscribe(username) {
       return reg.pushManager.subscribe(opts);
     })
     .then(function(sub) {
-      // Сохраняем подписку в Supabase
       var subJson = sub.toJSON();
-      return fetch(SUPABASE_URL + '/rest/v1/push_subscriptions', {
-        method: 'POST',
+      // Сначала удаляем старую подписку с этим endpoint (UPSERT через delete+insert)
+      return fetch(SUPABASE_URL + '/rest/v1/push_subscriptions?endpoint=eq.' + encodeURIComponent(subJson.endpoint), {
+        method: 'DELETE',
         headers: {
           'apikey': SUPABASE_KEY,
-          'Authorization': 'Bearer ' + SUPABASE_KEY,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify({
-          user_email: username,
-          endpoint: subJson.endpoint,
-          p256dh: subJson.keys.p256dh,
-          auth: subJson.keys.auth
-        })
+          'Authorization': 'Bearer ' + SUPABASE_KEY
+        }
+      }).then(function() {
+        return fetch(SUPABASE_URL + '/rest/v1/push_subscriptions', {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_KEY,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            user_email: username,
+            endpoint: subJson.endpoint,
+            p256dh: subJson.keys.p256dh,
+            auth: subJson.keys.auth
+          })
+        });
       });
     })
     .then(function(r) {
