@@ -216,7 +216,12 @@ async function encryptPayload(payload, p256dhBase64, authBase64) {
 }
 
 async function hkdfExtract(salt, ikm) {
-  const key = await crypto.subtle.importKey('raw', salt, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  // Если соль пустая — используем строку из 32 нулей (стандарт RFC 5869)
+  let saltBytes = salt;
+  if (!salt || salt.length === 0) {
+    saltBytes = new Uint8Array(32);
+  }
+  const key = await crypto.subtle.importKey('raw', saltBytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   const result = await crypto.subtle.sign('HMAC', key, ikm);
   return new Uint8Array(result);
 }
