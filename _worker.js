@@ -176,6 +176,7 @@ async function sendWebPush(sub, payload) {
   );
   const encSignature = base64UrlEncode(new Uint8Array(signature));
   const jwt = `${data}.${encSignature}`;
+  console.log('JWT alg: DER, sig len:', derSig.length, 'raw len:', rawSig.length);
 
   const encrypted = await encryptPayload(payload, subscription.keys.p256dh, subscription.keys.auth);
 
