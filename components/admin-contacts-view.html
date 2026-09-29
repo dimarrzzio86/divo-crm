@@ -1,160 +1,543 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Диво Детейлинг — CRM</title>
-<link rel="stylesheet" href="/assets/style.css?v=162">
-<link rel="stylesheet" href="/assets/dashboard.css?v=162">
-<link rel="stylesheet" href="/assets/auth.css?v=162">
-</head>
-<body>
+<!-- Раздел: Контакты (админка) -->
+<!-- Уровень: 4 (админ+) -->
+<!-- Полный CRUD: добавление, редактирование, удаление контрагентов -->
 
-<div id="divoAuthContainer"></div>
-
-<div class="divo-layout" id="divoMainLayout" style="display:none;">
-
-  <header class="divo-header" id="divo-header"></header>
-
-  <div class="divo-body">
-
-    <aside class="divo-sidebar" id="divo-sidebar"></aside>
-
-    <main class="divo-content">
-      <div class="divo-dashboard">
-
-        <div class="divo-dashboard-card" data-level="3" onclick="location.href='contacts.html'" style="cursor:pointer;">
-          <div class="divo-dashboard-head">
-            <div class="divo-dashboard-title-block">
-              <span class="divo-dashboard-icon">📇</span>
-              <div>
-                <div class="divo-dashboard-title">Контакты</div>
-                <div class="divo-dashboard-desc">Контрагенты и телефоны</div>
-              </div>
-            </div>
-          </div>
-          <div class="divo-dashboard-body">
-            <div class="divo-dashboard-placeholder">
-              <span class="divo-dashboard-placeholder-icon">👥</span>
-              <span>Список контрагентов</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="divo-dashboard-card" data-level="3" onclick="location.href='warehouse.html'" style="cursor:pointer;">
-          <div class="divo-dashboard-head">
-            <div class="divo-dashboard-title-block">
-              <span class="divo-dashboard-icon">📦</span>
-              <div>
-                <div class="divo-dashboard-title">Склад</div>
-                <div class="divo-dashboard-desc">Учёт остатков</div>
-              </div>
-            </div>
-          </div>
-          <div class="divo-dashboard-body">
-            <div class="divo-dashboard-placeholder">
-              <span class="divo-dashboard-placeholder-icon">📊</span>
-              <span>Остатки и минимумы</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="divo-dashboard-card" data-level="3" onclick="location.href='cash.html'" style="cursor:pointer;">
-          <div class="divo-dashboard-head">
-            <div class="divo-dashboard-title-block">
-              <span class="divo-dashboard-icon">💰</span>
-              <div>
-                <div class="divo-dashboard-title">Расчёты</div>
-                <div class="divo-dashboard-desc">Долги и оплаты</div>
-              </div>
-            </div>
-          </div>
-          <div class="divo-dashboard-body">
-            <div class="divo-dashboard-placeholder">
-              <span class="divo-dashboard-placeholder-icon">💵</span>
-              <span>Расчёты появятся здесь</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="divo-dashboard-card" data-level="3" onclick="location.href='prices.html'" style="cursor:pointer;">
-          <div class="divo-dashboard-head">
-            <div class="divo-dashboard-title-block">
-              <span class="divo-dashboard-icon">📋</span>
-              <div>
-                <div class="divo-dashboard-title">Прайсы</div>
-                <div class="divo-dashboard-desc">Услуги и цены</div>
-              </div>
-            </div>
-          </div>
-          <div class="divo-dashboard-body">
-            <div class="divo-dashboard-placeholder">
-              <span class="divo-dashboard-placeholder-icon">💲</span>
-              <span>Прайс-лист услуг</span>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </main>
-
-  </div>
-
-  <div class="divo-footer">© Диво Детейлинг • 2026</div>
-
+<div class="cnt-page-header">
+  <h1 class="cnt-page-title">📇 Контакты <span style="font-size:0.5em;color:#71717a">(админка)</span></h1>
+  <span class="cnt-page-count" id="cntTotalCount">…</span>
 </div>
 
-<script src="/components/components.js?v=162"></script>
+<!-- Форма добавления -->
+<div class="cnt-add-form" id="cntAddForm" style="display:none;">
+  <div class="cnt-add-title" id="cntFormTitle">➕ Добавить контрагента</div>
+  <div class="cnt-add-row">
+    <div class="cnt-field cnt-field-name">
+      <label>Имя / название</label>
+      <input type="text" id="cntInpName" placeholder="Например: Иван П." autocomplete="off">
+    </div>
+    <div class="cnt-field">
+      <label>Категория</label>
+      <input type="text" id="cntInpCategory" list="cntCategoryList" placeholder="Клиенты" autocomplete="off">
+      <datalist id="cntCategoryList"></datalist>
+    </div>
+    <div class="cnt-field">
+      <label>Телефон</label>
+      <input type="text" id="cntInpPhone" placeholder="+7 (999) 123-45-67" autocomplete="off">
+    </div>
+    <button class="cnt-save-btn" id="cntSaveBtn">💾 Сохранить</button>
+    <button class="cnt-cancel-btn" id="cntCancelBtn" style="display:none;">✕ Отмена</button>
+  </div>
+  <div class="cnt-add-row">
+    <div class="cnt-field cnt-field-comment">
+      <label>Заметка</label>
+      <input type="text" id="cntInpComment" placeholder="Комментарий..." autocomplete="off">
+    </div>
+  </div>
+</div>
+
+<button class="cnt-show-add-btn" id="cntShowAddBtn">➕ Добавить контрагента</button>
+
+<div class="cnt-search-wrap">
+  <span class="cnt-search-icon">🔍</span>
+  <input type="text" id="cntSearch" class="cnt-search-input" placeholder="Поиск по имени, телефону, категории, комментарию...">
+</div>
+
+<div class="cnt-toggle-bar">
+  <button class="cnt-toggle-btn" id="cntExpandAll">▸ Развернуть все</button>
+  <button class="cnt-toggle-btn" id="cntCollapseAll">▾ Свернуть все</button>
+</div>
+
+<div class="cnt-status" id="cntStatus"></div>
+
+<div id="cntContent">
+  <div class="cnt-loading">Загрузка контактов...</div>
+</div>
+
+<style>
+.cnt-add-form {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.cnt-add-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #e4e4e7;
+}
+.cnt-add-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.cnt-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 140px;
+}
+.cnt-field-name { min-width: 200px; }
+.cnt-field-comment { min-width: 100%; flex: 2; }
+.cnt-field label {
+  font-size: 0.78rem;
+  color: #a1a1aa;
+  font-weight: 500;
+}
+.cnt-field input {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #e4e4e7;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.cnt-field input:focus {
+  border-color: #6366f1;
+}
+.cnt-save-btn {
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.cnt-save-btn:hover { background: #4f46e5; }
+.cnt-cancel-btn {
+  background: rgba(255,255,255,0.08);
+  color: #e4e4e7;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.cnt-show-add-btn {
+  background: #22c55e;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 16px;
+  transition: background 0.15s;
+}
+.cnt-show-add-btn:hover { background: #16a34a; }
+.cnt-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+.cnt-action-btn {
+  background: rgba(255,255,255,0.06);
+  color: #e4e4e7;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.cnt-action-btn:hover { background: rgba(255,255,255,0.12); }
+.cnt-action-btn.edit:hover { border-color: #6366f1; color: #a5b4fc; }
+.cnt-action-btn.delete:hover { border-color: #ef4444; color: #fca5a5; }
+</style>
+
 <script>
-function divoCheckAuthAndInit() {
-  var user = divoGetUser();
+(function() {
+  var contractors = [];
+  var filtered = [];
+  var editingId = null;
+  var SUPABASE_URL = (typeof window.SUPABASE_URL !== 'undefined') ? window.SUPABASE_URL : 'https://jnbqzngsglnjzzpsvvgn.supabase.co';
+  var SUPABASE_KEY = (typeof window.SUPABASE_KEY !== 'undefined') ? window.SUPABASE_KEY : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuYnF6bmdzZ2xuanp6cHN2dmduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyMzIwOTEsImV4cCI6MjEwNDgwODA5MX0.uHVMUKBtO0326KB3bAHQ8rywBvBms7WvfaxPrhm3_Y0';
 
-  if (!user) {
-    var mainLayout = document.getElementById('divoMainLayout');
-    if (mainLayout) mainLayout.style.display = 'none';
+  function $(id) { return document.getElementById(id); }
 
-    fetch('/components/auth-form.html?v=162')
-      .then(function(r) { return r.text(); })
-      .then(function(html) {
-        var c = document.getElementById('divoAuthContainer');
-        if (c) {
-          c.innerHTML = html;
-          var btn = document.getElementById('divoAuthBtn');
-          if (btn) btn.addEventListener('click', divoDoLogin);
-          var pass = document.getElementById('divoAuthPassword');
-          if (pass) pass.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') divoDoLogin();
-          });
-        }
-      });
-    return;
+  function showStatus(msg, type) {
+    var s = $('cntStatus');
+    if (!s) return;
+    s.textContent = msg;
+    s.className = 'cnt-status show ' + type;
+  }
+  function hideStatus() {
+    var s = $('cntStatus');
+    if (s) s.className = 'cnt-status';
   }
 
-  // Залогинен — показываем layout
-  var mainLayout = document.getElementById('divoMainLayout');
-  if (mainLayout) mainLayout.style.display = 'flex';
+  function escapeHtml(text) {
+    var d = document.createElement('div');
+    d.textContent = text == null ? '' : String(text);
+    return d.innerHTML;
+  }
 
-  var authContainer = document.getElementById('divoAuthContainer');
-  if (authContainer) authContainer.innerHTML = '';
+  function getInitial(name) {
+    if (!name) return '?';
+    return name.trim().charAt(0).toUpperCase();
+  }
 
-  divoInit();
+  function formatPhoneLink(phone) {
+    if (!phone) return '';
+    var digits = phone.replace(/\D/g, '');
+    if (digits.length === 11 && digits.charAt(0) === '8') {
+      digits = '7' + digits.substring(1);
+    }
+    if (digits.length === 11 && digits.charAt(0) === '7') {
+      return 'tel:+' + digits;
+    }
+    return 'tel:' + phone.replace(/\s/g, '');
+  }
 
-  // Скрываем карточки по уровню
-  var userLevel = divoGetLevel();
-  var cards = document.querySelectorAll('.divo-dashboard-card[data-level]');
-  for (var i = 0; i < cards.length; i++) {
-    var reqLevel = parseInt(cards[i].getAttribute('data-level'), 10);
-    if (!isNaN(reqLevel) && userLevel < reqLevel) {
-      cards[i].style.display = 'none';
+  function loadData() {
+    showStatus('Загрузка контактов...', 'loading');
+    var url = SUPABASE_URL + '/rest/v1/contractors?select=*&order=category.asc,name.asc';
+    fetch(url, { method: 'GET', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        contractors = data || [];
+        filtered = contractors.slice();
+        hideStatus();
+        updateCount();
+        updateCategoryDatalist();
+        render();
+      })
+      .catch(function(e) {
+        console.error('Ошибка:', e);
+        showStatus('Ошибка загрузки: ' + e.message, 'error');
+        $('cntContent').innerHTML = '<div class="cnt-empty"><div class="cnt-empty-icon">⚠️</div>Не удалось загрузить контакты</div>';
+      });
+  }
+
+  function updateCategoryDatalist() {
+    var cats = {};
+    for (var i = 0; i < contractors.length; i++) {
+      var c = contractors[i].category;
+      if (c && !cats[c]) cats[c] = true;
+    }
+    var dl = $('cntCategoryList');
+    if (dl) {
+      dl.innerHTML = '';
+      for (var cat in cats) {
+        var o = document.createElement('option');
+        o.value = cat;
+        dl.appendChild(o);
+      }
     }
   }
-}
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', divoCheckAuthAndInit);
-} else {
-  divoCheckAuthAndInit();
-}
+  function filterData(query) {
+    query = (query || '').toLowerCase().trim();
+    if (!query) {
+      filtered = contractors.slice();
+    } else {
+      filtered = contractors.filter(function(c) {
+        var name = (c.name || '').toLowerCase();
+        var phone = (c.phone || '').toLowerCase();
+        var comment = (c.comment || '').toLowerCase();
+        var category = (c.category || '').toLowerCase();
+        return name.indexOf(query) !== -1 ||
+               phone.indexOf(query) !== -1 ||
+               comment.indexOf(query) !== -1 ||
+               category.indexOf(query) !== -1;
+      });
+    }
+    updateCount();
+    render();
+  }
+
+  function updateCount() {
+    var el = $('cntTotalCount');
+    if (el) {
+      el.textContent = filtered.length + ' из ' + contractors.length;
+    }
+  }
+
+  function render() {
+    var container = $('cntContent');
+    if (!container) return;
+
+    if (!filtered.length) {
+      var msg = contractors.length
+        ? 'Ничего не найдено по вашему запросу'
+        : 'Контактов пока нет. Добавьте первого!';
+      container.innerHTML = '<div class="cnt-empty"><div class="cnt-empty-icon">📇</div>' + msg + '</div>';
+      return;
+    }
+
+    var groups = {};
+    var groupOrder = [];
+    for (var i = 0; i < filtered.length; i++) {
+      var cat = filtered[i].category || 'Без категории';
+      if (!groups[cat]) { groups[cat] = []; groupOrder.push(cat); }
+      groups[cat].push(filtered[i]);
+    }
+    groupOrder.sort();
+
+    var html = '';
+    for (var g = 0; g < groupOrder.length; g++) {
+      var categoryName = groupOrder[g];
+      var items = groups[categoryName];
+
+      html += '<div class="cnt-category" data-cat="' + escapeHtml(categoryName) + '">';
+      html += '<div class="cnt-category-header" onclick="window.cntToggleCategory(this)">';
+      html += '  <span class="cnt-arrow">▶</span>';
+      html += '  <span class="cnt-cat-icon">📁</span>';
+      html += '  <span class="cnt-cat-name">' + escapeHtml(categoryName) + '</span>';
+      html += '  <span class="cnt-cat-count">' + items.length + '</span>';
+      html += '</div>';
+      html += '<div class="cnt-category-body">';
+      html += '  <div class="cnt-grid-wrap">';
+      html += '    <div class="cnt-grid">';
+
+      for (var j = 0; j < items.length; j++) {
+        var c = items[j];
+        var initial = getInitial(c.name);
+        var phoneLink = formatPhoneLink(c.phone);
+        var phoneHtml = c.phone
+          ? '<a href="' + phoneLink + '" class="cnt-field-value is-phone">' + escapeHtml(c.phone) + '</a>'
+          : '<span class="cnt-field-empty">не указан</span>';
+        var commentHtml = c.comment
+          ? '<span class="cnt-field-value">' + escapeHtml(c.comment) + '</span>'
+          : '<span class="cnt-field-empty">—</span>';
+
+        html += '<div class="cnt-card" data-id="' + c.id + '">';
+        html += '  <div class="cnt-card-top">';
+        html += '    <div class="cnt-avatar">' + escapeHtml(initial) + '</div>';
+        html += '    <div class="cnt-card-info">';
+        html += '      <div class="cnt-card-name">' + escapeHtml(c.name || 'Без имени') + '</div>';
+        html += '      <div class="cnt-card-cat">' + escapeHtml(c.category || 'Без категории') + '</div>';
+        html += '    </div>';
+        html += '  </div>';
+        html += '  <div class="cnt-card-field">';
+        html += '    <span class="cnt-field-icon">📞</span>';
+        html += '    <span class="cnt-field-label">Телефон</span>';
+        html += phoneHtml;
+        html += '  </div>';
+        html += '  <div class="cnt-card-field">';
+        html += '    <span class="cnt-field-icon">💬</span>';
+        html += '    <span class="cnt-field-label">Заметка</span>';
+        html += commentHtml;
+        html += '  </div>';
+        html += '  <div class="cnt-card-actions">';
+        html += '    <button class="cnt-action-btn edit" onclick="window.cntEdit(' + c.id + ')">✏️ Изменить</button>';
+        html += '    <button class="cnt-action-btn delete" onclick="window.cntDelete(' + c.id + ')">🗑 Удалить</button>';
+        html += '  </div>';
+        html += '</div>';
+      }
+
+      html += '    </div>';
+      html += '  </div>';
+      html += '</div>';
+      html += '</div>';
+    }
+
+    container.innerHTML = html;
+  }
+
+  function showAddForm() {
+    editingId = null;
+    $('cntFormTitle').textContent = '➕ Добавить контрагента';
+    $('cntInpName').value = '';
+    $('cntInpCategory').value = '';
+    $('cntInpPhone').value = '';
+    $('cntInpComment').value = '';
+    $('cntAddForm').style.display = 'block';
+    $('cntCancelBtn').style.display = 'inline-block';
+    $('cntShowAddBtn').style.display = 'none';
+    $('cntInpName').focus();
+  }
+
+  function showEditForm(c) {
+    editingId = c.id;
+    $('cntFormTitle').textContent = '✏️ Редактировать: ' + (c.name || '');
+    $('cntInpName').value = c.name || '';
+    $('cntInpCategory').value = c.category || '';
+    $('cntInpPhone').value = c.phone || '';
+    $('cntInpComment').value = c.comment || '';
+    $('cntAddForm').style.display = 'block';
+    $('cntCancelBtn').style.display = 'inline-block';
+    $('cntShowAddBtn').style.display = 'none';
+    $('cntInpName').focus();
+  }
+
+  function hideForm() {
+    editingId = null;
+    $('cntAddForm').style.display = 'none';
+    $('cntCancelBtn').style.display = 'none';
+    $('cntShowAddBtn').style.display = 'inline-block';
+  }
+
+  function saveContact() {
+    var name = ($('cntInpName').value || '').trim();
+    var category = ($('cntInpCategory').value || '').trim();
+    var phone = ($('cntInpPhone').value || '').trim();
+    var comment = ($('cntInpComment').value || '').trim();
+
+    if (!name) {
+      showStatus('Введите имя контрагента', 'error');
+      return;
+    }
+
+    var payload = { name: name, category: category, phone: phone, comment: comment };
+
+    if (editingId) {
+      // UPDATE
+      showStatus('Сохранение...', 'loading');
+      fetch(SUPABASE_URL + '/rest/v1/contractors?id=eq.' + editingId, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(payload)
+      })
+        .then(function(r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          hideForm();
+          showStatus('✅ Контрагент обновлён', 'success');
+          loadData();
+          setTimeout(hideStatus, 2000);
+        })
+        .catch(function(e) {
+          showStatus('Ошибка сохранения: ' + e.message, 'error');
+        });
+    } else {
+      // INSERT
+      showStatus('Добавление...', 'loading');
+      fetch(SUPABASE_URL + '/rest/v1/contractors', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(payload)
+      })
+        .then(function(r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          hideForm();
+          showStatus('✅ Контрагент добавлен', 'success');
+          loadData();
+          setTimeout(hideStatus, 2000);
+        })
+        .catch(function(e) {
+          showStatus('Ошибка добавления: ' + e.message, 'error');
+        });
+    }
+  }
+
+  function deleteContact(id) {
+    var c = contractors.find(function(x) { return x.id === id; });
+    if (!c) return;
+    if (!confirm('Удалить контрагента "' + (c.name || '') + '"?')) return;
+
+    showStatus('Удаление...', 'loading');
+    fetch(SUPABASE_URL + '/rest/v1/contractors?id=eq.' + id, {
+      method: 'DELETE',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Prefer': 'return=minimal'
+      }
+    })
+      .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        showStatus('✅ Контрагент удалён', 'success');
+        loadData();
+        setTimeout(hideStatus, 2000);
+      })
+      .catch(function(e) {
+        showStatus('Ошибка удаления: ' + e.message, 'error');
+      });
+  }
+
+  function toggleCategory(headerEl) {
+    var category = headerEl.parentElement;
+    category.classList.toggle('expanded');
+  }
+
+  function expandAll() {
+    var cats = document.querySelectorAll('.cnt-category');
+    for (var i = 0; i < cats.length; i++) {
+      cats[i].classList.add('expanded');
+    }
+  }
+
+  function collapseAll() {
+    var cats = document.querySelectorAll('.cnt-category');
+    for (var i = 0; i < cats.length; i++) {
+      cats[i].classList.remove('expanded');
+    }
+  }
+
+  // Глобальные функции (для onclick)
+  window.cntToggleCategory = toggleCategory;
+  window.cntEdit = function(id) {
+    var c = contractors.find(function(x) { return x.id === id; });
+    if (c) showEditForm(c);
+  };
+  window.cntDelete = deleteContact;
+
+  // Инициализация
+  function init() {
+    var search = $('cntSearch');
+    if (search) {
+      var timeout;
+      search.addEventListener('input', function() {
+        clearTimeout(timeout);
+        timeout = setTimeout(function() {
+          filterData(search.value);
+        }, 300);
+      });
+    }
+
+    var expandBtn = $('cntExpandAll');
+    if (expandBtn) expandBtn.addEventListener('click', expandAll);
+
+    var collapseBtn = $('cntCollapseAll');
+    if (collapseBtn) collapseBtn.addEventListener('click', collapseAll);
+
+    var showAddBtn = $('cntShowAddBtn');
+    if (showAddBtn) showAddBtn.addEventListener('click', showAddForm);
+
+    var saveBtn = $('cntSaveBtn');
+    if (saveBtn) saveBtn.addEventListener('click', saveContact);
+
+    var cancelBtn = $('cntCancelBtn');
+    if (cancelBtn) cancelBtn.addEventListener('click', hideForm);
+
+    // Enter в форме → сохранить
+    var inputs = ['cntInpName', 'cntInpCategory', 'cntInpPhone', 'cntInpComment'];
+    for (var i = 0; i < inputs.length; i++) {
+      var el = $(inputs[i]);
+      if (el) {
+        el.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') { e.preventDefault(); saveContact(); }
+        });
+      }
+    }
+
+    loadData();
+  }
+
+  init();
+})();
 </script>
-</body>
-</html>
