@@ -1,15 +1,8 @@
 // DIVO CRM — Cloudflare Pages Advanced Mode (_worker.js)
 // Обрабатывает все запросы: статика + /api/* функции
 
-const VAPID_PRIVATE_JWK = {
-  kty: 'EC',
-  crv: 'P-256',
-  d: 'kEoDJEkzy7UJRWxYgxcMjg9wstv8VivWh4KvHdIjPpw',
-  x: 'GbvATwZ4yUe2pDdWJLkyWUjYp1AVhyd9U40NsNkn-Ws',
-  y: 'OJKKEV9vIdsbC8XCMMi-mZNJ1AU2fIa2HXc7VLDHZ3g',
-  ext: true
-};
-const VAPID_PUBLIC_KEY = 'BBm7wE8GeMlHtqQ3ViS5MllI2KdQFYcnfVONDbDZJ_lrOJKKEV9vIdsbC8XCMMi-mZNJ1AU2fIa2HXc7VLDHZ3g';
+const VAPID_PRIVATE_KEY = '1GywpgDoD_dhL65Zr7MJJLjDFid1ZAlTuIgUjsojDUo';
+const VAPID_PUBLIC_KEY = 'BKzY2hG8ojeZSExtE8dR0HiY0yQ79c6MVIoBC-mCqulYb4vCO20mT5upQzFvfhjDjw5HRQbsOPgrQHlhfSre1Ek';
 const VAPID_SUBJECT = 'mailto:admin@divo-crm.pages.dev';
 
 const SUPABASE_URL = 'https://jnbqzngsglnjzzpsvvgn.supabase.co';
@@ -38,11 +31,6 @@ export default {
       return handleSendPush(request);
     }
 
-    // API endpoint: /api/clean-subs (очистка старых подписок)
-    if (path === '/api/clean-subs' && request.method === 'POST') {
-      return handleCleanSubs(request);
-    }
-
     // Всё остальное — отдаём статику через Pages assets
     if (env.ASSETS) {
       return env.ASSETS.fetch(request);
@@ -51,28 +39,6 @@ export default {
     return new Response('Not found', { status: 404 });
   }
 };
-
-async function handleCleanSubs(request) {
-  try {
-    const data = await request.json();
-    if (data.secret !== PUSH_SECRET) {
-      return json({ error: 'Unauthorized' }, 401);
-    }
-    const cutoff = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
-    const resp = await fetch(`${SUPABASE_URL}/rest/v1/push_subscriptions?created_at=lt.${encodeURIComponent(cutoff)}`, {
-      method: 'DELETE',
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_KEY,
-        'Prefer': 'return=representation'
-      }
-    });
-    const deleted = await resp.json();
-    return json({ deleted: Array.isArray(deleted) ? deleted.length : 0 });
-  } catch (e) {
-    return json({ error: e.message }, 500);
-  }
-}
 
 async function handleSendPush(request) {
   try {
@@ -85,8 +51,7 @@ async function handleSendPush(request) {
     const { title, body, url: clickUrl } = data;
 
     // Получаем подписки из Supabase
-    // Берём только последнюю подписку каждого пользователя (чтобы не было дубликатов)
-    const subsResponse = await fetch(`${SUPABASE_URL}/rest/v1/push_subscriptions?select=*&order=created_at.desc`, {
+    const subsResponse = await fetch(`${SUPABASE_URL}/rest/v1/push_subscriptions?select=*`, {
       headers: {
         'apikey': SUPABASE_KEY,
         'Authorization': 'Bearer ' + SUPABASE_KEY
@@ -105,20 +70,8 @@ async function handleSendPush(request) {
 
     let sent = 0;
     let failed = 0;
-    let errors = [];
 
-    // Дедупликация: только последняя подписка для каждого пользователя
-    const seenUsers = new Set();
-    const uniqueSubs = [];
     for (const sub of subscriptions) {
-      const key = sub.user_email || sub.endpoint;
-      if (!seenUsers.has(key)) {
-        seenUsers.add(key);
-        uniqueSubs.push(sub);
-      }
-    }
-
-    for (const sub of uniqueSubs) {
       try {
         const payload = JSON.stringify({
           title: title || 'DIVO CRM',
@@ -130,22 +83,11 @@ async function handleSendPush(request) {
         sent++;
       } catch (e) {
         console.error('Push failed for', sub.user_email, e.message);
-        errors.push({ user: sub.user_email, endpoint: sub.endpoint.substring(0, 50), error: e.message });
-        // Авто-удаление нерабочих подписок (VapidPkHashMismatch, 410 expired, 404)
-        if (e.message.includes('VapidPkHashMismatch') || e.message.includes('410') || e.message.includes('404') || e.message.includes('unsubscribed')) {
-          try {
-            await fetch(`${SUPABASE_URL}/rest/v1/push_subscriptions?id=eq.${sub.id}`, {
-              method: 'DELETE',
-              headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
-            });
-            console.log('Auto-deleted stale subscription:', sub.id);
-          } catch (delErr) {}
-        }
         failed++;
       }
     }
 
-    return json({ sent, failed, total: uniqueSubs.length, duplicates: subscriptions.length - uniqueSubs.length, errors: errors.slice(0, 3) });
+    return json({ sent, failed, total: subscriptions.length });
   } catch (e) {
     return json({ error: e.message }, 500);
   }
@@ -167,13 +109,13 @@ async function sendWebPush(sub, payload) {
   const encPayload = base64UrlEncode(new TextEncoder().encode(JSON.stringify(jwtPayload)));
   const data = `${encHeader}.${encPayload}`;
 
-  const key = await importVapidKey();
-  // WebCrypto ECDSA возвращает raw r||s (64 байта) — это и есть формат JWT ES256 (RFC 7518)
+  const key = await importVapidKey(VAPID_PRIVATE_KEY);
   const signature = await crypto.subtle.sign(
     { name: 'ECDSA', hash: 'SHA-256' },
     key,
     new TextEncoder().encode(data)
   );
+
   const encSignature = base64UrlEncode(new Uint8Array(signature));
   const jwt = `${data}.${encSignature}`;
 
@@ -191,17 +133,15 @@ async function sendWebPush(sub, payload) {
   });
 
   if (!response.ok && response.status !== 201 && response.status !== 202) {
-    const errText = await response.text().catch(() => '');
-    throw new Error('Push failed: ' + response.status + ' ' + errText.substring(0, 200));
+    throw new Error('Push failed: ' + response.status);
   }
 }
 
-
-async function importVapidKey() {
-  // Импортируем приватный ключ из полного JWK (с x,y,d)
+async function importVapidKey(privateKeyBase64) {
+  const keyData = base64UrlDecode(privateKeyBase64);
   return crypto.subtle.importKey(
-    'jwk',
-    VAPID_PRIVATE_JWK,
+    'pkcs8',
+    keyData,
     { name: 'ECDSA', namedCurve: 'P-256' },
     false,
     ['sign']
@@ -266,12 +206,7 @@ async function encryptPayload(payload, p256dhBase64, authBase64) {
 }
 
 async function hkdfExtract(salt, ikm) {
-  // Если соль пустая — используем строку из 32 нулей (стандарт RFC 5869)
-  let saltBytes = salt;
-  if (!salt || salt.length === 0) {
-    saltBytes = new Uint8Array(32);
-  }
-  const key = await crypto.subtle.importKey('raw', saltBytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const key = await crypto.subtle.importKey('raw', salt, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   const result = await crypto.subtle.sign('HMAC', key, ikm);
   return new Uint8Array(result);
 }
