@@ -1,162 +1,161 @@
 <!-- Раздел: Контакты (админка) -->
 <!-- Уровень: 4 (админ+) -->
-<!-- Полный CRUD: добавление, редактирование, удаление контрагентов -->
+<!-- Полный CRUD через модальное окно (как admin-users) -->
 
-<div class="cnt-page-header">
-  <h1 class="cnt-page-title">📇 Контакты <span style="font-size:0.5em;color:#71717a">(админка)</span></h1>
-  <span class="cnt-page-count" id="cntTotalCount">…</span>
-</div>
-
-<!-- Форма добавления -->
-<div class="cnt-add-form" id="cntAddForm" style="display:none;">
-  <div class="cnt-add-title" id="cntFormTitle">➕ Добавить контрагента</div>
-  <div class="cnt-add-row">
-    <div class="cnt-field cnt-field-name">
-      <label>Имя / название</label>
-      <input type="text" id="cntInpName" placeholder="Например: Иван П." autocomplete="off">
+<div class="ac-page">
+  <div class="ac-header">
+    <div>
+      <h1 class="ac-title">📇 Контакты</h1>
+      <div class="ac-subtitle">Управление контрагентами • категории • телефоны</div>
     </div>
-    <div class="cnt-field">
-      <label>Категория</label>
-      <input type="text" id="cntInpCategory" list="cntCategoryList" placeholder="Клиенты" autocomplete="off">
-      <datalist id="cntCategoryList"></datalist>
-    </div>
-    <div class="cnt-field">
-      <label>Телефон</label>
-      <input type="text" id="cntInpPhone" placeholder="+7 (999) 123-45-67" autocomplete="off">
-    </div>
-    <button class="cnt-save-btn" id="cntSaveBtn">💾 Сохранить</button>
-    <button class="cnt-cancel-btn" id="cntCancelBtn" style="display:none;">✕ Отмена</button>
+    <button class="ac-add-btn" id="acAddBtn">➕ Добавить</button>
   </div>
-  <div class="cnt-add-row">
-    <div class="cnt-field cnt-field-comment">
-      <label>Заметка</label>
-      <input type="text" id="cntInpComment" placeholder="Комментарий..." autocomplete="off">
-    </div>
+
+  <div class="ac-status" id="acStatus"></div>
+
+  <div class="ac-search-wrap">
+    <span class="ac-search-icon">🔍</span>
+    <input type="text" id="acSearch" class="ac-search-input" placeholder="Поиск по имени, телефону, категории, комментарию...">
+  </div>
+
+  <div class="ac-toggle-bar">
+    <button class="ac-toggle-btn" id="acExpandAll">▸ Развернуть все</button>
+    <button class="ac-toggle-btn" id="acCollapseAll">▾ Свернуть все</button>
+  </div>
+
+  <div class="ac-list" id="acList">
+    <div class="ac-loading">Загрузка контактов...</div>
   </div>
 </div>
 
-<button class="cnt-show-add-btn" id="cntShowAddBtn">➕ Добавить контрагента</button>
-
-<div class="cnt-search-wrap">
-  <span class="cnt-search-icon">🔍</span>
-  <input type="text" id="cntSearch" class="cnt-search-input" placeholder="Поиск по имени, телефону, категории, комментарию...">
-</div>
-
-<div class="cnt-toggle-bar">
-  <button class="cnt-toggle-btn" id="cntExpandAll">▸ Развернуть все</button>
-  <button class="cnt-toggle-btn" id="cntCollapseAll">▾ Свернуть все</button>
-</div>
-
-<div class="cnt-status" id="cntStatus"></div>
-
-<div id="cntContent">
-  <div class="cnt-loading">Загрузка контактов...</div>
+<!-- Модальное окно -->
+<div class="ac-modal-overlay" id="acModalOverlay" style="display:none;">
+  <div class="ac-modal">
+    <h2 class="ac-modal-title" id="acModalTitle">Новый контакт</h2>
+    <label class="ac-label">Имя / название</label>
+    <input type="text" class="ac-input" id="acName" placeholder="Например: Иван П.">
+    <label class="ac-label">Категория</label>
+    <input type="text" class="ac-input" id="acCategory" list="acCategoryList" placeholder="Выберите или введите новую">
+    <datalist id="acCategoryList"></datalist>
+    <label class="ac-label">Телефон</label>
+    <input type="text" class="ac-input" id="acPhone" placeholder="+7 (999) 123-45-67">
+    <label class="ac-label">Заметка</label>
+    <input type="text" class="ac-input" id="acComment" placeholder="Комментарий...">
+    <div class="ac-modal-btns">
+      <button class="ac-btn-cancel" id="acCancelBtn">Отмена</button>
+      <button class="ac-btn-save" id="acSaveBtn">Сохранить</button>
+    </div>
+  </div>
 </div>
 
 <style>
-.cnt-add-form {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 16px;
+.ac-page { font-family: inherit; }
+.ac-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 16px; }
+.ac-title { font-size: 28px; font-weight: 800; color: #fafafa; margin: 0; }
+.ac-subtitle { font-size: 14px; color: #71717a; margin-top: 4px; }
+.ac-add-btn {
+  padding: 10px 20px; background: #1e3a8a; border: 1.5px solid #3b82f6; color: #93c5fd;
+  border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .15s;
 }
-.cnt-add-title {
-  font-size: 1.05rem;
-  font-weight: 600;
-  margin-bottom: 12px;
-  color: #e4e4e7;
+.ac-add-btn:hover { background: #3b82f6; color: #0a0a0a; }
+
+.ac-status { display: none; padding: 12px 16px; border-radius: 10px; margin-bottom: 12px; font-size: 14px; }
+.ac-status.show { display: block; }
+.ac-status.success { background: #14532d; color: #4ade80; }
+.ac-status.error { background: #7f1d1d; color: #fca5a5; }
+.ac-status.loading { background: #1e293b; color: #93c5fd; }
+
+.ac-search-wrap { position: relative; margin-bottom: 16px; }
+.ac-search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #71717a; font-size: 16px; }
+.ac-search-input {
+  width: 100%; box-sizing: border-box; padding: 12px 14px 12px 42px;
+  background: #0a0a0a; border: 1.5px solid #27272a; border-radius: 12px;
+  color: #fafafa; font-size: 15px; font-family: inherit; outline: none;
 }
-.cnt-add-row {
-  display: flex;
-  gap: 12px;
-  align-items: flex-end;
-  flex-wrap: wrap;
-  margin-bottom: 10px;
+.ac-search-input:focus { border-color: #3b82f6; }
+
+.ac-toggle-bar { display: flex; gap: 8px; margin-bottom: 16px; }
+.ac-toggle-btn {
+  padding: 8px 14px; background: #18181b; border: 1.5px solid #27272a; color: #a1a1aa;
+  border-radius: 8px; font-size: 13px; cursor: pointer; font-family: inherit; transition: all .15s;
 }
-.cnt-field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex: 1;
-  min-width: 140px;
+.ac-toggle-btn:hover { border-color: #3b82f6; color: #93c5fd; }
+
+.ac-list { display: flex; flex-direction: column; gap: 12px; }
+.ac-loading, .ac-empty { text-align: center; padding: 40px; color: #71717a; font-size: 15px; }
+
+/* Категории */
+.ac-category { background: #18181b; border: 1.5px solid #27272a; border-radius: 14px; overflow: hidden; }
+.ac-category.expanded .ac-category-body { display: block; }
+.ac-category-body { display: none; padding: 12px; }
+.ac-category-header {
+  display: flex; align-items: center; gap: 10px; padding: 14px 18px; cursor: pointer;
+  user-select: none; transition: background .15s;
 }
-.cnt-field-name { min-width: 200px; }
-.cnt-field-comment { min-width: 100%; flex: 2; }
-.cnt-field label {
-  font-size: 0.78rem;
-  color: #a1a1aa;
-  font-weight: 500;
+.ac-category-header:hover { background: #1f1f23; }
+.ac-cat-arrow { font-size: 12px; color: #71717a; transition: transform .15s; }
+.ac-category.expanded .ac-cat-arrow { transform: rotate(90deg); }
+.ac-cat-icon { font-size: 16px; }
+.ac-cat-name { flex: 1; font-size: 16px; font-weight: 700; color: #fafafa; }
+.ac-cat-count {
+  padding: 3px 10px; background: #27272a; border-radius: 20px; font-size: 12px; color: #a1a1aa;
 }
-.cnt-field input {
-  background: rgba(0,0,0,0.3);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 8px;
-  padding: 8px 12px;
-  color: #e4e4e7;
-  font-size: 0.9rem;
-  outline: none;
-  transition: border-color 0.15s;
+
+/* Карточки */
+.ac-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+.ac-card {
+  background: #0f0f12; border: 1.5px solid #27272a; border-radius: 12px; padding: 16px;
+  transition: all .15s;
 }
-.cnt-field input:focus {
-  border-color: #6366f1;
+.ac-card:hover { border-color: #3b82f6; background: #131316; }
+.ac-card-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.ac-avatar {
+  width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 800; color: #fff; background: #3b82f6; flex-shrink: 0;
 }
-.cnt-save-btn {
-  background: #6366f1;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 9px 16px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.15s;
+.ac-card-info { flex: 1; min-width: 0; }
+.ac-card-name { font-size: 15px; font-weight: 700; color: #fafafa; }
+.ac-card-cat { font-size: 12px; color: #71717a; margin-top: 2px; }
+.ac-card-field { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 13px; }
+.ac-field-icon { font-size: 14px; }
+.ac-field-label { color: #71717a; min-width: 60px; }
+.ac-field-value { color: #e4e4e7; }
+.ac-field-value.is-phone { color: #93c5fd; text-decoration: none; }
+.ac-field-empty { color: #52525b; font-style: italic; }
+.ac-card-actions { display: flex; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #27272a; }
+.ac-action-btn {
+  flex: 1; padding: 7px 10px; background: #18181b; border: 1.5px solid #27272a; color: #a1a1aa;
+  border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all .15s;
 }
-.cnt-save-btn:hover { background: #4f46e5; }
-.cnt-cancel-btn {
-  background: rgba(255,255,255,0.08);
-  color: #e4e4e7;
-  border: none;
-  border-radius: 8px;
-  padding: 9px 16px;
-  font-size: 0.9rem;
-  cursor: pointer;
-  white-space: nowrap;
+.ac-action-btn.edit:hover { border-color: #3b82f6; color: #93c5fd; background: #1e293b; }
+.ac-action-btn.delete:hover { border-color: #ef4444; color: #fca5a5; background: #7f1d1d; }
+
+/* Модалка */
+.ac-modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center;
+  z-index: 200; padding: 16px;
 }
-.cnt-show-add-btn {
-  background: #22c55e;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 18px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  margin-bottom: 16px;
-  transition: background 0.15s;
+.ac-modal {
+  background: #18181b; border: 1.5px solid #27272a; border-radius: 16px; padding: 28px;
+  max-width: 460px; width: 100%;
 }
-.cnt-show-add-btn:hover { background: #16a34a; }
-.cnt-card-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid rgba(255,255,255,0.05);
+.ac-modal-title { font-size: 22px; font-weight: 800; color: #fafafa; margin: 0 0 20px; }
+.ac-label { display: block; font-size: 12px; color: #71717a; text-transform: uppercase; letter-spacing: 1px; margin: 12px 0 6px; font-weight: 600; }
+.ac-input {
+  width: 100%; box-sizing: border-box; padding: 10px 14px; background: #0a0a0a; border: 1.5px solid #27272a;
+  border-radius: 10px; color: #fafafa; font-size: 15px; font-family: inherit; outline: none;
 }
-.cnt-action-btn {
-  background: rgba(255,255,255,0.06);
-  color: #e4e4e7;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 6px;
-  padding: 5px 12px;
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: all 0.15s;
+.ac-input:focus { border-color: #3b82f6; }
+.ac-modal-btns { display: flex; gap: 10px; margin-top: 24px; }
+.ac-btn-cancel {
+  flex: 1; padding: 12px; background: #27272a; color: #a1a1aa; border: 1.5px solid #3f3f46;
+  border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit;
 }
-.cnt-action-btn:hover { background: rgba(255,255,255,0.12); }
-.cnt-action-btn.edit:hover { border-color: #6366f1; color: #a5b4fc; }
-.cnt-action-btn.delete:hover { border-color: #ef4444; color: #fca5a5; }
+.ac-btn-save {
+  flex: 1; padding: 12px; background: #1e3a8a; color: #93c5fd; border: 1.5px solid #3b82f6;
+  border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit;
+}
+.ac-btn-save:hover { background: #3b82f6; color: #0a0a0a; }
 </style>
 
 <script>
@@ -170,14 +169,17 @@
   function $(id) { return document.getElementById(id); }
 
   function showStatus(msg, type) {
-    var s = $('cntStatus');
+    var s = $('acStatus');
     if (!s) return;
     s.textContent = msg;
-    s.className = 'cnt-status show ' + type;
+    s.className = 'ac-status show ' + type;
+    if (type === 'success' || type === 'error') {
+      setTimeout(function() { s.className = 'ac-status'; }, 3000);
+    }
   }
   function hideStatus() {
-    var s = $('cntStatus');
-    if (s) s.className = 'cnt-status';
+    var s = $('acStatus');
+    if (s) s.className = 'ac-status';
   }
 
   function escapeHtml(text) {
@@ -194,32 +196,25 @@
   function formatPhoneLink(phone) {
     if (!phone) return '';
     var digits = phone.replace(/\D/g, '');
-    if (digits.length === 11 && digits.charAt(0) === '8') {
-      digits = '7' + digits.substring(1);
-    }
-    if (digits.length === 11 && digits.charAt(0) === '7') {
-      return 'tel:+' + digits;
-    }
+    if (digits.length === 11 && digits.charAt(0) === '8') digits = '7' + digits.substring(1);
+    if (digits.length === 11 && digits.charAt(0) === '7') return 'tel:+' + digits;
     return 'tel:' + phone.replace(/\s/g, '');
   }
 
   function loadData() {
     showStatus('Загрузка контактов...', 'loading');
     var url = SUPABASE_URL + '/rest/v1/contractors?select=*&order=category.asc,name.asc';
-    fetch(url, { method: 'GET', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } })
+    fetch(url, { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } })
       .then(function(r) { return r.json(); })
       .then(function(data) {
         contractors = data || [];
         filtered = contractors.slice();
         hideStatus();
-        updateCount();
         updateCategoryDatalist();
         render();
       })
       .catch(function(e) {
-        console.error('Ошибка:', e);
         showStatus('Ошибка загрузки: ' + e.message, 'error');
-        $('cntContent').innerHTML = '<div class="cnt-empty"><div class="cnt-empty-icon">⚠️</div>Не удалось загрузить контакты</div>';
       });
   }
 
@@ -229,7 +224,7 @@
       var c = contractors[i].category;
       if (c && !cats[c]) cats[c] = true;
     }
-    var dl = $('cntCategoryList');
+    var dl = $('acCategoryList');
     if (dl) {
       dl.innerHTML = '';
       for (var cat in cats) {
@@ -246,39 +241,25 @@
       filtered = contractors.slice();
     } else {
       filtered = contractors.filter(function(c) {
-        var name = (c.name || '').toLowerCase();
-        var phone = (c.phone || '').toLowerCase();
-        var comment = (c.comment || '').toLowerCase();
-        var category = (c.category || '').toLowerCase();
-        return name.indexOf(query) !== -1 ||
-               phone.indexOf(query) !== -1 ||
-               comment.indexOf(query) !== -1 ||
-               category.indexOf(query) !== -1;
+        return (c.name || '').toLowerCase().indexOf(query) !== -1 ||
+               (c.phone || '').toLowerCase().indexOf(query) !== -1 ||
+               (c.comment || '').toLowerCase().indexOf(query) !== -1 ||
+               (c.category || '').toLowerCase().indexOf(query) !== -1;
       });
     }
-    updateCount();
     render();
   }
 
-  function updateCount() {
-    var el = $('cntTotalCount');
-    if (el) {
-      el.textContent = filtered.length + ' из ' + contractors.length;
-    }
-  }
-
   function render() {
-    var container = $('cntContent');
+    var container = $('acList');
     if (!container) return;
 
     if (!filtered.length) {
-      var msg = contractors.length
-        ? 'Ничего не найдено по вашему запросу'
-        : 'Контактов пока нет. Добавьте первого!';
-      container.innerHTML = '<div class="cnt-empty"><div class="cnt-empty-icon">📇</div>' + msg + '</div>';
+      container.innerHTML = '<div class="ac-empty">' + (contractors.length ? 'Ничего не найдено' : 'Контактов пока нет. Нажмите «➕ Добавить»') + '</div>';
       return;
     }
 
+    // Группируем по категориям
     var groups = {};
     var groupOrder = [];
     for (var i = 0; i < filtered.length; i++) {
@@ -292,55 +273,52 @@
     for (var g = 0; g < groupOrder.length; g++) {
       var categoryName = groupOrder[g];
       var items = groups[categoryName];
+      var expanded = (g === 0) ? ' expanded' : '';
 
-      html += '<div class="cnt-category" data-cat="' + escapeHtml(categoryName) + '">';
-      html += '<div class="cnt-category-header" onclick="window.cntToggleCategory(this)">';
-      html += '  <span class="cnt-arrow">▶</span>';
-      html += '  <span class="cnt-cat-icon">📁</span>';
-      html += '  <span class="cnt-cat-name">' + escapeHtml(categoryName) + '</span>';
-      html += '  <span class="cnt-cat-count">' + items.length + '</span>';
+      html += '<div class="ac-category' + expanded + '">';
+      html += '<div class="ac-category-header" onclick="window.acToggleCategory(this)">';
+      html += '  <span class="ac-cat-arrow">▶</span>';
+      html += '  <span class="ac-cat-icon">📁</span>';
+      html += '  <span class="ac-cat-name">' + escapeHtml(categoryName) + '</span>';
+      html += '  <span class="ac-cat-count">' + items.length + '</span>';
       html += '</div>';
-      html += '<div class="cnt-category-body">';
-      html += '  <div class="cnt-grid-wrap">';
-      html += '    <div class="cnt-grid">';
+      html += '<div class="ac-category-body">';
+      html += '  <div class="ac-grid">';
 
       for (var j = 0; j < items.length; j++) {
         var c = items[j];
-        var initial = getInitial(c.name);
-        var phoneLink = formatPhoneLink(c.phone);
         var phoneHtml = c.phone
-          ? '<a href="' + phoneLink + '" class="cnt-field-value is-phone">' + escapeHtml(c.phone) + '</a>'
-          : '<span class="cnt-field-empty">не указан</span>';
+          ? '<a href="' + formatPhoneLink(c.phone) + '" class="ac-field-value is-phone">' + escapeHtml(c.phone) + '</a>'
+          : '<span class="ac-field-empty">не указан</span>';
         var commentHtml = c.comment
-          ? '<span class="cnt-field-value">' + escapeHtml(c.comment) + '</span>'
-          : '<span class="cnt-field-empty">—</span>';
+          ? '<span class="ac-field-value">' + escapeHtml(c.comment) + '</span>'
+          : '<span class="ac-field-empty">—</span>';
 
-        html += '<div class="cnt-card" data-id="' + c.id + '">';
-        html += '  <div class="cnt-card-top">';
-        html += '    <div class="cnt-avatar">' + escapeHtml(initial) + '</div>';
-        html += '    <div class="cnt-card-info">';
-        html += '      <div class="cnt-card-name">' + escapeHtml(c.name || 'Без имени') + '</div>';
-        html += '      <div class="cnt-card-cat">' + escapeHtml(c.category || 'Без категории') + '</div>';
+        html += '<div class="ac-card">';
+        html += '  <div class="ac-card-top">';
+        html += '    <div class="ac-avatar">' + escapeHtml(getInitial(c.name)) + '</div>';
+        html += '    <div class="ac-card-info">';
+        html += '      <div class="ac-card-name">' + escapeHtml(c.name || 'Без имени') + '</div>';
+        html += '      <div class="ac-card-cat">' + escapeHtml(c.category || 'Без категории') + '</div>';
         html += '    </div>';
         html += '  </div>';
-        html += '  <div class="cnt-card-field">';
-        html += '    <span class="cnt-field-icon">📞</span>';
-        html += '    <span class="cnt-field-label">Телефон</span>';
+        html += '  <div class="ac-card-field">';
+        html += '    <span class="ac-field-icon">📞</span>';
+        html += '    <span class="ac-field-label">Телефон</span>';
         html += phoneHtml;
         html += '  </div>';
-        html += '  <div class="cnt-card-field">';
-        html += '    <span class="cnt-field-icon">💬</span>';
-        html += '    <span class="cnt-field-label">Заметка</span>';
+        html += '  <div class="ac-card-field">';
+        html += '    <span class="ac-field-icon">💬</span>';
+        html += '    <span class="ac-field-label">Заметка</span>';
         html += commentHtml;
         html += '  </div>';
-        html += '  <div class="cnt-card-actions">';
-        html += '    <button class="cnt-action-btn edit" onclick="window.cntEdit(' + c.id + ')">✏️ Изменить</button>';
-        html += '    <button class="cnt-action-btn delete" onclick="window.cntDelete(' + c.id + ')">🗑 Удалить</button>';
+        html += '  <div class="ac-card-actions">';
+        html += '    <button class="ac-action-btn edit" onclick="window.acEdit(' + c.id + ')">✏️ Изменить</button>';
+        html += '    <button class="ac-action-btn delete" onclick="window.acDelete(' + c.id + ')">🗑 Удалить</button>';
         html += '  </div>';
         html += '</div>';
       }
 
-      html += '    </div>';
       html += '  </div>';
       html += '</div>';
       html += '</div>';
@@ -349,47 +327,32 @@
     container.innerHTML = html;
   }
 
-  function showAddForm() {
+  // === Модалка ===
+  function openModal(isEdit, c) {
+    editingId = isEdit ? c.id : null;
+    $('acModalTitle').textContent = isEdit ? 'Изменить контакт' : 'Новый контакт';
+    $('acName').value = isEdit ? (c.name || '') : '';
+    $('acCategory').value = isEdit ? (c.category || '') : '';
+    $('acPhone').value = isEdit ? (c.phone || '') : '';
+    $('acComment').value = isEdit ? (c.comment || '') : '';
+    $('acModalOverlay').style.display = 'flex';
+    $('acName').focus();
+  }
+
+  function closeModal() {
+    $('acModalOverlay').style.display = 'none';
     editingId = null;
-    $('cntFormTitle').textContent = '➕ Добавить контрагента';
-    $('cntInpName').value = '';
-    $('cntInpCategory').value = '';
-    $('cntInpPhone').value = '';
-    $('cntInpComment').value = '';
-    $('cntAddForm').style.display = 'block';
-    $('cntCancelBtn').style.display = 'inline-block';
-    $('cntShowAddBtn').style.display = 'none';
-    $('cntInpName').focus();
   }
 
-  function showEditForm(c) {
-    editingId = c.id;
-    $('cntFormTitle').textContent = '✏️ Редактировать: ' + (c.name || '');
-    $('cntInpName').value = c.name || '';
-    $('cntInpCategory').value = c.category || '';
-    $('cntInpPhone').value = c.phone || '';
-    $('cntInpComment').value = c.comment || '';
-    $('cntAddForm').style.display = 'block';
-    $('cntCancelBtn').style.display = 'inline-block';
-    $('cntShowAddBtn').style.display = 'none';
-    $('cntInpName').focus();
-  }
-
-  function hideForm() {
-    editingId = null;
-    $('cntAddForm').style.display = 'none';
-    $('cntCancelBtn').style.display = 'none';
-    $('cntShowAddBtn').style.display = 'inline-block';
-  }
-
-  function saveContact() {
-    var name = ($('cntInpName').value || '').trim();
-    var category = ($('cntInpCategory').value || '').trim();
-    var phone = ($('cntInpPhone').value || '').trim();
-    var comment = ($('cntInpComment').value || '').trim();
+  function save() {
+    var name = ($('acName').value || '').trim();
+    var category = ($('acCategory').value || '').trim();
+    var phone = ($('acPhone').value || '').trim();
+    var comment = ($('acComment').value || '').trim();
 
     if (!name) {
-      showStatus('Введите имя контрагента', 'error');
+      showStatus('Введите имя контакта', 'error');
+      $('acName').focus();
       return;
     }
 
@@ -410,13 +373,12 @@
       })
         .then(function(r) {
           if (!r.ok) throw new Error('HTTP ' + r.status);
-          hideForm();
-          showStatus('✅ Контрагент обновлён', 'success');
+          closeModal();
+          showStatus('✅ Контакт обновлён', 'success');
           loadData();
-          setTimeout(hideStatus, 2000);
         })
         .catch(function(e) {
-          showStatus('Ошибка сохранения: ' + e.message, 'error');
+          showStatus('Ошибка: ' + e.message, 'error');
         });
     } else {
       // INSERT
@@ -433,21 +395,20 @@
       })
         .then(function(r) {
           if (!r.ok) throw new Error('HTTP ' + r.status);
-          hideForm();
-          showStatus('✅ Контрагент добавлен', 'success');
+          closeModal();
+          showStatus('✅ Контакт добавлен', 'success');
           loadData();
-          setTimeout(hideStatus, 2000);
         })
         .catch(function(e) {
-          showStatus('Ошибка добавления: ' + e.message, 'error');
+          showStatus('Ошибка: ' + e.message, 'error');
         });
     }
   }
 
-  function deleteContact(id) {
+  function del(id) {
     var c = contractors.find(function(x) { return x.id === id; });
     if (!c) return;
-    if (!confirm('Удалить контрагента "' + (c.name || '') + '"?')) return;
+    if (!confirm('Удалить контакт "' + (c.name || '') + '"?')) return;
 
     showStatus('Удаление...', 'loading');
     fetch(SUPABASE_URL + '/rest/v1/contractors?id=eq.' + id, {
@@ -460,80 +421,63 @@
     })
       .then(function(r) {
         if (!r.ok) throw new Error('HTTP ' + r.status);
-        showStatus('✅ Контрагент удалён', 'success');
+        showStatus('✅ Контакт удалён', 'success');
         loadData();
-        setTimeout(hideStatus, 2000);
       })
       .catch(function(e) {
-        showStatus('Ошибка удаления: ' + e.message, 'error');
+        showStatus('Ошибка: ' + e.message, 'error');
       });
   }
 
-  function toggleCategory(headerEl) {
-    var category = headerEl.parentElement;
-    category.classList.toggle('expanded');
-  }
-
-  function expandAll() {
-    var cats = document.querySelectorAll('.cnt-category');
-    for (var i = 0; i < cats.length; i++) {
-      cats[i].classList.add('expanded');
-    }
-  }
-
-  function collapseAll() {
-    var cats = document.querySelectorAll('.cnt-category');
-    for (var i = 0; i < cats.length; i++) {
-      cats[i].classList.remove('expanded');
-    }
-  }
-
-  // Глобальные функции (для onclick)
-  window.cntToggleCategory = toggleCategory;
-  window.cntEdit = function(id) {
-    var c = contractors.find(function(x) { return x.id === id; });
-    if (c) showEditForm(c);
+  // Глобальные функции
+  window.acToggleCategory = function(header) {
+    var cat = header.parentElement;
+    if (cat) cat.classList.toggle('expanded');
   };
-  window.cntDelete = deleteContact;
+  window.acEdit = function(id) {
+    var c = contractors.find(function(x) { return x.id === id; });
+    if (c) openModal(true, c);
+  };
+  window.acDelete = del;
 
-  // Инициализация
+  // === Инициализация ===
   function init() {
-    var search = $('cntSearch');
-    if (search) {
-      var timeout;
-      search.addEventListener('input', function() {
-        clearTimeout(timeout);
-        timeout = setTimeout(function() {
-          filterData(search.value);
-        }, 300);
+    $('acAddBtn').addEventListener('click', function() { openModal(false, null); });
+    $('acCancelBtn').addEventListener('click', closeModal);
+    $('acSaveBtn').addEventListener('click', save);
+    $('acExpandAll').addEventListener('click', function() {
+      var cats = document.querySelectorAll('.ac-category');
+      for (var i = 0; i < cats.length; i++) cats[i].classList.add('expanded');
+    });
+    $('acCollapseAll').addEventListener('click', function() {
+      var cats = document.querySelectorAll('.ac-category');
+      for (var i = 0; i < cats.length; i++) cats[i].classList.remove('expanded');
+    });
+
+    // Поиск
+    var searchTimeout;
+    $('acSearch').addEventListener('input', function() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(function() { filterData($('acSearch').value); }, 300);
+    });
+
+    // Enter в модалке → сохранить
+    var inputs = ['acName', 'acCategory', 'acPhone', 'acComment'];
+    for (var i = 0; i < inputs.length; i++) {
+      $(inputs[i]).addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); save(); }
       });
     }
 
-    var expandBtn = $('cntExpandAll');
-    if (expandBtn) expandBtn.addEventListener('click', expandAll);
+    // Esc → закрыть модалку
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && $('acModalOverlay').style.display === 'flex') closeModal();
+    });
 
-    var collapseBtn = $('cntCollapseAll');
-    if (collapseBtn) collapseBtn.addEventListener('click', collapseAll);
-
-    var showAddBtn = $('cntShowAddBtn');
-    if (showAddBtn) showAddBtn.addEventListener('click', showAddForm);
-
-    var saveBtn = $('cntSaveBtn');
-    if (saveBtn) saveBtn.addEventListener('click', saveContact);
-
-    var cancelBtn = $('cntCancelBtn');
-    if (cancelBtn) cancelBtn.addEventListener('click', hideForm);
-
-    // Enter в форме → сохранить
-    var inputs = ['cntInpName', 'cntInpCategory', 'cntInpPhone', 'cntInpComment'];
-    for (var i = 0; i < inputs.length; i++) {
-      var el = $(inputs[i]);
-      if (el) {
-        el.addEventListener('keypress', function(e) {
-          if (e.key === 'Enter') { e.preventDefault(); saveContact(); }
-        });
-      }
-    }
+    // Клик по overlay → закрыть
+    $('acModalOverlay').addEventListener('click', function(e) {
+      if (e.target === $('acModalOverlay')) closeModal();
+    });
 
     loadData();
   }
