@@ -70,6 +70,7 @@ async function handleSendPush(request) {
 
     let sent = 0;
     let failed = 0;
+    let errors = [];
 
     for (const sub of subscriptions) {
       try {
