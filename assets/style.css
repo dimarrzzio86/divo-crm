@@ -275,14 +275,57 @@ html, body {
 }
 
 /* ============ АДАПТИВ ============ */
+
+/* Планшеты: сайдбар уже может быть широким, но компактнее */
+@media (max-width: 900px) {
+  .divo-sidebar { width: 220px; }
+}
+
+/* Мобильная версия: сайдбар = выезжающее меню (drawer) */
 @media (max-width: 700px) {
-  .divo-body { flex-direction: column; }
-  .divo-sidebar { width: 100%; }
+  /* Показываем кнопку-бургер */
+  .divo-burger-btn {
+    display: flex;
+  }
+
+  /* Сайдбар — выезжающее меню слева, изначально скрыт */
+  .divo-body {
+    flex-direction: column;
+  }
+  .divo-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    max-width: 85vw;
+    height: 100vh;
+    overflow-y: auto;
+    background: #0a0a0a;
+    padding: 16px;
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+    gap: 12px;
+  }
+  .divo-sidebar.open {
+    transform: translateX(0);
+    box-shadow: 4px 0 30px rgba(0,0,0,0.5);
+  }
+
+  /* Контент на всю ширину */
+  .divo-content {
+    width: 100%;
+    padding: 20px 16px;
+  }
+
+  /* Прочее */
   .divo-menu-item { padding: 14px; }
   .divo-title { font-size: 22px; }
   .divo-subtitle { font-size: 11px; }
   .divo-logo-icon { font-size: 34px; }
-  .divo-header { padding: 18px 20px; }
+  .divo-header { padding: 16px 18px; }
+  .divo-layout { padding: 12px 10px; gap: 12px; }
 }
 
 /* ============ КНОПКА БУРГЕР (мобила) ============ */
