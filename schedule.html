@@ -4,15 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — График записей</title>
-<link rel="manifest" href="/manifest.json?v=176">
-<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png?v=176">
+<link rel="manifest" href="/manifest.json?v=177">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png?v=177">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Диво CRM">
 <meta name="theme-color" content="#0a0a0a">
-<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png?v=176">
-<link rel="stylesheet" href="/assets/style.css?v=176">
-<link rel="stylesheet" href="/assets/auth.css?v=176">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png?v=177">
+<link rel="stylesheet" href="/assets/style.css?v=177">
+<link rel="stylesheet" href="/assets/auth.css?v=177">
 <style>
 /* === СТИЛИ СТРАНИЦЫ ГРАФИКА === */
 .sch-page { padding: 0; }
@@ -461,8 +461,8 @@
   </div>
 </div>
 
-<script src="/components/components.js?v=176"></script>
-<script src="/components/access-config.js?v=176"></script>
+<script src="/components/components.js?v=177"></script>
+<script src="/components/access-config.js?v=177"></script>
 <script>
 // Упрощённая инициализация — надёжно показываем страницу
 function divoInitSchedule() {
@@ -472,7 +472,7 @@ function divoInitSchedule() {
     // Не залогинен — показываем форму входа
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=176')
+    fetch('/components/auth-form.html?v=177')
       .then(function(r){ return r.text(); })
       .then(function(html){
         var c = document.getElementById('divoAuthContainer');
