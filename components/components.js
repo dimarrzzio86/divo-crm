@@ -340,6 +340,42 @@ function divoSetupHeaderButton() {
   }
 }
 
+// ============ МОБИЛЬНЫЙ САЙДБАР (DRAWER) ============
+
+// Открыть/закрыть сайдбар на мобиле
+function divoToggleSidebarMobile() {
+  var sidebar = document.getElementById('divo-sidebar');
+  var overlay = document.getElementById('divoSidebarOverlay');
+  if (!sidebar) return;
+
+  var isOpen = sidebar.classList.contains('open');
+  if (isOpen) {
+    sidebar.classList.remove('open');
+    if (overlay) overlay.classList.remove('show');
+  } else {
+    sidebar.classList.add('open');
+    if (overlay) overlay.classList.add('show');
+  }
+}
+
+// Закрыть сайдбар (мобила)
+function divoCloseSidebarMobile() {
+  var sidebar = document.getElementById('divo-sidebar');
+  var overlay = document.getElementById('divoSidebarOverlay');
+  if (sidebar) sidebar.classList.remove('open');
+  if (overlay) overlay.classList.remove('show');
+}
+
+// Создать overlay для сайдбара (один раз)
+function divoInitSidebarOverlay() {
+  if (document.getElementById('divoSidebarOverlay')) return;
+  var overlay = document.createElement('div');
+  overlay.id = 'divoSidebarOverlay';
+  overlay.className = 'divo-sidebar-overlay';
+  overlay.addEventListener('click', divoCloseSidebarMobile);
+  document.body.appendChild(overlay);
+}
+
 function divoInit() {
   divoInitSidebarOverlay();
 
