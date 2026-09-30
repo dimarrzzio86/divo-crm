@@ -2,7 +2,7 @@
    DIVO CRM v2 — ЛОГИКА КОМПОНЕНТОВ
    ========================================== */
 
-var DIVO_VERSION = 'v179';
+var DIVO_VERSION = 'v180';
 
 var SUPABASE_URL = 'https://jnbqzngsglnjzzpsvvgn.supabase.co';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuYnF6bmdzZ2xuanp6cHN2dmduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyMzIwOTEsImV4cCI6MjEwNDgwODA5MX0.uHVMUKBtO0326KB3bAHQ8rywBvBms7WvfaxPrhm3_Y0';
@@ -340,45 +340,7 @@ function divoSetupHeaderButton() {
   }
 }
 
-// ============ МОБИЛЬНЫЙ САЙДБАР (DRAWER) ============
-
-// Открыть/закрыть сайдбар на мобиле
-function divoToggleSidebarMobile() {
-  var sidebar = document.getElementById('divo-sidebar');
-  var overlay = document.getElementById('divoSidebarOverlay');
-  if (!sidebar) return;
-
-  var isOpen = sidebar.classList.contains('open');
-  if (isOpen) {
-    sidebar.classList.remove('open');
-    if (overlay) overlay.classList.remove('show');
-  } else {
-    sidebar.classList.add('open');
-    if (overlay) overlay.classList.add('show');
-  }
-}
-
-// Закрыть сайдбар (мобила)
-function divoCloseSidebarMobile() {
-  var sidebar = document.getElementById('divo-sidebar');
-  var overlay = document.getElementById('divoSidebarOverlay');
-  if (sidebar) sidebar.classList.remove('open');
-  if (overlay) overlay.classList.remove('show');
-}
-
-// Создать overlay для сайдбара (один раз)
-function divoInitSidebarOverlay() {
-  if (document.getElementById('divoSidebarOverlay')) return;
-  var overlay = document.createElement('div');
-  overlay.id = 'divoSidebarOverlay';
-  overlay.className = 'divo-sidebar-overlay';
-  overlay.addEventListener('click', divoCloseSidebarMobile);
-  document.body.appendChild(overlay);
-}
-
 function divoInit() {
-  divoInitSidebarOverlay();
-
   divoLoadComponent('/components/header.html', 'divo-header', function() {
     divoSetupHeaderButton();
   });
