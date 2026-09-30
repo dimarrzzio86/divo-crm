@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — CRM</title>
-<link rel="stylesheet" href="/assets/style.css?v=182">
-<link rel="stylesheet" href="/assets/dashboard.css?v=182">
-<link rel="stylesheet" href="/assets/auth.css?v=182">
+<link rel="stylesheet" href="/assets/style.css?v=183">
+<link rel="stylesheet" href="/assets/dashboard.css?v=183">
+<link rel="stylesheet" href="/assets/auth.css?v=183">
   <link rel="manifest" href="/manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -47,21 +47,20 @@
           </div>
         </div>
 
-        <div class="divo-dashboard-card" data-level="3" onclick="location.href='schedule.html'" style="cursor:pointer;">
+        <div class="divo-dashboard-card divo-dashboard-schedule" data-level="3" id="divoScheduleCard" onclick="location.href='schedule.html'" style="cursor:pointer;">
           <div class="divo-dashboard-head">
             <div class="divo-dashboard-title-block">
               <span class="divo-dashboard-icon">📅</span>
               <div>
                 <div class="divo-dashboard-title">График записей</div>
-                <div class="divo-dashboard-desc">Посты и автомобили в студии</div>
+                <div class="divo-dashboard-desc" id="divoScheduleCardDesc">Загрузка...</div>
               </div>
             </div>
-            <span class="divo-soon-badge" style="background:#fbbf24;color:#0a0a0a;">СКОРО</span>
           </div>
-          <div class="divo-dashboard-body">
+          <div class="divo-dashboard-body" id="divoScheduleCardBody">
             <div class="divo-dashboard-placeholder">
               <span class="divo-dashboard-placeholder-icon">🚗</span>
-              <span>4 поста · календарь записей</span>
+              <span>Загрузка графика...</span>
             </div>
           </div>
         </div>
@@ -147,7 +146,7 @@
 
 </div>
 
-<script src="/components/components.js?v=182"></script>
+<script src="/components/components.js?v=183"></script>
 <script>
 function divoCheckAuthAndInit() {
   var user = divoGetUser();
@@ -156,7 +155,7 @@ function divoCheckAuthAndInit() {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
 
-    fetch('/components/auth-form.html?v=182')
+    fetch('/components/auth-form.html?v=183')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
@@ -195,6 +194,11 @@ function divoCheckAuthAndInit() {
   // Загружаем превью задач на сегодня
   if (typeof divoLoadTasksPreview === 'function') {
     divoLoadTasksPreview();
+  }
+
+  // Загружаем превью графика записей
+  if (typeof divoLoadSchedulePreview === 'function') {
+    divoLoadSchedulePreview();
   }
 }
 
@@ -285,6 +289,103 @@ function divoLoadTasksPreview() {
     }
     html += '</div>';
     body.innerHTML = html;
+  }
+
+  function escapeHtmlSimple(t) {
+    if (t == null) return '';
+    var d = document.createElement('div');
+    d.textContent = String(t);
+    return d.innerHTML;
+  }
+}
+
+// Превью графика записей (ближайшие 5)
+function divoLoadSchedulePreview() {
+  var body = document.getElementById('divoScheduleCardBody');
+  var desc = document.getElementById('divoScheduleCardDesc');
+  if (!body) return;
+
+  function toLocalDateStr(d) {
+    var y = d.getFullYear();
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+  }
+
+  var today = toLocalDateStr(new Date());
+  // Заказ-наряды с date_in >= сегодня, исключая завершённые
+  var url = SUPABASE_URL + '/rest/v1/orders?date_in=gte.' + today +
+    '&select=id,number,car_brand,car_plate,date_in,date_out,time_in,post,status,services&order=date_in.asc,time_in.asc&limit=5';
+
+  fetch(url, {
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+  })
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(data) {
+      var orders = data || [];
+      // Считаем сколько всего на сегодня и будущее
+      var todayCount = 0;
+      for (var i = 0; i < orders.length; i++) {
+        if (orders[i].date_in === today && orders[i].status !== 'done' && orders[i].status !== 'cancelled') todayCount++;
+      }
+      renderSchedulePreview(orders, todayCount);
+    })
+    .catch(function(e) {
+      body.innerHTML = '<div class="dash-sch-empty">Не загрузилось</div>';
+      if (desc) desc.textContent = 'Ошибка загрузки';
+    });
+
+  function renderSchedulePreview(orders, todayCount) {
+    // Фильтруем — оставляем активные (не done/cancelled)
+    var active = orders.filter(function(o) {
+      return o.status !== 'done' && o.status !== 'cancelled';
+    });
+
+    if (desc) {
+      if (todayCount > 0) {
+        desc.textContent = 'Сегодня: ' + todayCount + ' · Ближайших: ' + active.length;
+      } else if (active.length > 0) {
+        desc.textContent = 'Ближайших записей: ' + active.length;
+      } else {
+        desc.textContent = 'Записей нет';
+      }
+    }
+
+    if (!active.length) {
+      body.innerHTML = '<div class="dash-sch-empty">На ближайшее время записей нет 🎉</div>';
+      return;
+    }
+
+    var html = '<div class="dash-sch-list">';
+    for (var i = 0; i < active.length; i++) {
+      var o = active[i];
+      var isToday = o.date_in === today;
+      var carName = (o.car_brand || 'Авто') + (o.car_plate ? ' ' + o.car_plate : '');
+      var dateLabel = isToday ? 'Сегодня' : formatDateShort(o.date_in);
+      var time = o.time_in ? ' · ' + o.time_in.substring(0, 5) : '';
+      var post = o.post ? ' · пост ' + o.post : '';
+      var servicesCount = (o.services && o.services.length) ? o.services.length : 0;
+      var servicesLabel = servicesCount ? ' · ' + servicesCount + ' услуг' : '';
+
+      html += '<div class="dash-sch-item' + (isToday ? ' today' : '') + '">';
+      html += '<div class="dash-sch-date">' + escapeHtmlSimple(dateLabel) + '</div>';
+      html += '<div class="dash-sch-info">';
+      html += '<div class="dash-sch-car">' + escapeHtmlSimple(carName) + '</div>';
+      html += '<div class="dash-sch-meta">' + escapeHtmlSimple(time + post + servicesLabel).replace(/^ · /, '') + '</div>';
+      html += '</div>';
+      html += '</div>';
+    }
+    html += '</div>';
+    body.innerHTML = html;
+  }
+
+  function formatDateShort(dateStr) {
+    if (!dateStr) return '';
+    var parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    var d = new Date(parts[0], parts[1] - 1, parts[2]);
+    var months = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+    return d.getDate() + ' ' + months[d.getMonth()];
   }
 
   function escapeHtmlSimple(t) {
