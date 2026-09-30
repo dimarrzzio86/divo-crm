@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — CRM</title>
-<link rel="stylesheet" href="/assets/style.css?v=180">
-<link rel="stylesheet" href="/assets/dashboard.css?v=180">
-<link rel="stylesheet" href="/assets/auth.css?v=180">
+<link rel="stylesheet" href="/assets/style.css?v=181">
+<link rel="stylesheet" href="/assets/dashboard.css?v=181">
+<link rel="stylesheet" href="/assets/auth.css?v=181">
   <link rel="manifest" href="/manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -147,7 +147,7 @@
 
 </div>
 
-<script src="/components/components.js?v=180"></script>
+<script src="/components/components.js?v=181"></script>
 <script>
 function divoCheckAuthAndInit() {
   var user = divoGetUser();
@@ -156,7 +156,7 @@ function divoCheckAuthAndInit() {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
 
-    fetch('/components/auth-form.html?v=180')
+    fetch('/components/auth-form.html?v=181')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
