@@ -87,6 +87,11 @@ html, body {
   justify-content: space-between;
   gap: 10px;
 }
+.divo-greeting-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 .divo-logout-btn {
   background: #27272a;
   border: 1px solid #3f3f46;
@@ -104,6 +109,33 @@ html, body {
   background: #ef4444;
   border-color: #ef4444;
   color: #fafafa;
+}
+.divo-push-btn {
+  background: #27272a;
+  border: 1px solid #3f3f46;
+  color: #a1a1aa;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 15px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .15s;
+  padding: 0;
+  line-height: 1;
+}
+.divo-push-btn:hover {
+  background: #1e3a8a;
+  border-color: #3b82f6;
+  color: #93c5fd;
+}
+.divo-push-btn.on {
+  background: #14532d;
+  border-color: #22c55e;
+  color: #4ade80;
 }
 
 /* --- Меню разделов --- */

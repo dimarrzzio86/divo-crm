@@ -5,25 +5,12 @@
   <div class="divo-greeting-label">Приветствую</div>
   <div class="divo-greeting-row">
     <div class="divo-greeting-text"><b id="userGreeting">Гость</b>!</div>
-    <button class="divo-logout-btn" onclick="divoLogout()">🚪 Выйти</button>
-  </div>
-</div>
-
-<!-- Push уведомления -->
-<div class="divo-sidebar-menu" id="sb-menu-push">
-  <div class="divo-sidebar-title" onclick="divoToggleSidebar(this)">
-    <span class="divo-sidebar-title-text">🔔 Уведомления</span>
-    <span class="divo-sidebar-chevron">▼</span>
-  </div>
-  <div class="divo-sidebar-body">
-    <div id="pushStatusBlock" style="padding: 12px; background: #18181b; border-radius: 8px; margin: 4px 0;">
-      <div id="pushStatus" style="font-size: 13px; color: #a1a1aa; margin-bottom: 8px;">Проверка...</div>
-      <button id="pushToggleBtn" onclick="divoPushToggle()" style="width: 100%; padding: 8px 12px; background: #1e3a8a; border: 1.5px solid #3b82f6; color: #93c5fd; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; margin-bottom: 6px;">
-        🔔 Включить
-      </button>
-      <div id="pushDebug" style="display:none;"></div>
+    <div class="divo-greeting-actions">
+      <button class="divo-push-btn" id="greetingPushBtn" onclick="divoPushToggle()" title="Уведомления">🔔</button>
+      <button class="divo-logout-btn" onclick="divoLogout()" title="Выйти">🚪 Выйти</button>
     </div>
   </div>
+  <div id="pushStatus" style="font-size: 11px; color: #71717a; margin-top: 6px;"></div>
 </div>
 
 <!-- Меню разделов -->

@@ -2,7 +2,7 @@
    DIVO CRM v2 — ЛОГИКА КОМПОНЕНТОВ
    ========================================== */
 
-var DIVO_VERSION = 'v171';
+var DIVO_VERSION = 'v172';
 
 var SUPABASE_URL = 'https://jnbqzngsglnjzzpsvvgn.supabase.co';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuYnF6bmdzZ2xuanp6cHN2dmduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyMzIwOTEsImV4cCI6MjEwNDgwODA5MX0.uHVMUKBtO0326KB3bAHQ8rywBvBms7WvfaxPrhm3_Y0';
@@ -365,28 +365,26 @@ function divoInit() {
 // Обновить UI статуса push
 function divoInitPushStatus() {
   var statusEl = document.getElementById('pushStatus');
-  var btnEl = document.getElementById('pushToggleBtn');
-  if (!statusEl || !btnEl) return;
+  var btnEl = document.getElementById('greetingPushBtn');
+  if (!statusEl && !btnEl) return;
 
   if (!divoPushSupported()) {
-    statusEl.textContent = '❌ Браузер не поддерживает push';
-    btnEl.style.display = 'none';
+    if (statusEl) { statusEl.textContent = '❌ Push не поддерживается'; statusEl.style.color = '#71717a'; }
+    if (btnEl) { btnEl.style.opacity = '0.4'; btnEl.title = 'Push не поддерживается'; }
     return;
   }
 
   // Проверяем подписку
   divoPushIsSubscribed().then(function(subscribed) {
     divoUpdatePushUI(subscribed);
-    // АВТО-ОБНОВЛЕНИЕ: при каждом логине пересоздаём подписку (гарантирует актуальный VAPID ключ)
-    // divoPushSubscribe сам отпишет от старой и создаст новую
+    // АВТО-ОБНОВЛЕНИЕ: при каждом логине пересоздаём подписку
     if (Notification.permission === 'granted') {
       var user = divoGetUser();
       if (user) {
         divoPushSubscribe(user.username).then(function() {
           divoUpdatePushUI(true);
-          console.log('✅ Push подписка обновлена при логине');
         }).catch(function(e) {
-          console.error('Обновление подписки не удалось:', e.message);
+          console.error('Обновление подписки:', e.message);
         });
       }
     }
@@ -396,23 +394,26 @@ function divoInitPushStatus() {
 // Обновить UI кнопки push
 function divoUpdatePushUI(subscribed) {
   var statusEl = document.getElementById('pushStatus');
-  var btnEl = document.getElementById('pushToggleBtn');
-  if (!statusEl || !btnEl) return;
+  var btnEl = document.getElementById('greetingPushBtn');
 
-  if (subscribed) {
-    statusEl.textContent = '✅ Уведомления включены';
-    statusEl.style.color = '#4ade80';
-    btnEl.textContent = '🔕 Выключить';
-    btnEl.style.background = '#7f1d1d';
-    btnEl.style.borderColor = '#dc2626';
-    btnEl.style.color = '#fca5a5';
-  } else {
-    statusEl.textContent = '🔕 Уведомления выключены';
-    statusEl.style.color = '#a1a1aa';
-    btnEl.textContent = '🔔 Включить';
-    btnEl.style.background = '#1e3a8a';
-    btnEl.style.borderColor = '#3b82f6';
-    btnEl.style.color = '#93c5fd';
+  if (statusEl) {
+    if (subscribed) {
+      statusEl.textContent = '✅ Уведомления включены';
+      statusEl.style.color = '#4ade80';
+    } else {
+      statusEl.textContent = '🔕 Выключены';
+      statusEl.style.color = '#71717a';
+    }
+  }
+
+  if (btnEl) {
+    if (subscribed) {
+      btnEl.classList.add('on');
+      btnEl.title = 'Уведомления включены — нажать чтобы выключить';
+    } else {
+      btnEl.classList.remove('on');
+      btnEl.title = 'Уведомления выключены — нажать чтобы включить';
+    }
   }
 }
 
