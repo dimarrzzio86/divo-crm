@@ -2,7 +2,7 @@
    DIVO CRM v2 — ЛОГИКА КОМПОНЕНТОВ
    ========================================== */
 
-var DIVO_VERSION = 'v181';
+var DIVO_VERSION = 'v182';
 
 var SUPABASE_URL = 'https://jnbqzngsglnjzzpsvvgn.supabase.co';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuYnF6bmdzZ2xuanp6cHN2dmduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyMzIwOTEsImV4cCI6MjEwNDgwODA5MX0.uHVMUKBtO0326KB3bAHQ8rywBvBms7WvfaxPrhm3_Y0';
@@ -345,9 +345,10 @@ function divoInit() {
     divoSetupHeaderButton();
   });
 
-  // На главной (index.html) всегда обычный сайдбар (без пунктов админки)
-  var isAdminPage = location.pathname.indexOf('/admin-') !== -1;
-  var sidebarFile = (divoIsAdmin() && isAdminPage)
+  // На админ-страницах грузим admin-sidebar, на остальных — обычный sidebar
+  var pathName = location.pathname;
+  var isAdminPage = (pathName.indexOf('/admin-') !== -1) || (pathName.indexOf('/admin.html') !== -1);
+  var sidebarFile = isAdminPage
     ? '/components/admin-sidebar.html'
     : '/components/sidebar.html';
 
