@@ -196,6 +196,25 @@
 .ce-srv-selects select:focus { border-color: #3b82f6; }
 .ce-srv-selects select:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* === БЛОКИ ПОКОЛЕНИЙ ВНУТРИ КАРТОЧКИ === */
+.ce-gen-block {
+  background: #0a0a0a; border: 1px solid #27272a; border-radius: 10px;
+  margin-bottom: 10px; overflow: hidden;
+}
+.ce-gen-block:last-child { margin-bottom: 0; }
+.ce-gen-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; background: #1f1f23; gap: 10px; flex-wrap: wrap;
+}
+.ce-gen-title { font-size: 14px; font-weight: 700; color: #fbbf24; }
+.ce-gen-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.ce-gen-actions button {
+  padding: 5px 9px; background: #27272a; border: 1px solid #3f3f46; color: #a1a1aa;
+  border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit; transition: all .15s;
+}
+.ce-gen-actions button:hover { background: #3f3f46; color: #fafafa; }
+.ce-gen-actions button.del:hover { background: #ef4444; border-color: #ef4444; color: #fafafa; }
+
 /* === АДАПТИВ === */
 @media (max-width: 700px) {
   .ce-form-row { flex-direction: column; }

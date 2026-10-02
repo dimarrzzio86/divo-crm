@@ -70,6 +70,38 @@ function ceLoadAll() {
   });
 }
 
+// Группировка по марке+модели
+function ceGroupCars() {
+  var groups = [];
+  var map = {};
+  for (var i = 0; i < CE_CARS.length; i++) {
+    var car = CE_CARS[i];
+    var key = (car.brand || '').toLowerCase().trim() + '||' + (car.model || '').toLowerCase().trim();
+    if (!map[key]) {
+      map[key] = { brand: car.brand, model: car.model, cars: [] };
+      groups.push(map[key]);
+    }
+    map[key].cars.push(car);
+  }
+  groups.sort(function(a, b) {
+    if (a.brand.toLowerCase() < b.brand.toLowerCase()) return -1;
+    if (a.brand.toLowerCase() > b.brand.toLowerCase()) return 1;
+    if (a.model.toLowerCase() < b.model.toLowerCase()) return -1;
+    if (a.model.toLowerCase() > b.model.toLowerCase()) return 1;
+    return 0;
+  });
+  return groups;
+}
+
+function ceCarSubInfo(car) {
+  var parts = [];
+  if (car.generation) parts.push(car.generation);
+  if (car.year_from || car.year_to) {
+    parts.push((car.year_from || '?') + '–' + (car.year_to || 'н.в.'));
+  }
+  return parts.join(' • ');
+}
+
 function ceRender() {
   var list = document.getElementById('ceList');
   if (!list) return;
@@ -80,49 +112,60 @@ function ceRender() {
     return;
   }
   
+  var groups = ceGroupCars();
   var html = '';
-  for (var i = 0; i < CE_CARS.length; i++) {
-    var car = CE_CARS[i];
-    var carTitle = car.brand + ' ' + car.model;
-    var carSub = '';
-    if (car.generation) carSub += car.generation;
-    if (car.year_from || car.year_to) {
-      carSub += (carSub ? ' • ' : '') + (car.year_from || '?') + '–' + (car.year_to || 'н.в.');
-    }
+  
+  for (var g = 0; g < groups.length; g++) {
+    var group = groups[g];
+    var carTitle = group.brand + ' ' + group.model;
     
-    if (search && carTitle.toLowerCase().indexOf(search) === -1 && carSub.toLowerCase().indexOf(search) === -1) continue;
+    var allSubs = group.cars.map(function(c){ return ceCarSubInfo(c); }).join(' ');
+    if (search && carTitle.toLowerCase().indexOf(search) === -1 && allSubs.toLowerCase().indexOf(search) === -1) continue;
     
-    var services = CE_SERVICES.filter(function(s){ return s.car_id === car.id; });
-    var total = 0;
-    services.forEach(function(s){ total += Number(s.price) || 0; });
-    
-    html += '<div class="ce-car-card" id="ceCar' + car.id + '">';
-    html += '<div class="ce-car-header" onclick="ceToggleCar(' + car.id + ')">';
+    html += '<div class="ce-car-card" id="ceGroup' + g + '">';
+    html += '<div class="ce-car-header" onclick="ceToggleCar(' + g + ', true)">';
     html += '<span class="ce-car-icon">🚗</span>';
     html += '<div class="ce-car-info">';
     html += '<div class="ce-car-title">' + ceEscape(carTitle) + '</div>';
-    if (carSub) html += '<div class="ce-car-sub">' + ceEscape(carSub) + '</div>';
+    var gens = group.cars.map(function(c){ return ceCarSubInfo(c); }).filter(function(s){return s;});
+    if (gens.length) html += '<div class="ce-car-sub">' + ceEscape(gens.join('  |  ')) + '</div>';
     html += '</div>';
     html += '<span class="ce-car-arrow">▶</span>';
     html += '</div>';
     
     html += '<div class="ce-car-body">';
-    if (!services.length) {
-      html += '<div class="ce-empty" style="padding:20px;">Нет услуг</div>';
-    } else {
-      html += '<table class="ce-services-table"><thead><tr>';
-      html += '<th>Услуга</th><th>Цена</th>';
-      html += '</tr></thead><tbody>';
-      for (var k = 0; k < services.length; k++) {
-        var srv = services[k];
-        html += '<tr>';
-        html += '<td>' + ceEscape(srv.service_name) + '</td>';
-        html += '<td class="ce-srv-price">' + (srv.price ? Number(srv.price).toLocaleString('ru') + ' ₽' : '—') + '</td>';
-        html += '</tr>';
+    
+    for (var k = 0; k < group.cars.length; k++) {
+      var car = group.cars[k];
+      var services = CE_SERVICES.filter(function(s){ return s.car_id === car.id; });
+      var total = 0;
+      services.forEach(function(s){ total += Number(s.price) || 0; });
+      var subInfo = ceCarSubInfo(car);
+      
+      html += '<div class="ce-gen-block">';
+      html += '<div class="ce-gen-header">';
+      html += '<span class="ce-gen-title">' + ceEscape(subInfo || 'Базовая версия') + '</span>';
+      html += '</div>';
+      
+      if (!services.length) {
+        html += '<div class="ce-empty" style="padding:12px;">Нет услуг</div>';
+      } else {
+        html += '<table class="ce-services-table"><thead><tr>';
+        html += '<th>Услуга</th><th>Цена</th>';
+        html += '</tr></thead><tbody>';
+        for (var j = 0; j < services.length; j++) {
+          var srv = services[j];
+          html += '<tr>';
+          html += '<td>' + ceEscape(srv.service_name) + '</td>';
+          html += '<td class="ce-srv-price">' + (srv.price ? Number(srv.price).toLocaleString('ru') + ' ₽' : '—') + '</td>';
+          html += '</tr>';
+        }
+        html += '<tr style="font-weight:bold;border-top:2px solid #3b82f6;"><td>Итого:</td><td class="ce-srv-price">' + total.toLocaleString('ru') + ' ₽</td></tr>';
+        html += '</tbody></table>';
       }
-      html += '<tr style="font-weight:bold;border-top:2px solid #3b82f6;"><td>Итого:</td><td class="ce-srv-price">' + total.toLocaleString('ru') + ' ₽</td></tr>';
-      html += '</tbody></table>';
+      html += '</div>';
     }
+    
     html += '</div>';
     html += '</div>';
   }
@@ -168,8 +211,8 @@ function ceSwitchTab(tab, btn) {
   document.getElementById('ceTabWorks').style.display = tab === 'works' ? '' : 'none';
 }
 
-function ceToggleCar(id) {
-  var el = document.getElementById('ceCar' + id);
+function ceToggleCar(id, isGroup) {
+  var el = document.getElementById(isGroup ? 'ceGroup' + id : 'ceCar' + id);
   if (el) el.classList.toggle('expanded');
 }
 
