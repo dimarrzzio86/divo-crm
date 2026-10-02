@@ -89,21 +89,26 @@ html, body {
 }
 .divo-greeting-actions {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 6px;
+  margin-top: 10px;
+}
+.divo-greeting-actions button {
+  width: 100%;
+  padding: 9px 12px;
+  font-size: 13px;
+  justify-content: center;
+  white-space: nowrap;
 }
 .divo-logout-btn {
   background: #27272a;
   border: 1px solid #3f3f46;
   color: #a1a1aa;
-  padding: 5px 12px;
   border-radius: 8px;
-  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
   transition: all .15s;
-  white-space: nowrap;
 }
 .divo-logout-btn:hover {
   background: #ef4444;
@@ -114,18 +119,13 @@ html, body {
   background: #27272a;
   border: 1px solid #3f3f46;
   color: #a1a1aa;
-  width: 30px;
-  height: 30px;
   display: flex;
   align-items: center;
-  justify-content: center;
   border-radius: 8px;
-  font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
   font-family: inherit;
   transition: all .15s;
-  padding: 0;
-  line-height: 1;
 }
 .divo-push-btn:hover {
   background: #1e3a8a;
