@@ -1951,6 +1951,19 @@ function ordStartPage() {
   ordInitDateFilter();
   ordRender();
 
+  // Проверяем ?date= из URL (переход из графика по кнопке "Создать запись")
+  var params = new URLSearchParams(window.location.search);
+  var prefillDate = params.get('date');
+  if (prefillDate) {
+    // Открываем форму нового заказа и подставляем дату заезда
+    setTimeout(function() {
+      ordNewOrder();
+      var dateInField = document.getElementById('ordField-dateIn');
+      if (dateInField) dateInField.value = prefillDate;
+      var formCard = document.getElementById('ordFormCard');
+      if (formCard) formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 300);
+  }
 }
 
 if (document.readyState === 'loading') {
