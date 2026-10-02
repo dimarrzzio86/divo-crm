@@ -156,7 +156,7 @@ var CE_PRICE_CATS = [];
 var CE_PRICE_SUBCATS = [];
 var CE_PRICE_SERVICES = [];
 
-function ceLoadAll() {
+function ceLoadAll(callback) {
   ceShowStatus('Загрузка данных...', 'loading');
   var h = ceHeaders();
   // Загружаем всё параллельно (включая прайс)
@@ -181,9 +181,11 @@ function ceLoadAll() {
     ceShowStatus('', '');
     ceRender();
     ceRenderWorks();
+    if (typeof callback === 'function') callback();
   }).catch(function(e) {
     console.error('CE load error:', e);
     ceShowStatus('Ошибка загрузки: ' + e.message, 'error');
+    if (typeof callback === 'function') callback();
   });
 }
 
@@ -432,10 +434,20 @@ function ceSaveEstimate() {
   ceShowStatus('Сохранение...', 'loading');
   fetch(url, { method: method, headers: ceHeaders(), body: JSON.stringify(data) })
     .then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-    .then(function() {
+    .then(function(result) {
       ceCloseEstModal();
-      ceShowStatus('Сохранено', 'success');
-      ceLoadAll();
+      if (!CE_EDIT_EST_ID && result && result[0] && result[0].id) {
+        var newEstId = result[0].id;
+        ceShowStatus('Просчёт создан. Добавьте услуги.', 'success');
+        ceLoadAll(function() {
+          var carEl = document.getElementById('ceCar' + data.car_id);
+          if (carEl) carEl.classList.add('expanded');
+          setTimeout(function() { ceOpenSrvModal(newEstId); }, 200);
+        });
+      } else {
+        ceShowStatus('Сохранено', 'success');
+        ceLoadAll();
+      }
     })
     .catch(function(e){ ceShowStatus('Ошибка: ' + e.message, 'error'); });
 }
