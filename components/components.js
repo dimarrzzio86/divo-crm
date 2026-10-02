@@ -2,7 +2,7 @@
    DIVO CRM v2 — ЛОГИКА КОМПОНЕНТОВ
    ========================================== */
 
-var DIVO_VERSION = 'v183';
+var DIVO_VERSION = 'v184';
 
 var SUPABASE_URL = 'https://jnbqzngsglnjzzpsvvgn.supabase.co';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuYnF6bmdzZ2xuanp6cHN2dmduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyMzIwOTEsImV4cCI6MjEwNDgwODA5MX0.uHVMUKBtO0326KB3bAHQ8rywBvBms7WvfaxPrhm3_Y0';
@@ -283,11 +283,16 @@ function divoLoadComponent(url, target, callback) {
 }
 
 function divoHighlightActiveMenu() {
-  var path = window.location.pathname.split('/').pop() || 'index.html';
+  // Cloudflare Pages убирает .html: /admin-contacts.html → /admin-contacts
+  var rawPath = window.location.pathname.split('/').pop() || 'index';
+  // Нормализуем: убираем .html если есть
+  var path = rawPath.replace(/\.html$/i, '');
   var items = document.querySelectorAll('.divo-menu-item');
   for (var i = 0; i < items.length; i++) {
-    var href = items[i].getAttribute('href');
-    if (href === path && !items[i].classList.contains('disabled')) {
+    var href = items[i].getAttribute('href') || '';
+    // Убираем .html из href тоже
+    var hrefNorm = href.replace(/\.html$/i, '');
+    if (hrefNorm === path && !items[i].classList.contains('disabled')) {
       items[i].classList.add('active');
     }
   }
@@ -346,8 +351,9 @@ function divoInit() {
   });
 
   // На админ-страницах грузим admin-sidebar, на остальных — обычный sidebar
+  // ВНИМАНИЕ: Cloudflare Pages убирает .html (admin.html → /admin, admin-contacts.html → /admin-contacts)
   var pathName = location.pathname;
-  var isAdminPage = (pathName.indexOf('/admin-') !== -1) || (pathName.indexOf('/admin.html') !== -1);
+  var isAdminPage = (pathName.indexOf('/admin') !== -1);
   var sidebarFile = isAdminPage
     ? '/components/admin-sidebar.html'
     : '/components/sidebar.html';
