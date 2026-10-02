@@ -4,15 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — Настройки графика</title>
-<link rel="manifest" href="/manifest.json?v=236">
-<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png?v=236">
+<link rel="manifest" href="/manifest.json?v=237">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png?v=237">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Диво CRM">
 <meta name="theme-color" content="#0a0a0a">
-<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png?v=236">
-<link rel="stylesheet" href="/assets/style.css?v=236">
-<link rel="stylesheet" href="/assets/auth.css?v=236">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png?v=237">
+<link rel="stylesheet" href="/assets/style.css?v=237">
+<link rel="stylesheet" href="/assets/auth.css?v=237">
 </head>
 <body>
 
@@ -27,15 +27,15 @@
   <div class="divo-footer">© Диво Детейлинг • 2026</div>
 </div>
 
-<script src="/components/components.js?v=236"></script>
-<script src="/components/access-config.js?v=236"></script>
+<script src="/components/components.js?v=237"></script>
+<script src="/components/access-config.js?v=237"></script>
 <script>
 function divoInitAdminSchedule() {
   var user = divoGetUser();
   if (!user) {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=236')
+    fetch('/components/auth-form.html?v=237')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
@@ -65,7 +65,7 @@ function divoInitAdminSchedule() {
 
     divoInit();
 
-    fetch('/components/admin-schedule-view.html?v=236')
+    fetch('/components/admin-schedule-view.html?v=237')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var content = document.getElementById('divoContent');

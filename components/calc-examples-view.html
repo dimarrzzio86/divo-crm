@@ -350,8 +350,14 @@ function ceRenderList() {
   var list = document.getElementById('ceList');
   if (!list) return;
   
+  // Без выбора авто — не показываем ничего
+  if (!CE_PICK_BRAND && !CE_PICK_MODEL && !CE_PICK_GEN) {
+    list.innerHTML = '<div class="ce-empty" style="padding:40px 20px;text-align:center;">👆 Нажмите «Выбрать марку» чтобы посмотреть услуги</div>';
+    return;
+  }
+  
   if (!CE_CARS.length) {
-    list.innerHTML = '<div class="ce-empty">Пока нет примеров расчётов</div>';
+    list.innerHTML = '<div class="ce-empty">Нет данных</div>';
     return;
   }
   
