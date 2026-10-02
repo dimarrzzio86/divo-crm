@@ -337,6 +337,22 @@
 }
 .sch-popup-close:hover { background: #3f3f46; color: #fafafa; }
 
+/* Кнопка "Создать запись" в popup */
+.sch-popup-create-btn {
+  width: 100%; padding: 14px;
+  background: #22c55e; color: #0a0a0a;
+  border: none; border-radius: 12px;
+  font-size: 15px; font-weight: 700; font-family: inherit;
+  cursor: pointer; transition: all .15s;
+  margin-bottom: 16px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.sch-popup-create-btn:hover {
+  background: #16a34a; transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(34,197,94,0.3);
+}
+.sch-popup-create-btn:active { transform: scale(0.98); }
+
 /* === Баннер === */
 .sch-dev-banner {
   background: linear-gradient(90deg, #1a1410 0%, #18181b 100%);
@@ -456,6 +472,9 @@
   <div class="sch-popup">
     <div class="sch-popup-title" id="popupTitle">—</div>
     <div class="sch-popup-sub" id="popupSub">—</div>
+    <button class="sch-popup-create-btn" id="popupCreateBtn" onclick="createOrderFromPopup()">
+      ➕ Создать запись на этот день
+    </button>
     <div id="popupContent"></div>
     <button class="sch-popup-close" onclick="closePopup()">Закрыть</button>
   </div>
@@ -516,6 +535,7 @@ var SCH_SUPABASE_KEY = (typeof SUPABASE_KEY !== 'undefined') ? SUPABASE_KEY : 'e
 // === ДАННЫЕ (загружаются из Supabase) ===
 var CARS = []; // пустой массив, заполнится после загрузки из БД
 var SCH_CACHE = null; // кэш заказ-нарядов
+var POPUP_DATE = ''; // дата открытого popup (для кнопки "Создать запись")
 
 // Загрузить заказ-наряды из Supabase и заполнить CARS
 function loadScheduleOrders() {
@@ -1091,6 +1111,7 @@ function getContractorsForOrder(orderId) {
 }
 
 function openPopup(dateStr){
+  POPUP_DATE = dateStr;  // сохраняем для кнопки "Создать запись"
   var d = parseDate(dateStr);
   var dow = d.getDay();
   document.getElementById('popupTitle').textContent = d.getDate()+' '+MONTHS[d.getMonth()].toLowerCase()+' '+d.getFullYear();
@@ -1159,6 +1180,13 @@ function openPopup(dateStr){
 }
 function closePopup(){
   document.getElementById('schPopup').classList.remove('open');
+}
+
+// Создать заказ-наряд на дату из popup
+function createOrderFromPopup() {
+  if (!POPUP_DATE) return;
+  closePopup();
+  location.href = 'orders.html?date=' + encodeURIComponent(POPUP_DATE);
 }
 
 // === СТАРТ ===
