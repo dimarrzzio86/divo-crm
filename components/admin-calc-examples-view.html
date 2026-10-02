@@ -148,7 +148,7 @@ function ceEscape(s) {
 function ceLoadAll(callback) {
   var h = ceHeaders();
   Promise.all([
-    fetch(SUPABASE_URL + '/rest/v1/calc_cars?select=*&order=brand.asc,model.asc', { headers: h }).then(function(r){return r.json();}),
+    fetch(SUPABASE_URL + '/rest/v1/calc_cars?select=*&order=brand.asc,model.asc&limit=5000', { headers: h }).then(function(r){return r.json();}),
     fetch(SUPABASE_URL + '/rest/v1/calc_car_services?select=*&order=created_at.asc', { headers: h }).then(function(r){return r.json();}),
     fetch(SUPABASE_URL + '/rest/v1/calc_contractor_works?select=*&order=created_at.desc', { headers: h }).then(function(r){return r.json();}),
     fetch(SUPABASE_URL + '/rest/v1/contractors?select=id,name,category&order=name.asc', { headers: h }).then(function(r){return r.json();}),
