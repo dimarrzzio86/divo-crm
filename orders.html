@@ -1026,7 +1026,9 @@ function ordServicesToRows(services) {
         }
       }
     }
-    ORD_ROWS.push({ catId: catId, subcatId: subcatId, svcId: svcId, svcName: name, price: price });
+    // Сохраняем флаг manual — иначе ручные услуги грузятся как пустые строки прайса
+    var isManual = (typeof s === 'object' && s.manual) ? true : false;
+    ORD_ROWS.push({ catId: catId, subcatId: subcatId, svcId: svcId, svcName: name, price: price, manual: isManual });
   }
 }
 
