@@ -397,13 +397,29 @@ function ceDeleteCar(id) {
 }
 
 // ============ ПРОСЧЁТ: CRUD ============
+// При клике «➕ Просчёт» — сразу создаём просчёт с автоназванием и открываем услуги
 function ceOpenEstModal(carId) {
-  CE_EDIT_EST_ID = null;
-  document.getElementById('ceEstCarId').value = carId;
-  document.getElementById('ceEstModalTitle').textContent = 'Новый просчёт';
-  document.getElementById('ceEstTitle').value = '';
-  document.getElementById('ceEstComment').value = '';
-  document.getElementById('ceEstModal').classList.add('open');
+  ceShowStatus('Создание просчёта...', 'loading');
+  // Автоназвание: «Просчёт DD.MM.YYYY HH:MM»
+  var d = new Date();
+  var pad = function(n) { return (n < 10 ? '0' : '') + n; };
+  var title = 'Просчёт ' + pad(d.getDate()) + '.' + pad(d.getMonth()+1) + '.' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  
+  var data = { car_id: carId, title: title, comment: null };
+  fetch(SUPABASE_URL + '/rest/v1/calc_estimates', { method: 'POST', headers: ceHeaders(), body: JSON.stringify(data) })
+    .then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(result) {
+      if (result && result[0] && result[0].id) {
+        var newEstId = result[0].id;
+        ceShowStatus('Просчёт создан. Добавьте услуги.', 'success');
+        ceLoadAll(function() {
+          var carEl = document.getElementById('ceCar' + carId);
+          if (carEl) carEl.classList.add('expanded');
+          setTimeout(function() { ceOpenSrvModal(newEstId); }, 200);
+        });
+      }
+    })
+    .catch(function(e){ ceShowStatus('Ошибка: ' + e.message, 'error'); });
 }
 function ceCloseEstModal() {
   document.getElementById('ceEstModal').classList.remove('open');
