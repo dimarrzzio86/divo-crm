@@ -3,11 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Диво Детейлинг — Прайс партнёра</title>
+<title>Диво Детейлинг — Примеры расчётов (админ)</title>
 <link rel="stylesheet" href="/assets/style.css?v=203">
 <link rel="stylesheet" href="/assets/auth.css?v=203">
-<link rel="stylesheet" href="/assets/cash.css?v=203">
-<link rel="stylesheet" href="/assets/contacts.css?v=203">
   <link rel="manifest" href="/manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -22,7 +20,13 @@
   <header class="divo-header" id="divo-header"></header>
   <div class="divo-body">
     <aside class="divo-sidebar" id="divo-sidebar"></aside>
-    <main class="divo-content" id="divoContent"></main>
+    <main class="divo-content" id="divoContent">
+      <div style="padding: 40px 20px; text-align: center;">
+        <div style="font-size: 48px; margin-bottom: 16px;">🧮</div>
+        <h1 style="font-size: 24px; color: #fafafa; font-weight: 800; margin-bottom: 8px;">Примеры расчётов (редактирование)</h1>
+        <p style="color: #71717a; font-size: 14px;">Раздел в разработке</p>
+      </div>
+    </main>
   </div>
   <div class="divo-footer">© Диво Детейлинг • 2026</div>
 </div>
@@ -51,26 +55,18 @@ function divoCheckAuthAndInit() {
       });
     return;
   }
-  if (!divoCheckSectionAccess('partner-prices')) return;
-  var mainLayout = document.getElementById('divoMainLayout');
-  if (mainLayout) mainLayout.style.display = 'flex';
-  var authContainer = document.getElementById('divoAuthContainer');
-  if (authContainer) authContainer.innerHTML = '';
-  divoInit();
-  fetch('/components/partner-prices-view.html?v=203')
-    .then(function(r) { return r.text(); })
-    .then(function(html) {
-      var content = document.getElementById('divoContent');
-      if (content) {
-        content.innerHTML = html;
-        var scripts = content.querySelectorAll('script');
-        for (var i = 0; i < scripts.length; i++) {
-          var s = document.createElement('script');
-          s.textContent = scripts[i].textContent;
-          content.appendChild(s);
-        }
-      }
-    });
+  // Проверяем доступ через access-config
+  divoLoadAccessConfig(function() {
+    if (!divoHasAccessToSection('admin-calc-examples')) {
+      location.href = 'index.html';
+      return;
+    }
+    var mainLayout = document.getElementById('divoMainLayout');
+    if (mainLayout) mainLayout.style.display = 'flex';
+    var authContainer = document.getElementById('divoAuthContainer');
+    if (authContainer) authContainer.innerHTML = '';
+    divoInit();
+  });
 }
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', divoCheckAuthAndInit);
