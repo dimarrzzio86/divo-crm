@@ -530,9 +530,12 @@ function ceSvcOptions(catId, subcatId, selected) {
 
 // --- Каскадные обработчики ---
 function ceOnRowCat(row, val) {
-  row.querySelector('.ce-srv-subcat').innerHTML = ceSubcatOptions(val, '');
-  row.querySelector('.ce-srv-svc').innerHTML = '<option value="">—</option>';
-  row.querySelector('.ce-srv-svc').disabled = !val;
+  var subcatSel = row.querySelector('.ce-srv-subcat');
+  var svcSel = row.querySelector('.ce-srv-svc');
+  subcatSel.innerHTML = ceSubcatOptions(val, '');
+  subcatSel.disabled = !val;
+  svcSel.innerHTML = '<option value="">—</option>';
+  svcSel.disabled = true;
 }
 function ceOnRowSubcat(row, val) {
   var catId = row.querySelector('.ce-srv-cat').value;
