@@ -539,7 +539,9 @@ function ceOnRowCat(row, val) {
 }
 function ceOnRowSubcat(row, val) {
   var catId = row.querySelector('.ce-srv-cat').value;
-  row.querySelector('.ce-srv-svc').innerHTML = ceSvcOptions(catId, val, '');
+  var svcSel = row.querySelector('.ce-srv-svc');
+  svcSel.innerHTML = ceSvcOptions(catId, val, '');
+  svcSel.disabled = !val;
 }
 function ceOnRowSvc(row, val, opt) {
   // При выборе услуги из прайса подставляем её название
