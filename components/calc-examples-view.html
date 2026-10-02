@@ -1,0 +1,214 @@
+<!-- Раздел: Примеры расчётов (ПРОСМОТР) -->
+<!-- Только просмотр: авто → просчёты → услуги + работы контрагентов -->
+
+<div class="ce-page">
+  <div class="ce-header">
+    <div>
+      <h1 class="ce-title">🧮 Примеры расчётов</h1>
+      <div class="ce-subtitle">Готовые просчёты для разных авто и услуг</div>
+    </div>
+  </div>
+
+  <div class="ce-status" id="ceStatus"></div>
+
+  <div class="ce-search-wrap">
+    <span class="ce-search-icon">🔍</span>
+    <input type="text" id="ceSearch" class="ce-search-input" placeholder="Поиск по марке, модели, поколению..." oninput="ceRender()">
+  </div>
+
+  <div class="ce-tabs">
+    <button class="ce-tab active" onclick="ceSwitchTab('cars', this)">🚗 Авто и просчёты</button>
+    <button class="ce-tab" onclick="ceSwitchTab('works', this)">🔧 Работы контрагентов</button>
+  </div>
+
+  <div id="ceTabCars">
+    <div class="ce-list" id="ceList">
+      <div class="ce-loading">Загрузка...</div>
+    </div>
+  </div>
+
+  <div id="ceTabWorks" style="display:none;">
+    <div class="ce-list" id="ceWorksList">
+      <div class="ce-loading">Загрузка...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============ ГЛОБАЛЫ ============
+var CE_CARS = [];
+var CE_ESTIMATES = [];
+var CE_SERVICES = [];
+var CE_WORKS = [];
+var CE_CONTRACTORS = [];
+var CE_TAB = 'cars';
+
+function ceHeaders() {
+  return { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
+}
+
+function ceEscape(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ============ ЗАГРУЗКА ============
+function ceLoadAll() {
+  var h = ceHeaders();
+  Promise.all([
+    fetch(SUPABASE_URL + '/rest/v1/calc_cars?select=*&order=brand.asc,model.asc', { headers: h }).then(function(r){return r.json();}),
+    fetch(SUPABASE_URL + '/rest/v1/calc_estimates?select=*&order=created_at.desc', { headers: h }).then(function(r){return r.json();}),
+    fetch(SUPABASE_URL + '/rest/v1/calc_estimate_services?select=*&order=created_at.desc', { headers: h }).then(function(r){return r.json();}),
+    fetch(SUPABASE_URL + '/rest/v1/calc_contractor_works?select=*&order=created_at.desc', { headers: h }).then(function(r){return r.json();}),
+    fetch(SUPABASE_URL + '/rest/v1/contractors?select=id,name,category&order=name.asc', { headers: h }).then(function(r){return r.json();})
+  ]).then(function(results) {
+    CE_CARS = results[0] || [];
+    CE_ESTIMATES = results[1] || [];
+    CE_SERVICES = results[2] || [];
+    CE_WORKS = results[3] || [];
+    CE_CONTRACTORS = results[4] || [];
+    ceRender();
+    ceRenderWorks();
+  }).catch(function(e) {
+    console.error('CE load error:', e);
+    var list = document.getElementById('ceList');
+    if (list) list.innerHTML = '<div class="ce-empty">Ошибка загрузки</div>';
+  });
+}
+
+// ============ РЕНДЕР: АВТО + ПРОСЧЁТЫ ============
+function ceRender() {
+  var list = document.getElementById('ceList');
+  if (!list) return;
+  var search = (document.getElementById('ceSearch') ? document.getElementById('ceSearch').value : '').toLowerCase();
+  
+  if (!CE_CARS.length) {
+    list.innerHTML = '<div class="ce-empty">Пока нет примеров расчётов</div>';
+    return;
+  }
+  
+  var html = '';
+  for (var i = 0; i < CE_CARS.length; i++) {
+    var car = CE_CARS[i];
+    var carTitle = car.brand + ' ' + car.model;
+    var carSub = '';
+    if (car.generation) carSub += car.generation;
+    if (car.year_from || car.year_to) {
+      carSub += (carSub ? ' • ' : '') + (car.year_from || '?') + '–' + (car.year_to || 'н.в.');
+    }
+    
+    if (search && carTitle.toLowerCase().indexOf(search) === -1 && carSub.toLowerCase().indexOf(search) === -1) continue;
+    
+    var estimates = CE_ESTIMATES.filter(function(e){ return e.car_id === car.id; });
+    
+    html += '<div class="ce-car-card" id="ceCar' + car.id + '">';
+    html += '<div class="ce-car-header" onclick="ceToggleCar(' + car.id + ')">';
+    html += '<span class="ce-car-icon">🚗</span>';
+    html += '<div class="ce-car-info">';
+    html += '<div class="ce-car-title">' + ceEscape(carTitle) + '</div>';
+    if (carSub) html += '<div class="ce-car-sub">' + ceEscape(carSub) + '</div>';
+    html += '</div>';
+    html += '<span class="ce-car-arrow">▶</span>';
+    html += '</div>';
+    
+    html += '<div class="ce-car-body">';
+    if (!estimates.length) {
+      html += '<div class="ce-empty" style="padding:20px;">Нет просчётов</div>';
+    } else {
+      for (var j = 0; j < estimates.length; j++) {
+        var est = estimates[j];
+        var services = CE_SERVICES.filter(function(s){ return s.estimate_id === est.id; });
+        var total = 0;
+        services.forEach(function(s){ total += Number(s.price) || 0; });
+        
+        html += '<div class="ce-estimate" id="ceEst' + est.id + '">';
+        html += '<div class="ce-estimate-header" onclick="ceToggleEst(' + est.id + ')">';
+        html += '<span class="ce-estimate-arrow">▶</span>';
+        html += '<div class="ce-estimate-title">' + ceEscape(est.title) + '</div>';
+        if (total) html += '<div class="ce-estimate-total">' + total.toLocaleString('ru') + ' ₽</div>';
+        html += '</div>';
+        
+        html += '<div class="ce-estimate-body">';
+        if (!services.length) {
+          html += '<div class="ce-empty" style="padding:12px;">Нет услуг</div>';
+        } else {
+          html += '<table class="ce-services-table"><thead><tr>';
+          html += '<th>Услуга</th><th>Цена</th><th>Контакт</th><th>Особая цена</th>';
+          html += '</tr></thead><tbody>';
+          for (var k = 0; k < services.length; k++) {
+            var srv = services[k];
+            var contractor = srv.contact_id ? CE_CONTRACTORS.find(function(c){return c.id===srv.contact_id;}) : null;
+            html += '<tr>';
+            html += '<td>' + ceEscape(srv.service_name) + '</td>';
+            html += '<td class="ce-srv-price">' + (srv.price ? Number(srv.price).toLocaleString('ru') + ' ₽' : '—') + '</td>';
+            html += '<td class="ce-srv-contact">' + (contractor ? ceEscape(contractor.name) : '—') + '</td>';
+            html += '<td class="ce-srv-special">' + (srv.special_price ? Number(srv.special_price).toLocaleString('ru') + ' ₽' : '—') + '</td>';
+            html += '</tr>';
+          }
+          html += '</tbody></table>';
+        }
+        html += '</div>';
+        html += '</div>';
+      }
+    }
+    html += '</div>';
+    html += '</div>';
+  }
+  
+  list.innerHTML = html;
+}
+
+// ============ РЕНДЕР: РАБОТЫ ============
+function ceRenderWorks() {
+  var list = document.getElementById('ceWorksList');
+  if (!list) return;
+  
+  if (!CE_WORKS.length) {
+    list.innerHTML = '<div class="ce-empty">Нет работ контрагентов</div>';
+    return;
+  }
+  
+  var html = '<table class="ce-works-table"><thead><tr>';
+  html += '<th>Авто</th><th>Контрагент</th><th>Услуга</th><th>Цена</th><th>Комментарий</th>';
+  html += '</tr></thead><tbody>';
+  
+  for (var i = 0; i < CE_WORKS.length; i++) {
+    var w = CE_WORKS[i];
+    var car = CE_CARS.find(function(c){return c.id===w.car_id;});
+    var contractor = CE_CONTRACTORS.find(function(c){return c.id===w.contractor_id;});
+    var carTitle = car ? (car.brand + ' ' + car.model) : '—';
+    html += '<tr>';
+    html += '<td>' + ceEscape(carTitle) + '</td>';
+    html += '<td>' + (contractor ? ceEscape(contractor.name) : '—') + '</td>';
+    html += '<td>' + ceEscape(w.service_name) + '</td>';
+    html += '<td class="ce-work-price">' + (w.price ? Number(w.price).toLocaleString('ru') + ' ₽' : '—') + '</td>';
+    html += '<td>' + ceEscape(w.comment) + '</td>';
+    html += '</tr>';
+  }
+  
+  html += '</tbody></table>';
+  list.innerHTML = html;
+}
+
+// ============ ВКЛАДКИ ============
+function ceSwitchTab(tab, btn) {
+  CE_TAB = tab;
+  document.querySelectorAll('.ce-tab').forEach(function(t){t.classList.remove('active');});
+  if (btn) btn.classList.add('active');
+  document.getElementById('ceTabCars').style.display = tab === 'cars' ? '' : 'none';
+  document.getElementById('ceTabWorks').style.display = tab === 'works' ? '' : 'none';
+}
+
+// ============ TOGGLE ============
+function ceToggleCar(id) {
+  var el = document.getElementById('ceCar' + id);
+  if (el) el.classList.toggle('expanded');
+}
+function ceToggleEst(id) {
+  var el = document.getElementById('ceEst' + id);
+  if (el) el.classList.toggle('expanded');
+}
+
+// ============ ИНИЦИАЛИЗАЦИЯ ============
+ceLoadAll();
+</script>
