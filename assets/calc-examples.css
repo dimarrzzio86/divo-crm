@@ -240,6 +240,30 @@
   flex: 1 1 100% !important;
 }
 
+/* === СЕЛЕКТОР АВТО (КАСКАД) === */
+.ce-selector-wrap {
+  background: #18181b; border: 1px solid #27272a; border-radius: 10px;
+  padding: 16px; margin-bottom: 16px;
+}
+.ce-selector-title {
+  font-size: 14px; color: #a1a1aa; margin-bottom: 12px;
+}
+.ce-selector-row {
+  display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;
+}
+.ce-selector-field {
+  flex: 1 1 150px; min-width: 150px;
+}
+.ce-selector-field .ce-label {
+  display: block; font-size: 11px; color: #71717a; margin-bottom: 4px;
+}
+.ce-btn-reset {
+  padding: 8px 14px; background: #27272a; border: 1px solid #3f3f46;
+  color: #a1a1aa; border-radius: 6px; cursor: pointer; font-family: inherit;
+  font-size: 13px; white-space: nowrap; transition: all .15s;
+}
+.ce-btn-reset:hover { background: #3f3f46; color: #fafafa; }
+
 /* === КАТЕГОРИИ УСЛУГ === */
 .ce-srv-cat-block {
   background: #0a0a0a; border: 1px solid #27272a; border-radius: 8px;
