@@ -165,9 +165,7 @@ function ceRender() {
       for (var ci = 0; ci < model.cars.length; ci++) {
         var car = model.cars[ci];
         var services = CE_SERVICES.filter(function(s){ return s.car_id === car.id; });
-        var total = 0;
-        services.forEach(function(s){ total += Number(s.price) || 0; });
-        var genInfo = ceCarGenInfo(car);
+                var genInfo = ceCarGenInfo(car);
         
         html += '<div class="ce-gen-block">';
         html += '<div class="ce-gen-header"><span class="ce-gen-title">' + ceEscape(genInfo || 'Базовая') + '</span></div>';
@@ -179,7 +177,7 @@ function ceRender() {
             var srv = services[j];
             html += '<tr><td>' + ceEscape(srv.service_name) + '</td><td class="ce-srv-price">' + (srv.price ? Number(srv.price).toLocaleString('ru') + ' ₽' : '—') + '</td></tr>';
           }
-          html += '<tr style="font-weight:bold;border-top:2px solid #3b82f6;"><td>Итого:</td><td class="ce-srv-price">' + total.toLocaleString('ru') + ' ₽</td></tr>';
+          
           html += '</tbody></table>';
         }
         html += '</div>';
@@ -198,6 +196,34 @@ function ceToggleBrand(idx) {
 function ceToggleModel(bi, mi) {
   var el = document.getElementById('ceModel' + bi + '_' + mi);
   if (el) el.classList.toggle('expanded');
+}
+
+// ============ РЕНДЕР: Работы контрагентов ============
+function ceRenderWorks() {
+  var list = document.getElementById('ceWorksList');
+  if (!list) return;
+  if (!CE_WORKS.length) {
+    list.innerHTML = '<div class="ce-empty">Нет работ контрагентов</div>';
+    return;
+  }
+  var html = '<table class="ce-works-table"><thead><tr>';
+  html += '<th>Авто</th><th>Контрагент</th><th>Услуга</th><th>Цена</th><th>Комментарий</th>';
+  html += '</tr></thead><tbody>';
+  for (var i = 0; i < CE_WORKS.length; i++) {
+    var w = CE_WORKS[i];
+    var car = CE_CARS.find(function(c){return c.id===w.car_id;});
+    var contractor = CE_CONTRACTORS.find(function(c){return c.id===w.contractor_id;});
+    var carTitle = car ? (car.brand + ' ' + car.model) : '—';
+    html += '<tr>';
+    html += '<td>' + ceEscape(carTitle) + '</td>';
+    html += '<td>' + (contractor ? ceEscape(contractor.name) : '—') + '</td>';
+    html += '<td>' + ceEscape(w.service_name) + '</td>';
+    html += '<td class="ce-work-price">' + (w.price ? Number(w.price).toLocaleString('ru') + ' ₽' : '—') + '</td>';
+    html += '<td>' + ceEscape(w.comment) + '</td>';
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  list.innerHTML = html;
 }
 
 function ceSwitchTab(tab, btn) {

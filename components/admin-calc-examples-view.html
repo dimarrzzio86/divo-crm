@@ -293,9 +293,7 @@ function ceRender() {
       for (var ci = 0; ci < model.cars.length; ci++) {
         var car = model.cars[ci];
         var services = CE_SERVICES.filter(function(s){ return s.car_id === car.id; });
-        var total = 0;
-        services.forEach(function(s){ total += Number(s.price) || 0; });
-        var genInfo = ceCarGenInfo(car);
+                var genInfo = ceCarGenInfo(car);
         
         html += '<div class="ce-gen-block">';
         html += '<div class="ce-gen-header">';
@@ -321,7 +319,7 @@ function ceRender() {
             html += '<td class="ce-srv-price">' + (srv.price ? Number(srv.price).toLocaleString('ru') + ' ₽' : '—') + '</td>';
             html += '</tr>';
           }
-          html += '<tr style="font-weight:bold;border-top:2px solid #3b82f6;"><td>Итого:</td><td class="ce-srv-price">' + total.toLocaleString('ru') + ' ₽</td></tr>';
+          
           html += '</tbody></table>';
         }
         html += '</div>';
