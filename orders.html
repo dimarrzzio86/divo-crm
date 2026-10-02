@@ -329,10 +329,10 @@
         <!-- ПАНЕЛЬ ФИЛЬТРА ПО ДАТАМ -->
         <div class="ord-datebar">
           <div class="ord-date-presets">
-            <button class="ord-date-btn active" data-preset="month" onclick="ordSetDatePreset('month')">Этот месяц</button>
+            <button class="ord-date-btn" data-preset="month" onclick="ordSetDatePreset('month')">Этот месяц</button>
             <button class="ord-date-btn" data-preset="today" onclick="ordSetDatePreset('today')">Сегодня</button>
             <button class="ord-date-btn" data-preset="week" onclick="ordSetDatePreset('week')">Эта неделя</button>
-            <button class="ord-date-btn" data-preset="all" onclick="ordSetDatePreset('all')">Всё время</button>
+            <button class="ord-date-btn active" data-preset="all" onclick="ordSetDatePreset('all')">Всё время</button>
             <button class="ord-date-btn" data-preset="custom" onclick="ordSetDatePreset('custom')">Период…</button>
           </div>
           <div class="ord-date-range" id="ordDateRange" style="display:none;">
@@ -534,7 +534,7 @@ function ordFindFreePost(dateIn, dateOut, timeIn, timeOut, excludeId, orders) {
 // === ФИЛЬТР ПО ДАТАМ ===
 
 function ordInitDateFilter() {
-  ordSetDatePreset('month');
+  ordSetDatePreset('all');
 }
 
 function ordSetDatePreset(preset) {
