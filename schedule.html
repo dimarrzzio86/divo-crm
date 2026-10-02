@@ -4,15 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — График записей</title>
-<link rel="manifest" href="/manifest.json?v=192">
-<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png?v=192">
+<link rel="manifest" href="/manifest.json?v=193">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png?v=193">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Диво CRM">
 <meta name="theme-color" content="#0a0a0a">
-<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png?v=192">
-<link rel="stylesheet" href="/assets/style.css?v=192">
-<link rel="stylesheet" href="/assets/auth.css?v=192">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png?v=193">
+<link rel="stylesheet" href="/assets/style.css?v=193">
+<link rel="stylesheet" href="/assets/auth.css?v=193">
 <style>
 /* === СТИЛИ СТРАНИЦЫ ГРАФИКА === */
 .sch-page { padding: 0; }
@@ -25,10 +25,6 @@
 .sch-title {
   font-size: 24px; font-weight: 800; color: #fafafa;
   display: flex; align-items: center; gap: 10px;
-}
-.sch-soon {
-  background: #fbbf24; color: #0a0a0a; font-size: 10px; font-weight: 800;
-  padding: 4px 10px; border-radius: 6px; letter-spacing: 0.5px;
 }
 .sch-subtitle { font-size: 13px; color: #a1a1aa; margin-top: 4px; }
 
@@ -353,15 +349,6 @@
 }
 .sch-popup-create-btn:active { transform: scale(0.98); }
 
-/* === Баннер === */
-.sch-dev-banner {
-  background: linear-gradient(90deg, #1a1410 0%, #18181b 100%);
-  border: 1.5px solid #fbbf24; border-radius: 12px;
-  padding: 14px 18px; margin-bottom: 20px;
-  font-size: 13px; color: #fbbf24; display: flex; align-items: center; gap: 10px;
-}
-.sch-dev-banner b { color: #fde68a; }
-
 @media (max-width: 700px) {
   .sch-stats { grid-template-columns: repeat(2, 1fr); }
   .sch-top { flex-direction: column; }
@@ -386,14 +373,7 @@
 
     <main class="divo-content sch-page" id="divoContent">
 
-      <!-- Баннер -->
-      <div class="sch-dev-banner">
-        <span style="font-size:18px;">🚧</span>
-        <span><b>РАЗДЕЛ В РАЗРАБОТКЕ</b> · это превью для оценки визуала</span>
-        <span class="sch-soon" style="margin-left:auto; background:#22c55e;">LIVE</span>
-      </div>
-
-      <!-- Заголовок -->
+<!-- Заголовок -->
       <div class="sch-top">
         <div>
           <div class="sch-title">
@@ -446,10 +426,6 @@
 
       <!-- Легенда -->
       <div class="sch-legend" id="schLegend">
-        <div class="sch-legend-item"><div class="sch-legend-dot" style="background:#3b82f6"></div>Honda Civic</div>
-        <div class="sch-legend-item"><div class="sch-legend-dot" style="background:#22c55e"></div>Mazda CX-5</div>
-        <div class="sch-legend-item"><div class="sch-legend-dot" style="background:#f97316"></div>BMW X5</div>
-        <div class="sch-legend-item"><div class="sch-legend-dot" style="background:#a855f7"></div>Toyota Camry</div>
         <div class="sch-legend-divider"></div>
         <div class="sch-legend-item"><div class="sch-legend-free"></div>Свободный пост</div>
         <div class="sch-legend-item"><div class="sch-legend-dot" style="background:#fbbf24"></div>Аутсорс-услуга</div>
@@ -480,8 +456,8 @@
   </div>
 </div>
 
-<script src="/components/components.js?v=192"></script>
-<script src="/components/access-config.js?v=192"></script>
+<script src="/components/components.js?v=193"></script>
+<script src="/components/access-config.js?v=193"></script>
 <script>
 // Упрощённая инициализация — надёжно показываем страницу
 function divoInitSchedule() {
@@ -491,7 +467,7 @@ function divoInitSchedule() {
     // Не залогинен — показываем форму входа
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=192')
+    fetch('/components/auth-form.html?v=193')
       .then(function(r){ return r.text(); })
       .then(function(html){
         var c = document.getElementById('divoAuthContainer');
