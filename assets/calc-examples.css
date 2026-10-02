@@ -233,6 +233,33 @@
 .ce-gen-actions button:hover { background: #3f3f46; color: #fafafa; }
 .ce-gen-actions button.del:hover { background: #ef4444; border-color: #ef4444; color: #fafafa; }
 
+/* === КАТЕГОРИИ УСЛУГ === */
+.ce-srv-cat-block {
+  background: #0a0a0a; border: 1px solid #27272a; border-radius: 8px;
+  margin-bottom: 8px; overflow: hidden;
+}
+.ce-srv-cat-block:last-child { margin-bottom: 0; }
+.ce-srv-cat-header {
+  display: flex; align-items: center; gap: 8px; padding: 10px 12px;
+  background: #1f1f23; cursor: pointer; user-select: none;
+}
+.ce-srv-cat-header:hover { background: #27272a; }
+.ce-srv-cat-arrow { font-size: 10px; color: #71717a; transition: transform .15s; }
+.ce-srv-cat-block.expanded .ce-srv-cat-arrow { transform: rotate(90deg); }
+.ce-srv-cat-title { flex: 1; font-size: 14px; font-weight: 700; color: #fbbf24; text-transform: uppercase; letter-spacing: 0.5px; }
+.ce-srv-cat-count { font-size: 11px; color: #71717a; }
+.ce-srv-cat-body { display: none; padding: 8px; }
+.ce-srv-cat-block.expanded .ce-srv-cat-body { display: block; }
+
+.ce-srv-sub-block { margin-bottom: 6px; }
+.ce-srv-sub-block:last-child { margin-bottom: 0; }
+.ce-srv-sub-title {
+  font-size: 12px; font-weight: 600; color: #93c5fd;
+  padding: 6px 10px; background: #18181b; border-radius: 6px;
+  margin-bottom: 4px;
+}
+.ce-srv-sub-block .ce-services-table { margin: 0; }
+
 /* === АДАПТИВ === */
 @media (max-width: 700px) {
   .ce-form-row { flex-direction: column; }

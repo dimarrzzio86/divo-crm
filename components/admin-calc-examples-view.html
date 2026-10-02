@@ -309,18 +309,67 @@ function ceRender() {
         if (!services.length) {
           html += '<div class="ce-empty" style="padding:12px;">Нет услуг</div>';
         } else {
-          html += '<table class="ce-services-table"><thead><tr>';
-          html += '<th>Услуга</th><th>Цена</th>';
-          html += '</tr></thead><tbody>';
+          // Группировка услуг по категории → подкатегории
+          var groups = {};
+          var groupOrder = [];
           for (var j = 0; j < services.length; j++) {
             var srv = services[j];
-            html += '<tr>';
-            html += '<td>' + ceEscape(srv.service_name) + '</td>';
-            html += '<td class="ce-srv-price">' + (srv.price ? Number(srv.price).toLocaleString('ru') + ' ₽' : '—') + '</td>';
-            html += '</tr>';
+            var catId = 'manual';
+            var catName = '✍️ Прочее (ручной ввод)';
+            var subId = 'manual';
+            var subName = '';
+            if (srv.service_id) {
+              var svc = CE_PRICE_SERVICES.find(function(s){ return String(s.id) === String(srv.service_id); });
+              if (svc) {
+                catId = 'cat_' + svc.category_id;
+                var cat = CE_PRICE_CATS.find(function(s){ return String(s.id) === String(svc.category_id); });
+                catName = cat ? cat.name : 'Без категории';
+                subId = 'sub_' + (svc.subcategory_id || '0');
+                if (svc.subcategory_id) {
+                  var sub = CE_PRICE_SUBCATS.find(function(s){ return String(s.id) === String(svc.subcategory_id); });
+                  subName = sub ? sub.name : '';
+                }
+              }
+            }
+            if (!groups[catId]) {
+              groups[catId] = { name: catName, subs: {} };
+              groupOrder.push(catId);
+            }
+            if (!groups[catId].subs[subId]) groups[catId].subs[subId] = { name: subName, items: [] };
+            groups[catId].subs[subId].items.push(srv);
           }
           
-          html += '</tbody></table>';
+          for (var gi = 0; gi < groupOrder.length; gi++) {
+            var g = groups[groupOrder[gi]];
+            var gKey = 'cat' + bi + '_' + mi + '_' + ci + '_' + gi;
+            html += '<div class="ce-srv-cat-block" id="ceSrvCat' + gKey + '">';
+            html += '<div class="ce-srv-cat-header" onclick="ceToggleSrvCat(\'' + gKey + '\')">';
+            html += '<span class="ce-srv-cat-arrow">▶</span>';
+            html += '<span class="ce-srv-cat-title">' + ceEscape(g.name) + '</span>';
+            html += '<span class="ce-srv-cat-count">' + Object.keys(g.subs).length + ' подк.</span>';
+            html += '</div>';
+            html += '<div class="ce-srv-cat-body">';
+            
+            for (var subId in g.subs) {
+              var sub = g.subs[subId];
+              html += '<div class="ce-srv-sub-block">';
+              if (sub.name) {
+                html += '<div class="ce-srv-sub-title">' + ceEscape(sub.name) + '</div>';
+              }
+              html += '<table class="ce-services-table"><tbody>';
+              for (var k = 0; k < sub.items.length; k++) {
+                var srv = sub.items[k];
+                html += '<tr>';
+                html += '<td>' + ceEscape(srv.service_name) + '</td>';
+                html += '<td class="ce-srv-price">' + (srv.price ? Number(srv.price).toLocaleString('ru') + ' ₽' : '—') + '</td>';
+                html += '</tr>';
+              }
+              html += '</tbody></table>';
+              html += '</div>';
+            }
+            
+            html += '</div></div>';
+          }
         }
         html += '</div>';
       }
@@ -347,6 +396,10 @@ function ceToggleBrand(idx) {
   if (el) el.classList.toggle('expanded');
 }
 
+function ceToggleSrvCat(key) {
+  var el = document.getElementById('ceSrvCat' + key);
+  if (el) el.classList.toggle('expanded');
+}
 function ceToggleModel(bi, mi) {
   var el = document.getElementById('ceModel' + bi + '_' + mi);
   if (el) el.classList.toggle('expanded');
