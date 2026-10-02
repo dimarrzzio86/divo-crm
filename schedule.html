@@ -4,15 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — График записей</title>
-<link rel="manifest" href="/manifest.json?v=197">
-<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png?v=197">
+<link rel="manifest" href="/manifest.json?v=198">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png?v=198">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Диво CRM">
 <meta name="theme-color" content="#0a0a0a">
-<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png?v=197">
-<link rel="stylesheet" href="/assets/style.css?v=197">
-<link rel="stylesheet" href="/assets/auth.css?v=197">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png?v=198">
+<link rel="stylesheet" href="/assets/style.css?v=198">
+<link rel="stylesheet" href="/assets/auth.css?v=198">
 <style>
 /* === СТИЛИ СТРАНИЦЫ ГРАФИКА === */
 .sch-page { padding: 0; }
@@ -461,7 +461,7 @@
       <button class="sch-popup-create-btn" id="popupCreateBtn" onclick="createOrderFromPopup()">
         ➕ Создать запись
       </button>
-      <button class="sch-popup-create-btn sch-popup-tasks-btn" id="popupTasksBtn" data-level="4" onclick="createTasksFromPopup()">
+      <button class="sch-popup-create-btn sch-popup-tasks-btn" id="popupTasksBtn" style="display:none;" onclick="createTasksFromPopup()">
         📝 Создать задачи
       </button>
     </div>
@@ -470,8 +470,8 @@
   </div>
 </div>
 
-<script src="/components/components.js?v=197"></script>
-<script src="/components/access-config.js?v=197"></script>
+<script src="/components/components.js?v=198"></script>
+<script src="/components/access-config.js?v=198"></script>
 <script>
 // Упрощённая инициализация — надёжно показываем страницу
 function divoInitSchedule() {
@@ -481,7 +481,7 @@ function divoInitSchedule() {
     // Не залогинен — показываем форму входа
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=197')
+    fetch('/components/auth-form.html?v=198')
       .then(function(r){ return r.text(); })
       .then(function(html){
         var c = document.getElementById('divoAuthContainer');
@@ -508,6 +508,11 @@ function divoInitSchedule() {
   // Грузим шапку и меню
   if (typeof divoInit === 'function') {
     try { divoInit(); } catch(e) { console.warn('divoInit error:', e); }
+  }
+
+  // Грузим конфигурацию доступов (для проверки кнопки "Создать задачи")
+  if (typeof divoLoadAccessConfig === 'function') {
+    divoLoadAccessConfig();
   }
 
   // Запускаем календарь (даже если access-config не подгрузился)
@@ -1100,14 +1105,33 @@ function getContractorsForOrder(orderId) {
   return SCH_CONTRACTORS_CACHE[orderId] || [];
 }
 
-function openPopup(dateStr){
-  POPUP_DATE = dateStr;  // сохраняем для кнопки "Создать запись"
-  // Проверяем доступ к созданию задач (admin-tasks, уровень 4)
+
+// Проверка доступа к кнопке "Создать задачи" (учитывает ручные настройки из раздела Доступы)
+function checkTasksBtnAccess() {
   var tasksBtn = document.getElementById('popupTasksBtn');
-  if (tasksBtn) {
+  if (!tasksBtn) return;
+
+  function applyAccess() {
     var hasAccess = (typeof divoHasAccessToSection === 'function') ? divoHasAccessToSection('admin-tasks') : false;
     tasksBtn.style.display = hasAccess ? '' : 'none';
   }
+
+  // Если конфиг уже загружен — проверяем сразу
+  if (typeof DIVO_ACCESS_CONFIG !== 'undefined' && DIVO_ACCESS_CONFIG) {
+    applyAccess();
+  } else if (typeof divoLoadAccessConfig === 'function') {
+    // Конфиг ещё грузится — проверяем после загрузки
+    tasksBtn.style.display = 'none'; // скрываем пока не знаем
+    divoLoadAccessConfig(function() { applyAccess(); });
+  } else {
+    applyAccess();
+  }
+}
+
+function openPopup(dateStr){
+  POPUP_DATE = dateStr;  // сохраняем для кнопки "Создать запись"
+  // Проверяем доступ к созданию задач (admin-tasks — уровень настраивается вручную)
+  checkTasksBtnAccess();
   var d = parseDate(dateStr);
   var dow = d.getDay();
   document.getElementById('popupTitle').textContent = d.getDate()+' '+MONTHS[d.getMonth()].toLowerCase()+' '+d.getFullYear();

@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — Расчёты</title>
-<link rel="stylesheet" href="/assets/style.css?v=197">
-<link rel="stylesheet" href="/assets/auth.css?v=197">
-<link rel="stylesheet" href="/assets/contacts.css?v=197">
-<link rel="stylesheet" href="/assets/cash.css?v=197">
+<link rel="stylesheet" href="/assets/style.css?v=198">
+<link rel="stylesheet" href="/assets/auth.css?v=198">
+<link rel="stylesheet" href="/assets/contacts.css?v=198">
+<link rel="stylesheet" href="/assets/cash.css?v=198">
   <link rel="manifest" href="/manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -34,7 +34,7 @@
 
 </div>
 
-<script src="/components/components.js?v=197"></script>
+<script src="/components/components.js?v=198"></script>
 <script>
 function divoCheckAuthAndInit() {
   var user = divoGetUser();
@@ -43,7 +43,7 @@ function divoCheckAuthAndInit() {
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
 
-    fetch('/components/auth-form.html?v=197')
+    fetch('/components/auth-form.html?v=198')
       .then(function(r) { return r.text(); })
       .then(function(html) {
         var c = document.getElementById('divoAuthContainer');
@@ -72,7 +72,7 @@ function divoCheckAuthAndInit() {
   divoInit();
 
   // Грузим контент расчётов
-  fetch('/components/cash-view.html?v=197')
+  fetch('/components/cash-view.html?v=198')
     .then(function(r) { return r.text(); })
     .then(function(html) {
       var content = document.getElementById('divoContent');
