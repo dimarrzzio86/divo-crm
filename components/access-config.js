@@ -27,6 +27,7 @@ var DIVO_ACCESS_DEFAULT = {
     "admin-calculator": { "level": 4, "name": "Калькулятор",      "icon": "🧮", "group": "admin", "url": "admin-calculator.html" },
     "admin-tasks":      { "level": 4, "name": "Задачи на сегодня", "icon": "📝", "group": "admin", "url": "admin-tasks.html" },
     "admin-schedule":   { "level": 4, "name": "Настройки графика", "icon": "⚙️", "group": "admin", "url": "admin-schedule.html" },
+    "schedule-tasks-btn": { "level": 4, "name": "Кнопка задачи в графике", "icon": "📝", "group": "admin", "url": "" },
     "admin-partners":   { "level": 5, "name": "Партнёры",         "icon": "🤝", "group": "admin", "url": "admin-partners.html" },
     "admin-users":      { "level": 5, "name": "Пользователи",     "icon": "👤", "group": "admin", "url": "admin-users.html" },
     "admin-partner-prices":   { "level": 4, "name": "Прайсы партнёров (адм)",  "icon": "🤝", "group": "admin", "url": "admin-partner-prices.html" },
