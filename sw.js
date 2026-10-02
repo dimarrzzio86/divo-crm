@@ -1,5 +1,5 @@
 // DIVO CRM — Service Worker (push + network-first кеш с автообновлением)
-const CACHE_NAME = 'divo-crm-v205';
+const CACHE_NAME = 'divo-crm-v206';
 
 // === УСТАНОВКА — сразу активируемся ===
 self.addEventListener('install', function(event) {
