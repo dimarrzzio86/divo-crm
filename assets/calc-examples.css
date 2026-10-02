@@ -196,10 +196,28 @@
 .ce-srv-selects select:focus { border-color: #3b82f6; }
 .ce-srv-selects select:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* === БЛОКИ ПОКОЛЕНИЙ ВНУТРИ КАРТОЧКИ === */
-.ce-gen-block {
+/* === БЛОКИ МОДЕЛЕЙ ВНУТРИ МАРКИ === */
+.ce-model-block {
   background: #0a0a0a; border: 1px solid #27272a; border-radius: 10px;
   margin-bottom: 10px; overflow: hidden;
+}
+.ce-model-block:last-child { margin-bottom: 0; }
+.ce-model-header {
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+  background: #1f1f23; cursor: pointer; user-select: none;
+}
+.ce-model-header:hover { background: #27272a; }
+.ce-model-arrow { font-size: 10px; color: #71717a; transition: transform .15s; }
+.ce-model-block.expanded .ce-model-arrow { transform: rotate(90deg); }
+.ce-model-title { flex: 1; font-size: 15px; font-weight: 700; color: #93c5fd; }
+.ce-model-count { font-size: 12px; color: #71717a; }
+.ce-model-body { display: none; padding: 10px; }
+.ce-model-block.expanded .ce-model-body { display: block; }
+
+/* === БЛОКИ ПОКОЛЕНИЙ ВНУТРИ МОДЕЛИ === */
+.ce-gen-block {
+  background: #18181b; border: 1px solid #27272a; border-radius: 8px;
+  margin-bottom: 8px; overflow: hidden;
 }
 .ce-gen-block:last-child { margin-bottom: 0; }
 .ce-gen-header {
