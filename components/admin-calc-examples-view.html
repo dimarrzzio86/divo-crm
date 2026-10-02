@@ -569,19 +569,66 @@ function ceAddSrvRow(existing) {
   div.innerHTML = 
     '<input type="hidden" class="ce-srv-id" value="' + (existing ? existing.id : '') + '">' +
     '<label class="ce-srv-check" title="Ручной ввод">' +
-      '<input type="checkbox" class="ce-srv-manual"' + (manual ? ' checked' : '') + ' onchange="ceOnManualToggle(this)">' +
+      '<input type="checkbox" class="ce-srv-manual"' + (manual ? ' checked' : '') + '>' +
       '<span>✍️</span>' +
     '</label>' +
     '<div class="ce-srv-selects" style="display:flex;gap:6px;flex:1 1 100%;flex-wrap:wrap;">' +
-      '<select class="ce-srv-cat" onchange="ceOnRowCat(this.closest(\'.ce-srv-row\'), this.value)" style="flex:1;min-width:120px;">' + ceCatOptions(catId) + '</select>' +
-      '<select class="ce-srv-subcat" onchange="ceOnRowSubcat(this.closest(\'.ce-srv-row\'), this.value)" style="flex:1;min-width:120px;"' + (catId ? '' : ' disabled') + '>' + ceSubcatOptions(catId, subcatId) + '</select>' +
-      '<select class="ce-srv-svc" onchange="ceOnRowSvc(this.closest(\'.ce-srv-row\'), this.value, this.options[this.selectedIndex])" style="flex:1.5;min-width:140px;"' + (catId ? '' : ' disabled') + '>' + ceSvcOptions(catId, subcatId, existing ? existing.service_id : '') + '</select>' +
+      '<select class="ce-srv-cat" style="flex:1;min-width:120px;">' + ceCatOptions(catId) + '</select>' +
+      '<select class="ce-srv-subcat" style="flex:1;min-width:120px;"' + (catId ? '' : ' disabled') + '>' + ceSubcatOptions(catId, subcatId) + '</select>' +
+      '<select class="ce-srv-svc" style="flex:1.5;min-width:140px;"' + (catId ? '' : ' disabled') + '>' + ceSvcOptions(catId, subcatId, existing ? existing.service_id : '') + '</select>' +
     '</div>' +
     '<input type="text" class="ce-srv-name" placeholder="Название услуги" value="' + ceEscape(existing ? existing.service_name : '') + '" style="display:' + (manual ? 'block' : 'none') + ';flex:1 1 100%;">' +
     '<input type="number" class="ce-srv-price-input" placeholder="Цена" value="' + (existing ? existing.price : '') + '">' +
     '<select class="ce-srv-contact-select">' + optHtml + '</select>' +
     '<input type="number" class="ce-srv-special-input" placeholder="Особая" value="' + (existing ? existing.special_price : '') + '">' +
-    '<button class="ce-srv-del" onclick="this.parentElement.remove()">🗑</button>';
+    '<button class="ce-srv-del">🗑</button>';
+  
+  // Привязываем события через addEventListener (надёжнее чем inline onchange)
+  var catSel = div.querySelector('.ce-srv-cat');
+  var subcatSel = div.querySelector('.ce-srv-subcat');
+  var svcSel = div.querySelector('.ce-srv-svc');
+  var manualCheck = div.querySelector('.ce-srv-manual');
+  var delBtn = div.querySelector('.ce-srv-del');
+  
+  catSel.addEventListener('change', function() {
+    var val = this.value;
+    subcatSel.innerHTML = ceSubcatOptions(val, '');
+    subcatSel.disabled = !val;
+    svcSel.innerHTML = '<option value="">—</option>';
+    svcSel.disabled = true;
+  });
+  
+  subcatSel.addEventListener('change', function() {
+    var val = this.value;
+    var cid = catSel.value;
+    svcSel.innerHTML = ceSvcOptions(cid, val, '');
+    svcSel.disabled = !val;
+  });
+  
+  svcSel.addEventListener('change', function() {
+    var val = this.value;
+    if (val) {
+      var opt = this.options[this.selectedIndex];
+      var nameInput = div.querySelector('.ce-srv-name');
+      if (nameInput) nameInput.value = opt.dataset.name || opt.text;
+    }
+  });
+  
+  manualCheck.addEventListener('change', function() {
+    var selects = div.querySelector('.ce-srv-selects');
+    var nameInput = div.querySelector('.ce-srv-name');
+    if (this.checked) {
+      if (selects) selects.style.display = 'none';
+      if (nameInput) nameInput.style.display = 'block';
+    } else {
+      if (selects) selects.style.display = 'flex';
+      if (nameInput) nameInput.style.display = 'none';
+    }
+  });
+  
+  delBtn.addEventListener('click', function() {
+    div.remove();
+  });
   
   // Скрываем/показываем селекты в зависимости от manual
   if (manual) {
