@@ -391,6 +391,7 @@
 // ============================================
 
 var ORD_EDITING_ID = null;
+var ORD_PREFILL_DATE = null; // дата для предзаполнения (из графика)
 var ORD_SERVICES = [];
 var ORD_ROWS = [];
 var ORD_FILTER = 'all';
@@ -763,7 +764,9 @@ function ordFillForm(o) {
   document.getElementById('ordField-number').value = o ? (o.number || '') : '';
   document.getElementById('ordField-carBrand').value = o ? (o.carBrand || '') : '';
   document.getElementById('ordField-carPlate').value = o ? (o.carPlate || '') : '';
-  document.getElementById('ordField-dateIn').value = o ? (o.dateIn || '') : '';
+  var dateInValue = o ? (o.dateIn || '') : '';
+  if (!dateInValue && ORD_PREFILL_DATE) dateInValue = ORD_PREFILL_DATE;
+  document.getElementById('ordField-dateIn').value = dateInValue;
   document.getElementById('ordField-timeIn').value = o ? (o.timeIn || '') : '';
   document.getElementById('ordField-dateOut').value = o ? (o.dateOut || '') : '';
   document.getElementById('ordField-timeOut').value = o ? (o.timeOut || '') : '';
@@ -1955,14 +1958,10 @@ function ordStartPage() {
   var params = new URLSearchParams(window.location.search);
   var prefillDate = params.get('date');
   if (prefillDate) {
-    // Открываем форму нового заказа и подставляем дату заезда
-    setTimeout(function() {
-      ordNewOrder();
-      var dateInField = document.getElementById('ordField-dateIn');
-      if (dateInField) dateInField.value = prefillDate;
-      var formCard = document.getElementById('ordFormCard');
-      if (formCard) formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 300);
+    // Сохраняем дату в глобальную переменную — ordFillForm её подхватит
+    ORD_PREFILL_DATE = prefillDate;
+    // Открываем форму нового заказа (ordFillForm подставит дату)
+    setTimeout(function() { ordNewOrder(); }, 300);
   }
 }
 
