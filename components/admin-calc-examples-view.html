@@ -83,22 +83,25 @@
   </div>
 </div>
 
-<!-- Модалка: Работа контрагента -->
+<!-- Модалка: Работа контрагента (как услуги — каскадные селекты) -->
 <div class="ce-modal-overlay" id="ceWorkModal" onclick="if(event.target===this)ceCloseWorkModal()">
-  <div class="ce-modal">
-    <h2 class="ce-modal-title" id="ceWorkModalTitle">Новая работа</h2>
-    <label class="ce-label">Авто *</label>
-    <select class="ce-select" id="ceWorkCarId"></select>
-    <label class="ce-label">Контрагент *</label>
-    <select class="ce-select" id="ceWorkContractorId"></select>
-    <label class="ce-label">Услуга *</label>
-    <input type="text" class="ce-input" id="ceWorkService" placeholder="Полировка кузова, Керамика 9H...">
-    <label class="ce-label">Цена</label>
-    <input type="number" class="ce-input" id="ceWorkPrice" placeholder="0">
-    <label class="ce-label">Комментарий</label>
-    <textarea class="ce-textarea" id="ceWorkComment" placeholder="Заметка..."></textarea>
+  <div class="ce-modal" style="max-width: 700px;">
+    <h2 class="ce-modal-title" id="ceWorkModalTitle">Работа контрагента</h2>
+    <div class="ce-form-row">
+      <div>
+        <label class="ce-label">Авто *</label>
+        <select class="ce-select" id="ceWorkCarId"></select>
+      </div>
+      <div>
+        <label class="ce-label">Контрагент *</label>
+        <select class="ce-select" id="ceWorkContractorId"></select>
+      </div>
+    </div>
+    <input type="hidden" id="ceWorkEditId">
+    <div id="ceWorkRows"></div>
+    <button class="ce-btn-add-srv" onclick="ceAddWorkRow()">➕ Добавить услугу</button>
     <div class="ce-modal-actions">
-      <button class="ce-btn ce-btn-save" onclick="ceSaveWork()">Сохранить</button>
+      <button class="ce-btn ce-btn-save" onclick="ceSaveWorks()">Сохранить</button>
       <button class="ce-btn ce-btn-cancel" onclick="ceCloseWorkModal()">Отмена</button>
     </div>
   </div>
@@ -413,25 +416,112 @@ function ceRenderWorks() {
     list.innerHTML = '<div class="ce-empty">Нет работ. Нажмите «Добавить работу»</div>';
     return;
   }
-  var html = '<table class="ce-works-table"><thead><tr>';
-  html += '<th>Авто</th><th>Контрагент</th><th>Услуга</th><th>Цена</th><th>Комментарий</th><th></th>';
-  html += '</tr></thead><tbody>';
+  
+  // Группировка работ по авто → категория → подкатегория
+  var carGroups = {};
+  var carOrder = [];
   for (var i = 0; i < CE_WORKS.length; i++) {
     var w = CE_WORKS[i];
     var car = CE_CARS.find(function(c){return c.id===w.car_id;});
-    var contractor = CE_CONTRACTORS.find(function(c){return c.id===w.contractor_id;});
     var carTitle = car ? (car.brand + ' ' + car.model) : '—';
-    html += '<tr>';
-    html += '<td>' + ceEscape(carTitle) + '</td>';
-    html += '<td>' + (contractor ? ceEscape(contractor.name) : '—') + '</td>';
-    html += '<td>' + ceEscape(w.service_name) + '</td>';
-    html += '<td class="ce-work-price">' + (w.price ? Number(w.price).toLocaleString('ru') + ' ₽' : '—') + '</td>';
-    html += '<td>' + ceEscape(w.comment) + '</td>';
-    html += '<td><button class="ce-srv-del" onclick="ceDeleteWork(' + w.id + ')">🗑</button></td>';
-    html += '</tr>';
+    if (!carGroups[w.car_id]) {
+      carGroups[w.car_id] = { title: carTitle, works: [] };
+      carOrder.push(w.car_id);
+    }
+    carGroups[w.car_id].works.push(w);
   }
-  html += '</tbody></table>';
+  
+  var html = '';
+  for (var ci = 0; ci < carOrder.length; ci++) {
+    var cg = carGroups[carOrder[ci]];
+    var cKey = 'workcar_' + ci;
+    html += '<div class="ce-car-card" id="ceWorkCar' + cKey + '">';
+    html += '<div class="ce-car-header" onclick="ceToggleWorkCar(\'' + cKey + '\')">';
+    html += '<span class="ce-car-icon">🚗</span>';
+    html += '<div class="ce-car-info">';
+    html += '<div class="ce-car-title">' + ceEscape(cg.title) + '</div>';
+    html += '<div class="ce-car-sub">' + cg.works.length + ' работ</div>';
+    html += '</div>';
+    html += '<span class="ce-car-arrow">▶</span>';
+    html += '</div>';
+    html += '<div class="ce-car-body">';
+    
+    // Группировка по категории → подкатегории
+    var groups = {};
+    var groupOrder = [];
+    for (var wi = 0; wi < cg.works.length; wi++) {
+      var work = cg.works[wi];
+      var catId = 'manual';
+      var catName = '✍️ Прочее';
+      var subId = 'manual';
+      var subName = '';
+      if (work.service_id) {
+        var svc = CE_PRICE_SERVICES.find(function(s){ return String(s.id) === String(work.service_id); });
+        if (svc) {
+          catId = 'cat_' + svc.category_id;
+          var cat = CE_PRICE_CATS.find(function(s){ return String(s.id) === String(svc.category_id); });
+          catName = cat ? cat.name : 'Без категории';
+          subId = 'sub_' + (svc.subcategory_id || '0');
+          if (svc.subcategory_id) {
+            var sub = CE_PRICE_SUBCATS.find(function(s){ return String(s.id) === String(svc.subcategory_id); });
+            subName = sub ? sub.name : '';
+          }
+        }
+      }
+      if (!groups[catId]) {
+        groups[catId] = { name: catName, subs: {} };
+        groupOrder.push(catId);
+      }
+      if (!groups[catId].subs[subId]) groups[catId].subs[subId] = { name: subName, items: [] };
+      groups[catId].subs[subId].items.push(work);
+    }
+    
+    for (var gi = 0; gi < groupOrder.length; gi++) {
+      var g = groups[groupOrder[gi]];
+      var gKey = cKey + '_cat' + gi;
+      html += '<div class="ce-srv-cat-block" id="ceWorkSrvCat' + gKey + '">';
+      html += '<div class="ce-srv-cat-header" onclick="ceToggleWorkSrvCat(\'' + gKey + '\')">';
+      html += '<span class="ce-srv-cat-arrow">▶</span>';
+      html += '<span class="ce-srv-cat-title">' + ceEscape(g.name) + '</span>';
+      html += '<span class="ce-srv-cat-count">' + Object.keys(g.subs).length + ' подк.</span>';
+      html += '</div>';
+      html += '<div class="ce-srv-cat-body">';
+      
+      for (var subId in g.subs) {
+        var sub = g.subs[subId];
+        html += '<div class="ce-srv-sub-block">';
+        if (sub.name) {
+          html += '<div class="ce-srv-sub-title">' + ceEscape(sub.name) + '</div>';
+        }
+        html += '<table class="ce-services-table"><thead><tr><th>Услуга</th><th>Контрагент</th><th>Цена</th><th></th></tr></thead><tbody>';
+        for (var k = 0; k < sub.items.length; k++) {
+          var item = sub.items[k];
+          var contractor = CE_CONTRACTORS.find(function(c){return c.id===item.contractor_id;});
+          html += '<tr>';
+          html += '<td>' + ceEscape(item.service_name) + '</td>';
+          html += '<td class="ce-srv-contact">' + (contractor ? ceEscape(contractor.name) : '—') + '</td>';
+          html += '<td class="ce-work-price">' + (item.price ? Number(item.price).toLocaleString('ru') + ' ₽' : '—') + '</td>';
+          html += '<td><button class="ce-srv-del" onclick="ceDeleteWork(' + item.id + ')">🗑</button></td>';
+          html += '</tr>';
+        }
+        html += '</tbody></table>';
+        html += '</div>';
+      }
+      html += '</div></div>';
+    }
+    
+    html += '</div></div>';
+  }
   list.innerHTML = html;
+}
+
+function ceToggleWorkCar(key) {
+  var el = document.getElementById('ceWorkCar' + key);
+  if (el) el.classList.toggle('expanded');
+}
+function ceToggleWorkSrvCat(key) {
+  var el = document.getElementById('ceWorkSrvCat' + key);
+  if (el) el.classList.toggle('expanded');
 }
 
 // ============ ВКЛАДКИ ============
@@ -723,21 +813,21 @@ function ceSaveServices() {
 
 // ============ РАБОТЫ КОНТРАГЕНТОВ ============
 function ceOpenWorkModal() {
-  document.getElementById('ceWorkModalTitle').textContent = 'Новая работа';
+  document.getElementById('ceWorkModalTitle').textContent = 'Работа контрагента';
   ceFillWorkSelects();
-  document.getElementById('ceWorkService').value = '';
-  document.getElementById('ceWorkPrice').value = '';
-  document.getElementById('ceWorkComment').value = '';
+  document.getElementById('ceWorkEditId').value = '';
+  document.getElementById('ceWorkRows').innerHTML = '';
+  ceAddWorkRow();
   document.getElementById('ceWorkModal').classList.add('open');
 }
 
 function ceOpenWorkModalForCar(carId) {
-  document.getElementById('ceWorkModalTitle').textContent = 'Новая работа';
+  document.getElementById('ceWorkModalTitle').textContent = 'Работа контрагента';
   ceFillWorkSelects();
   document.getElementById('ceWorkCarId').value = carId;
-  document.getElementById('ceWorkService').value = '';
-  document.getElementById('ceWorkPrice').value = '';
-  document.getElementById('ceWorkComment').value = '';
+  document.getElementById('ceWorkEditId').value = '';
+  document.getElementById('ceWorkRows').innerHTML = '';
+  ceAddWorkRow();
   document.getElementById('ceWorkModal').classList.add('open');
 }
 
@@ -759,32 +849,143 @@ function ceCloseWorkModal() {
   document.getElementById('ceWorkModal').classList.remove('open');
 }
 
-function ceSaveWork() {
+// --- Создание строки работы (как услуга) ---
+function ceAddWorkRow(existing) {
+  var rows = document.getElementById('ceWorkRows');
+  var div = document.createElement('div');
+  div.className = 'ce-srv-row';
+  div.style.flexWrap = 'wrap';
+  
+  var manual = existing && existing.manual;
+  var catId = existing && existing.service_id ? ceFindCatByServiceId(existing.service_id) : '';
+  var subcatId = existing && existing.service_id ? ceFindSubByServiceId(existing.service_id) : '';
+  
+  div.innerHTML = 
+    '<input type="hidden" class="ce-work-id" value="' + (existing ? existing.id : '') + '">' +
+    '<label class="ce-srv-check" title="Ручной ввод">' +
+      '<input type="checkbox" class="ce-srv-manual"' + (manual ? ' checked' : '') + '>' +
+      '<span>✍️</span>' +
+    '</label>' +
+    '<div class="ce-srv-selects" style="display:flex;gap:6px;flex:1 1 100%;flex-wrap:wrap;">' +
+      '<select class="ce-srv-cat" style="flex:1;min-width:120px;">' + ceCatOptions(catId) + '</select>' +
+      '<select class="ce-srv-subcat" style="flex:1;min-width:120px;"' + (catId ? '' : ' disabled') + '>' + ceSubcatOptions(catId, subcatId) + '</select>' +
+      '<select class="ce-srv-svc" style="flex:1.5;min-width:140px;"' + (catId ? '' : ' disabled') + '>' + ceSvcOptions(catId, subcatId, existing ? existing.service_id : '') + '</select>' +
+    '</div>' +
+    '<input type="text" class="ce-srv-name" placeholder="Название услуги" value="' + ceEscape(existing ? existing.service_name : '') + '" style="display:' + (manual ? 'block' : 'none') + ';flex:1 1 100%;">' +
+    '<input type="number" class="ce-srv-price-input" placeholder="Цена" value="' + (existing ? existing.price : '') + '">' +
+    '<button class="ce-srv-del">🗑</button>';
+  
+  var catSel = div.querySelector('.ce-srv-cat');
+  var subcatSel = div.querySelector('.ce-srv-subcat');
+  var svcSel = div.querySelector('.ce-srv-svc');
+  var manualCheck = div.querySelector('.ce-srv-manual');
+  var delBtn = div.querySelector('.ce-srv-del');
+  
+  catSel.addEventListener('change', function() {
+    var val = this.value;
+    subcatSel.innerHTML = ceSubcatOptions(val, '');
+    subcatSel.disabled = !val;
+    svcSel.innerHTML = '<option value="">—</option>';
+    svcSel.disabled = true;
+  });
+  
+  subcatSel.addEventListener('change', function() {
+    var val = this.value;
+    var cid = catSel.value;
+    svcSel.innerHTML = ceSvcOptions(cid, val, '');
+    svcSel.disabled = !val;
+  });
+  
+  svcSel.addEventListener('change', function() {
+    var val = this.value;
+    if (val) {
+      var opt = this.options[this.selectedIndex];
+      var nameInput = div.querySelector('.ce-srv-name');
+      if (nameInput) nameInput.value = opt.dataset.name || opt.text;
+    }
+  });
+  
+  manualCheck.addEventListener('change', function() {
+    var selects = div.querySelector('.ce-srv-selects');
+    var nameInput = div.querySelector('.ce-srv-name');
+    if (this.checked) {
+      if (selects) selects.style.display = 'none';
+      if (nameInput) nameInput.style.display = 'block';
+    } else {
+      if (selects) selects.style.display = 'flex';
+      if (nameInput) nameInput.style.display = 'none';
+    }
+  });
+  
+  delBtn.addEventListener('click', function() {
+    div.remove();
+  });
+  
+  if (manual) {
+    var sels = div.querySelector('.ce-srv-selects');
+    if (sels) sels.style.display = 'none';
+  }
+  
+  rows.appendChild(div);
+}
+
+// ============ СОХРАНЕНИЕ РАБОТ ============
+function ceSaveWorks() {
   var carId = document.getElementById('ceWorkCarId').value;
   var contractorId = document.getElementById('ceWorkContractorId').value;
-  var service = document.getElementById('ceWorkService').value.trim();
-  var price = document.getElementById('ceWorkPrice').value;
-  var comment = document.getElementById('ceWorkComment').value.trim();
-  
-  if (!carId || !contractorId || !service) {
-    ceShowStatus('Заполните авто, контрагента и услугу', 'error');
+  if (!carId || !contractorId) {
+    ceShowStatus('Выберите авто и контрагента', 'error');
     return;
   }
   
-  var data = {
-    car_id: parseInt(carId),
-    contractor_id: parseInt(contractorId),
-    service_name: service,
-    price: price ? parseFloat(price) : null,
-    comment: comment || null
-  };
+  var rows = document.querySelectorAll('#ceWorkRows .ce-srv-row');
+  var toSave = [];
   
-  ceShowStatus('Сохранение...', 'loading');
-  fetch(SUPABASE_URL + '/rest/v1/calc_contractor_works', { method: 'POST', headers: ceHeaders(), body: JSON.stringify(data) })
-    .then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+  rows.forEach(function(row) {
+    var id = row.querySelector('.ce-work-id').value;
+    var isManual = row.querySelector('.ce-srv-manual').checked;
+    var svcSelect = row.querySelector('.ce-srv-svc');
+    var serviceId = svcSelect ? svcSelect.value : '';
+    var name = row.querySelector('.ce-srv-name').value.trim();
+    if (!isManual && serviceId) {
+      var opt = svcSelect.options[svcSelect.selectedIndex];
+      if (opt) name = opt.dataset.name || opt.text;
+    }
+    if (!name) return;
+    var price = row.querySelector('.ce-srv-price-input').value;
+    
+    var item = {
+      car_id: parseInt(carId),
+      contractor_id: parseInt(contractorId),
+      service_name: name,
+      service_id: serviceId ? parseInt(serviceId) : null,
+      manual: isManual,
+      price: price ? parseFloat(price) : null
+    };
+    
+    if (id) {
+      item.id = parseInt(id);
+    }
+    toSave.push(item);
+  });
+  
+  ceShowStatus('Сохранение работ...', 'loading');
+  var promises = [];
+  
+  toSave.forEach(function(item){
+    if (item.id) {
+      var d = Object.assign({}, item);
+      delete d.id;
+      promises.push(fetch(SUPABASE_URL + '/rest/v1/calc_contractor_works?id=eq.' + item.id, { method: 'PATCH', headers: ceHeaders(), body: JSON.stringify(d) }));
+    } else {
+      promises.push(fetch(SUPABASE_URL + '/rest/v1/calc_contractor_works', { method: 'POST', headers: ceHeaders(), body: JSON.stringify(item) }));
+    }
+  });
+  
+  Promise.all(promises)
     .then(function() {
       ceCloseWorkModal();
-      ceShowStatus('Работа добавлена', 'success');
+      ceShowStatus('Работы сохранены', 'success');
       ceLoadAll();
     })
     .catch(function(e){ ceShowStatus('Ошибка: ' + e.message, 'error'); });
