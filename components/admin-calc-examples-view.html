@@ -152,22 +152,32 @@ function ceEscape(s) {
 }
 
 // ============ ЗАГРУЗКА ДАННЫХ ============
+var CE_PRICE_CATS = [];
+var CE_PRICE_SUBCATS = [];
+var CE_PRICE_SERVICES = [];
+
 function ceLoadAll() {
   ceShowStatus('Загрузка данных...', 'loading');
   var h = ceHeaders();
-  // Загружаем всё параллельно
+  // Загружаем всё параллельно (включая прайс)
   Promise.all([
     fetch(SUPABASE_URL + '/rest/v1/calc_cars?select=*&order=brand.asc,model.asc', { headers: h }).then(function(r){return r.json();}),
     fetch(SUPABASE_URL + '/rest/v1/calc_estimates?select=*&order=created_at.desc', { headers: h }).then(function(r){return r.json();}),
     fetch(SUPABASE_URL + '/rest/v1/calc_estimate_services?select=*&order=created_at.desc', { headers: h }).then(function(r){return r.json();}),
     fetch(SUPABASE_URL + '/rest/v1/calc_contractor_works?select=*&order=created_at.desc', { headers: h }).then(function(r){return r.json();}),
-    fetch(SUPABASE_URL + '/rest/v1/contractors?select=id,name,category&order=name.asc', { headers: h }).then(function(r){return r.json();})
+    fetch(SUPABASE_URL + '/rest/v1/contractors?select=id,name,category&order=name.asc', { headers: h }).then(function(r){return r.json();}),
+    fetch(SUPABASE_URL + '/rest/v1/service_categories?select=*&order=sort_order.asc,name.asc', { headers: h }).then(function(r){return r.json();}),
+    fetch(SUPABASE_URL + '/rest/v1/service_subcategories?select=*&order=sort_order.asc,name.asc', { headers: h }).then(function(r){return r.json();}),
+    fetch(SUPABASE_URL + '/rest/v1/services?select=*&order=name.asc', { headers: h }).then(function(r){return r.json();})
   ]).then(function(results) {
     CE_CARS = results[0] || [];
     CE_ESTIMATES = results[1] || [];
     CE_SERVICES = results[2] || [];
     CE_WORKS = results[3] || [];
     CE_CONTRACTORS = results[4] || [];
+    CE_PRICE_CATS = results[5] || [];
+    CE_PRICE_SUBCATS = results[6] || [];
+    CE_PRICE_SERVICES = results[7] || [];
     ceShowStatus('', '');
     ceRender();
     ceRenderWorks();
@@ -454,10 +464,64 @@ function ceOpenSrvModal(estId) {
 function ceCloseSrvModal() {
   document.getElementById('ceSrvModal').classList.remove('open');
 }
+// --- Опции для каскадных селектов ---
+function ceCatOptions(selected) {
+  var html = '<option value="">— Категория —</option>';
+  for (var i = 0; i < CE_PRICE_CATS.length; i++) {
+    var cat = CE_PRICE_CATS[i];
+    var sel = (String(cat.id) === String(selected)) ? ' selected' : '';
+    html += '<option value="' + cat.id + '"' + sel + '>' + ceEscape(cat.name) + '</option>';
+  }
+  return html;
+}
+function ceSubcatOptions(catId, selected) {
+  var subs = CE_PRICE_SUBCATS.filter(function(s) { return String(s.category_id) === String(catId); });
+  if (subs.length === 0) return '<option value="">(любая)</option>';
+  var html = '<option value="">— Подкатегория —</option>';
+  for (var i = 0; i < subs.length; i++) {
+    var sel = (String(subs[i].id) === String(selected)) ? ' selected' : '';
+    html += '<option value="' + subs[i].id + '"' + sel + '>' + ceEscape(subs[i].name) + '</option>';
+  }
+  return html;
+}
+function ceSvcOptions(catId, subcatId, selected) {
+  var svcs;
+  if (subcatId) {
+    svcs = CE_PRICE_SERVICES.filter(function(s) { return String(s.subcategory_id) === String(subcatId); });
+  } else {
+    svcs = CE_PRICE_SERVICES.filter(function(s) { return String(s.category_id) === String(catId); });
+  }
+  if (svcs.length === 0) return '<option value="">— Нет услуг —</option>';
+  var html = '<option value="">— Услуга —</option>';
+  for (var i = 0; i < svcs.length; i++) {
+    var sel = (String(svcs[i].id) === String(selected)) ? ' selected' : '';
+    html += '<option value="' + svcs[i].id + '" data-name="' + ceEscape(svcs[i].name) + '"' + sel + '>' + ceEscape(svcs[i].name) + '</option>';
+  }
+  return html;
+}
+
+// --- Каскадные обработчики ---
+function ceOnRowCat(row, val) {
+  row.querySelector('.ce-srv-subcat').innerHTML = ceSubcatOptions(val, '');
+  row.querySelector('.ce-srv-svc').innerHTML = '<option value="">—</option>';
+  row.querySelector('.ce-srv-svc').disabled = !val;
+}
+function ceOnRowSubcat(row, val) {
+  var catId = row.querySelector('.ce-srv-cat').value;
+  row.querySelector('.ce-srv-svc').innerHTML = ceSvcOptions(catId, val, '');
+}
+function ceOnRowSvc(row, val, opt) {
+  // При выборе услуги из прайса подставляем её название
+  if (val && opt) {
+    row.querySelector('.ce-srv-name').value = opt.dataset.name || opt.text;
+  }
+}
+
 function ceAddSrvRow(existing) {
   var rows = document.getElementById('ceSrvRows');
   var div = document.createElement('div');
   div.className = 'ce-srv-row';
+  div.style.flexWrap = 'wrap';
   
   // Селект контактов
   var optHtml = '<option value="">— контакт —</option>';
@@ -465,13 +529,32 @@ function ceAddSrvRow(existing) {
     optHtml += '<option value="' + c.id + '">' + ceEscape(c.name) + '</option>';
   });
   
+  var manual = existing && existing.manual;
+  var catId = existing && existing.service_id ? ceFindCatByServiceId(existing.service_id) : '';
+  var subcatId = existing && existing.service_id ? ceFindSubByServiceId(existing.service_id) : '';
+  
   div.innerHTML = 
     '<input type="hidden" class="ce-srv-id" value="' + (existing ? existing.id : '') + '">' +
-    '<input type="text" class="ce-srv-name" placeholder="Услуга" value="' + ceEscape(existing ? existing.service_name : '') + '">' +
+    '<label class="ce-srv-check" title="Ручной ввод">' +
+      '<input type="checkbox" class="ce-srv-manual"' + (manual ? ' checked' : '') + ' onchange="ceOnManualToggle(this)">' +
+      '<span>✍️</span>' +
+    '</label>' +
+    '<div class="ce-srv-selects" style="display:flex;gap:6px;flex:1 1 100%;flex-wrap:wrap;">' +
+      '<select class="ce-srv-cat" onchange="ceOnRowCat(this.closest(\'.ce-srv-row\'), this.value)" style="flex:1;min-width:120px;">' + ceCatOptions(catId) + '</select>' +
+      '<select class="ce-srv-subcat" onchange="ceOnRowSubcat(this.closest(\'.ce-srv-row\'), this.value)" style="flex:1;min-width:120px;"' + (catId ? '' : ' disabled') + '>' + ceSubcatOptions(catId, subcatId) + '</select>' +
+      '<select class="ce-srv-svc" onchange="ceOnRowSvc(this.closest(\'.ce-srv-row\'), this.value, this.options[this.selectedIndex])" style="flex:1.5;min-width:140px;"' + (catId ? '' : ' disabled') + '>' + ceSvcOptions(catId, subcatId, existing ? existing.service_id : '') + '</select>' +
+    '</div>' +
+    '<input type="text" class="ce-srv-name" placeholder="Название услуги" value="' + ceEscape(existing ? existing.service_name : '') + '" style="display:' + (manual ? 'block' : 'none') + ';flex:1 1 100%;">' +
     '<input type="number" class="ce-srv-price-input" placeholder="Цена" value="' + (existing ? existing.price : '') + '">' +
     '<select class="ce-srv-contact-select">' + optHtml + '</select>' +
     '<input type="number" class="ce-srv-special-input" placeholder="Особая" value="' + (existing ? existing.special_price : '') + '">' +
     '<button class="ce-srv-del" onclick="this.parentElement.remove()">🗑</button>';
+  
+  // Скрываем/показываем селекты в зависимости от manual
+  if (manual) {
+    var sels = div.querySelector('.ce-srv-selects');
+    if (sels) sels.style.display = 'none';
+  }
   
   if (existing && existing.contact_id) {
     var sel = div.querySelector('.ce-srv-contact-select');
@@ -479,6 +562,32 @@ function ceAddSrvRow(existing) {
   }
   
   rows.appendChild(div);
+}
+
+// Найти категорию по service_id
+function ceFindCatByServiceId(svcId) {
+  var svc = CE_PRICE_SERVICES.find(function(s){return String(s.id) === String(svcId);});
+  return svc ? svc.category_id : '';
+}
+function ceFindSubByServiceId(svcId) {
+  var svc = CE_PRICE_SERVICES.find(function(s){return String(s.id) === String(svcId);});
+  return svc ? svc.subcategory_id : '';
+}
+
+// Тоггл ручного ввода
+function ceOnManualToggle(checkbox) {
+  var row = checkbox.closest('.ce-srv-row');
+  var selects = row.querySelector('.ce-srv-selects');
+  var nameInput = row.querySelector('.ce-srv-name');
+  if (checkbox.checked) {
+    // Ручной режим: показываем текстовое поле, скрываем селекты
+    if (selects) selects.style.display = 'none';
+    if (nameInput) nameInput.style.display = 'block';
+  } else {
+    // Режим прайса: показываем селекты, скрываем поле
+    if (selects) selects.style.display = 'flex';
+    if (nameInput) nameInput.style.display = 'none';
+  }
 }
 function ceSaveServices() {
   var estId = parseInt(document.getElementById('ceSrvEstimateId').value);
@@ -490,7 +599,15 @@ function ceSaveServices() {
   
   rows.forEach(function(row) {
     var id = row.querySelector('.ce-srv-id').value;
+    var isManual = row.querySelector('.ce-srv-manual').checked;
+    var svcSelect = row.querySelector('.ce-srv-svc');
+    var serviceId = svcSelect ? svcSelect.value : '';
     var name = row.querySelector('.ce-srv-name').value.trim();
+    // Если не ручной режим — берём название из селекта услуги
+    if (!isManual && serviceId) {
+      var opt = svcSelect.options[svcSelect.selectedIndex];
+      if (opt) name = opt.dataset.name || opt.text;
+    }
     if (!name) return;
     var price = row.querySelector('.ce-srv-price-input').value;
     var contactId = row.querySelector('.ce-srv-contact-select').value;
@@ -499,6 +616,8 @@ function ceSaveServices() {
     var item = {
       estimate_id: estId,
       service_name: name,
+      service_id: serviceId ? parseInt(serviceId) : null,
+      manual: isManual,
       price: price ? parseFloat(price) : null,
       contact_id: contactId ? parseInt(contactId) : null,
       special_price: specialPrice ? parseFloat(specialPrice) : null

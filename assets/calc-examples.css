@@ -180,6 +180,22 @@
 }
 .ce-srv-del:hover { background: #ef4444; color: #fafafa; }
 
+/* Чекбокс ручного ввода */
+.ce-srv-check {
+  display: flex; align-items: center; gap: 4px; cursor: pointer;
+  padding: 4px 6px; background: #18181b; border: 1px solid #27272a; border-radius: 6px;
+  font-size: 16px; user-select: none;
+}
+.ce-srv-check input { width: auto; cursor: pointer; }
+
+/* Селекты услуг (каскад) */
+.ce-srv-selects select {
+  padding: 8px 10px; background: #18181b; border: 1px solid #27272a; border-radius: 8px;
+  color: #fafafa; font-size: 13px; font-family: inherit; outline: none;
+}
+.ce-srv-selects select:focus { border-color: #3b82f6; }
+.ce-srv-selects select:disabled { opacity: 0.5; cursor: not-allowed; }
+
 /* === АДАПТИВ === */
 @media (max-width: 700px) {
   .ce-form-row { flex-direction: column; }
