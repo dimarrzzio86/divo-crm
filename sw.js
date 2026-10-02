@@ -1,5 +1,5 @@
 // DIVO CRM — Service Worker (только push-уведомления)
-const CACHE_NAME = 'divo-crm-v233';
+const CACHE_NAME = 'divo-crm-v234';
 
 // Установка Service Worker
 self.addEventListener('install', function(event) {
