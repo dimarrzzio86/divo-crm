@@ -24,7 +24,6 @@ var DIVO_ACCESS_DEFAULT = {
     "admin-contacts":   { "level": 4, "name": "Контакты (адм)",   "icon": "📇", "group": "admin", "url": "admin-contacts.html" },
     "admin-warehouse":  { "level": 4, "name": "Склад (адм)",      "icon": "📦", "group": "admin", "url": "admin-warehouse.html" },
     "admin-prices":     { "level": 4, "name": "Прайсы (адм)",     "icon": "📋", "group": "admin", "url": "admin-prices.html" },
-    "admin-calculator": { "level": 4, "name": "Калькулятор",      "icon": "🧮", "group": "admin", "url": "admin-calculator.html" },
     "admin-tasks":      { "level": 4, "name": "Задачи на сегодня", "icon": "📝", "group": "admin", "url": "admin-tasks.html" },
     "admin-schedule":   { "level": 4, "name": "Настройки графика", "icon": "⚙️", "group": "admin", "url": "admin-schedule.html" },
     "schedule-tasks-btn": { "level": 4, "name": "Кнопка задачи в графике", "icon": "📝", "group": "admin", "url": "" },
@@ -85,7 +84,11 @@ function divoLoadAccessConfig(callback) {
       if (config && config.sections) {
         var merged = {};
         for (var k1 in DIVO_ACCESS_DEFAULT.sections) merged[k1] = DIVO_ACCESS_DEFAULT.sections[k1];
-        for (var k2 in config.sections) merged[k2] = config.sections[k2];
+        for (var k2 in config.sections) {
+          // Пропускаем удалённые разделы
+          if (k2 === 'admin-calculator') continue;
+          merged[k2] = config.sections[k2];
+        }
         config.sections = merged;
       } else {
         config = DIVO_ACCESS_DEFAULT;
