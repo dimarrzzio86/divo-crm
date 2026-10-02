@@ -1,11 +1,10 @@
 <!-- Раздел: Примеры расчётов (ПРОСМОТР) -->
-<!-- Авто → услуги (прайс) + работы контрагентов -->
 
 <div class="ce-page">
   <div class="ce-header">
     <div>
       <h1 class="ce-title">🧞 Примеры расчётов</h1>
-      <div class="ce-subtitle">Авто • услуги • работы контрагентов</div>
+      <div class="ce-subtitle">Выберите авто для просмотра услуг и работ</div>
     </div>
   </div>
 
@@ -18,42 +17,43 @@
 
   <!-- ВКЛАДКА: АВТО И УСЛУГИ -->
   <div id="ceTabCars">
-    <!-- Выбор авто через каскадные селекты -->
-    <div class="ce-selector-wrap" id="ceCarSelector">
-      <div class="ce-selector-title">🔍 Выберите автомобиль для просмотра услуг:</div>
-      <div class="ce-selector-row">
-        <div class="ce-selector-field">
-          <label class="ce-label">Марка</label>
-          <select class="ce-select" id="ceSelBrand" onchange="ceOnBrandChange()">
-            <option value="">— все марки —</option>
-          </select>
-        </div>
-        <div class="ce-selector-field">
-          <label class="ce-label">Модель</label>
-          <select class="ce-select" id="ceSelModel" onchange="ceOnModelChange()" disabled>
-            <option value="">— все модели —</option>
-          </select>
-        </div>
-        <div class="ce-selector-field">
-          <label class="ce-label">Поколение</label>
-          <select class="ce-select" id="ceSelGen" onchange="ceRenderFiltered()" disabled>
-            <option value="">— все поколения —</option>
-          </select>
-        </div>
-        <button class="ce-btn ce-btn-reset" onclick="ceResetSelector()">↻ Сбросить</button>
+    <!-- Кнопка выбора авто как на auto.ru -->
+    <div class="ce-pick-wrap">
+      <div class="ce-pick-current" id="cePickDisplay" onclick="ceOpenPicker()">
+        <span class="ce-pick-icon">🔍</span>
+        <span class="ce-pick-text" id="cePickText">Выбрать марку</span>
+        <span class="ce-pick-arrow">▼</span>
       </div>
+      <button class="ce-pick-reset" id="cePickReset" onclick="ceResetPick()" style="display:none;">✕ Сбросить</button>
     </div>
 
-    <!-- Список авто (сгруппированный) -->
+    <!-- Список -->
     <div class="ce-list" id="ceList">
       <div class="ce-loading">Загрузка...</div>
     </div>
   </div>
 
-  <!-- ВКЛАДКА: РАБОТЫ КОНТРАГЕНТОВ -->
+  <!-- ВКЛАДКА: РАБОТЫ -->
   <div id="ceTabWorks" style="display:none;">
     <div class="ce-list" id="ceWorksList">
       <div class="ce-loading">Загрузка...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Модалка выбора авто (как на auto.ru) -->
+<div class="ce-picker-overlay" id="cePicker" onclick="if(event.target===this)ceClosePicker()">
+  <div class="ce-picker">
+    <div class="ce-picker-head">
+      <h3 class="ce-picker-title" id="cePickerTitle">Выберите марку</h3>
+      <button class="ce-picker-close" onclick="ceClosePicker()">✕</button>
+    </div>
+    <div class="ce-picker-search">
+      <input type="text" id="cePickerSearch" placeholder="Поиск..." oninput="cePickerSearchInput()">
+    </div>
+    <div class="ce-picker-body" id="cePickerBody"></div>
+    <div class="ce-picker-foot">
+      <button class="ce-picker-back" id="cePickerBack" onclick="cePickerBack()" style="display:none;">← Назад</button>
     </div>
   </div>
 </div>
@@ -66,13 +66,14 @@ var CE_CONTRACTORS = [];
 var CE_PRICE_CATS = [];
 var CE_PRICE_SUBCATS = [];
 var CE_PRICE_SERVICES = [];
-var CE_SELECTED_BRAND = '';
-var CE_SELECTED_MODEL = '';
-var CE_SELECTED_GEN = '';
-var CE_TAB = 'cars';
+var CE_PICK_BRAND = '';
+var CE_PICK_MODEL = '';
+var CE_PICK_GEN = '';
+var CE_PICK_STAGE = 'brand';
+CE_TAB = 'cars';
 
 function ceHeaders() {
-  return { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' };
+  return { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
 }
 
 function ceEscape(s) {
@@ -92,7 +93,7 @@ function ceShowStatus(msg, type) {
 function ceLoadAll() {
   var h = ceHeaders();
   Promise.all([
-    fetch(SUPABASE_URL + '/rest/v1/calc_cars?select=*&order=brand.asc,model.asc', { headers: h }).then(function(r){return r.json();}),
+    fetch(SUPABASE_URL + '/rest/v1/calc_cars?select=*&order=brand.asc,model.asc,year_from.desc', { headers: h }).then(function(r){return r.json();}),
     fetch(SUPABASE_URL + '/rest/v1/calc_car_services?select=*&order=created_at.asc', { headers: h }).then(function(r){return r.json();}),
     fetch(SUPABASE_URL + '/rest/v1/calc_contractor_works?select=*&order=created_at.desc', { headers: h }).then(function(r){return r.json();}),
     fetch(SUPABASE_URL + '/rest/v1/contractors?select=id,name,category&order=name.asc', { headers: h }).then(function(r){return r.json();}),
@@ -107,8 +108,7 @@ function ceLoadAll() {
     CE_PRICE_CATS = results[4] || [];
     CE_PRICE_SUBCATS = results[5] || [];
     CE_PRICE_SERVICES = results[6] || [];
-    ceFillBrandSelect();
-    ceRenderFiltered();
+    ceRenderList();
     ceRenderWorks();
   }).catch(function(e) {
     console.error('CE load error:', e);
@@ -117,131 +117,257 @@ function ceLoadAll() {
   });
 }
 
-// ============ КАСКАДНЫЕ СЕЛЕКТЫ ============
-function ceFillBrandSelect() {
-  var sel = document.getElementById('ceSelBrand');
-  if (!sel) return;
-  var brands = [];
-  var seen = {};
-  for (var i = 0; i < CE_CARS.length; i++) {
-    var b = CE_CARS[i].brand;
-    var key = b.toLowerCase().trim();
-    if (!seen[key]) {
-      seen[key] = true;
-      brands.push(b);
-    }
-  }
-  brands.sort();
-  sel.innerHTML = '<option value="">— все марки —</option>';
-  for (var i = 0; i < brands.length; i++) {
-    sel.innerHTML += '<option value="' + ceEscape(brands[i]) + '">' + ceEscape(brands[i]) + '</option>';
-  }
+// ============ ПИКЕР (КАК НА AUTO.RU) ============
+function ceOpenPicker() {
+  CE_PICK_STAGE = 'brand';
+  document.getElementById('cePickerSearch').value = '';
+  cePickerRender();
+  document.getElementById('cePicker').classList.add('open');
 }
 
-function ceOnBrandChange() {
-  CE_SELECTED_BRAND = document.getElementById('ceSelBrand').value;
-  CE_SELECTED_MODEL = '';
-  CE_SELECTED_GEN = '';
+function ceClosePicker() {
+  document.getElementById('cePicker').classList.remove('open');
+}
+
+function cePickerSearchInput() {
+  cePickerRender();
+}
+
+function cePickerRender() {
+  var body = document.getElementById('cePickerBody');
+  var title = document.getElementById('cePickerTitle');
+  var backBtn = document.getElementById('cePickerBack');
+  var q = (document.getElementById('cePickerSearch').value || '').toLowerCase().trim();
   
-  var modelSel = document.getElementById('ceSelModel');
-  var genSel = document.getElementById('ceSelGen');
-  
-  if (CE_SELECTED_BRAND) {
-    // Заполнить модели выбранной марки
-    var models = [];
+  if (CE_PICK_STAGE === 'brand') {
+    title.textContent = 'Выберите марку';
+    backBtn.style.display = 'none';
+    
+    // Список марок
+    var brands = [];
     var seen = {};
     for (var i = 0; i < CE_CARS.length; i++) {
-      if (CE_CARS[i].brand.toLowerCase().trim() === CE_SELECTED_BRAND.toLowerCase().trim()) {
+      var b = CE_CARS[i].brand;
+      var key = b.toLowerCase().trim();
+      if (!seen[key]) { seen[key] = true; brands.push(b); }
+    }
+    brands.sort();
+    if (q) brands = brands.filter(function(b){ return b.toLowerCase().indexOf(q) !== -1; });
+    
+    // Группировка по первой букве
+    var groups = {};
+    var groupKeys = [];
+    for (var i = 0; i < brands.length; i++) {
+      var first = brands[i].charAt(0).toUpperCase();
+      if (!groups[first]) { groups[first] = []; groupKeys.push(first); }
+      groups[first].push(brands[i]);
+    }
+    groupKeys.sort();
+    
+    var html = '';
+    for (var gi = 0; gi < groupKeys.length; gi++) {
+      var letter = groupKeys[gi];
+      var items = groups[letter];
+      html += '<div class="ce-picker-letter">' + ceEscape(letter) + '</div>';
+      html += '<div class="ce-picker-grid">';
+      for (var i = 0; i < items.length; i++) {
+        var count = CE_CARS.filter(function(c){ return c.brand.toLowerCase().trim() === items[i].toLowerCase().trim(); }).length;
+        html += '<div class="ce-picker-item" onclick="cePickBrand(\'' + ceEscape(items[i]).replace(/'/g,"\\'") + '\')">';
+        html += '<span class="ce-picker-item-name">' + ceEscape(items[i]) + '</span>';
+        html += '<span class="ce-picker-item-count">' + count + '</span>';
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+    body.innerHTML = html;
+    
+  } else if (CE_PICK_STAGE === 'model') {
+    title.textContent = CE_PICK_BRAND + ' — выберите модель';
+    backBtn.style.display = '';
+    backBtn.textContent = '← К маркам';
+    
+    var models = [];
+    var seenM = {};
+    for (var i = 0; i < CE_CARS.length; i++) {
+      if (CE_CARS[i].brand.toLowerCase().trim() === CE_PICK_BRAND.toLowerCase().trim()) {
         var m = CE_CARS[i].model;
         var key = m.toLowerCase().trim();
-        if (!seen[key]) { seen[key] = true; models.push(m); }
+        if (!seenM[key]) { seenM[key] = true; models.push(m); }
       }
     }
     models.sort();
-    modelSel.innerHTML = '<option value="">— все модели —</option>';
-    for (var i = 0; i < models.length; i++) {
-      modelSel.innerHTML += '<option value="' + ceEscape(models[i]) + '">' + ceEscape(models[i]) + '</option>';
+    if (q) models = models.filter(function(m){ return m.toLowerCase().indexOf(q) !== -1; });
+    
+    var html = '';
+    if (!models.length) {
+      html = '<div class="ce-picker-empty">Нет моделей</div>';
+    } else {
+      html += '<div class="ce-picker-grid">';
+      for (var i = 0; i < models.length; i++) {
+        var count = CE_CARS.filter(function(c){ 
+          return c.brand.toLowerCase().trim() === CE_PICK_BRAND.toLowerCase().trim() && 
+                 c.model.toLowerCase().trim() === models[i].toLowerCase().trim(); 
+        }).length;
+        html += '<div class="ce-picker-item" onclick="cePickModel(\'' + ceEscape(models[i]).replace(/'/g,"\\'") + '\')">';
+        html += '<span class="ce-picker-item-name">' + ceEscape(models[i]) + '</span>';
+        html += '<span class="ce-picker-item-count">' + count + '</span>';
+        html += '</div>';
+      }
+      html += '</div>';
     }
-    modelSel.disabled = false;
-  } else {
-    modelSel.innerHTML = '<option value="">— все модели —</option>';
-    modelSel.disabled = true;
-  }
-  genSel.innerHTML = '<option value="">— все поколения —</option>';
-  genSel.disabled = true;
-  
-  ceRenderFiltered();
-}
-
-function ceOnModelChange() {
-  CE_SELECTED_MODEL = document.getElementById('ceSelModel').value;
-  CE_SELECTED_GEN = '';
-  
-  var genSel = document.getElementById('ceSelGen');
-  
-  if (CE_SELECTED_MODEL) {
-    // Заполнить поколения выбранной марки+модели
-    var cars = CE_CARS.filter(function(c) {
-      return c.brand.toLowerCase().trim() === CE_SELECTED_BRAND.toLowerCase().trim() &&
-             c.model.toLowerCase().trim() === CE_SELECTED_MODEL.toLowerCase().trim();
+    body.innerHTML = html;
+    
+  } else if (CE_PICK_STAGE === 'gen') {
+    title.textContent = CE_PICK_BRAND + ' ' + CE_PICK_MODEL + ' — поколение';
+    backBtn.style.display = '';
+    backBtn.textContent = '← К моделям';
+    
+    var cars = CE_CARS.filter(function(c){
+      return c.brand.toLowerCase().trim() === CE_PICK_BRAND.toLowerCase().trim() &&
+             c.model.toLowerCase().trim() === CE_PICK_MODEL.toLowerCase().trim();
     });
-    genSel.innerHTML = '<option value="">— все поколения —</option>';
-    for (var i = 0; i < cars.length; i++) {
-      var car = cars[i];
-      var genInfo = ceCarGenInfo(car) || 'Базовая';
-      genSel.innerHTML += '<option value="' + car.id + '">' + ceEscape(genInfo) + '</option>';
+    if (q) cars = cars.filter(function(c){ 
+      var info = ceCarGenInfo(c).toLowerCase();
+      return info.indexOf(q) !== -1;
+    });
+    
+    var html = '';
+    if (!cars.length) {
+      html = '<div class="ce-picker-empty">Нет поколений</div>';
+    } else {
+      html += '<div class="ce-picker-list">';
+      for (var i = 0; i < cars.length; i++) {
+        var car = cars[i];
+        var info = ceCarGenInfo(car) || 'Базовая версия';
+        var classInfo = car.class ? ' • Класс ' + car.class : '';
+        html += '<div class="ce-picker-item ce-picker-item-row" onclick="cePickGen(' + car.id + ', \'' + ceEscape(info).replace(/'/g,"\\'") + '\')">';
+        html += '<span class="ce-picker-item-name">' + ceEscape(info) + classInfo + '</span>';
+        html += '<span class="ce-picker-item-arrow">▶</span>';
+        html += '</div>';
+      }
+      html += '</div>';
     }
-    genSel.disabled = false;
-  } else {
-    genSel.innerHTML = '<option value="">— все поколения —</option>';
-    genSel.disabled = true;
+    body.innerHTML = html;
   }
-  
-  ceRenderFiltered();
 }
 
-function ceResetSelector() {
-  document.getElementById('ceSelBrand').value = '';
-  document.getElementById('ceSelModel').value = '';
-  document.getElementById('ceSelGen').value = '';
-  document.getElementById('ceSelModel').disabled = true;
-  document.getElementById('ceSelGen').disabled = true;
-  CE_SELECTED_BRAND = '';
-  CE_SELECTED_MODEL = '';
-  CE_SELECTED_GEN = '';
-  ceRenderFiltered();
+function cePickBrand(brand) {
+  CE_PICK_BRAND = brand;
+  CE_PICK_MODEL = '';
+  CE_PICK_GEN = '';
+  CE_PICK_STAGE = 'model';
+  document.getElementById('cePickerSearch').value = '';
+  cePickerRender();
 }
 
-// ============ ГРУППИРОВКА ============
-function ceGroupCarsFiltered() {
+function cePickModel(model) {
+  CE_PICK_MODEL = model;
+  CE_PICK_GEN = '';
+  CE_PICK_STAGE = 'gen';
+  document.getElementById('cePickerSearch').value = '';
+  cePickerRender();
+}
+
+function cePickGen(carId, info) {
+  CE_PICK_GEN = carId;
+  ceClosePicker();
+  ceUpdatePickDisplay();
+  ceRenderList();
+}
+
+function cePickerBack() {
+  if (CE_PICK_STAGE === 'gen') {
+    CE_PICK_STAGE = 'model';
+    CE_PICK_GEN = '';
+  } else if (CE_PICK_STAGE === 'model') {
+    CE_PICK_STAGE = 'brand';
+    CE_PICK_BRAND = '';
+    CE_PICK_MODEL = '';
+  }
+  document.getElementById('cePickerSearch').value = '';
+  cePickerRender();
+}
+
+function ceUpdatePickDisplay() {
+  var text = document.getElementById('cePickText');
+  var resetBtn = document.getElementById('cePickReset');
+  if (CE_PICK_GEN) {
+    var car = CE_CARS.find(function(c){ return c.id === CE_PICK_GEN; });
+    if (car) {
+      var info = ceCarGenInfo(car);
+      text.textContent = car.brand + ' ' + car.model + (info ? ' ' + info : '');
+    }
+    resetBtn.style.display = '';
+  } else if (CE_PICK_MODEL) {
+    text.textContent = CE_PICK_BRAND + ' ' + CE_PICK_MODEL + ' (все поколения)';
+    resetBtn.style.display = '';
+  } else if (CE_PICK_BRAND) {
+    text.textContent = CE_PICK_BRAND + ' (все модели)';
+    resetBtn.style.display = '';
+  } else {
+    text.textContent = 'Выбрать марку';
+    resetBtn.style.display = 'none';
+  }
+}
+
+function ceResetPick() {
+  CE_PICK_BRAND = '';
+  CE_PICK_MODEL = '';
+  CE_PICK_GEN = '';
+  ceUpdatePickDisplay();
+  ceRenderList();
+}
+
+// ============ ГРУППИРОВКА + ФИЛЬТР ============
+function ceCarGenInfo(car) {
+  var parts = [];
+  if (car.generation) parts.push(car.generation);
+  if (car.year_from || car.year_to) parts.push((car.year_from || '?') + '–' + (car.year_to || 'н.в.'));
+  return parts.join(' • ');
+}
+
+function getModelWord(n) {
+  if (n === 1) return 'ь';
+  if (n >= 2 && n <= 4) return 'и';
+  return 'ей';
+}
+
+function ceGetFilteredCars() {
   var filtered = CE_CARS.slice();
+  if (CE_PICK_BRAND) {
+    filtered = filtered.filter(function(c){ return c.brand.toLowerCase().trim() === CE_PICK_BRAND.toLowerCase().trim(); });
+  }
+  if (CE_PICK_MODEL) {
+    filtered = filtered.filter(function(c){ return c.model.toLowerCase().trim() === CE_PICK_MODEL.toLowerCase().trim(); });
+  }
+  if (CE_PICK_GEN) {
+    filtered = filtered.filter(function(c){ return c.id === CE_PICK_GEN; });
+  }
+  return filtered;
+}
+
+function ceRenderList() {
+  var list = document.getElementById('ceList');
+  if (!list) return;
   
-  // Фильтр по марке
-  if (CE_SELECTED_BRAND) {
-    filtered = filtered.filter(function(c) {
-      return c.brand.toLowerCase().trim() === CE_SELECTED_BRAND.toLowerCase().trim();
-    });
-  }
-  // Фильтр по модели
-  if (CE_SELECTED_MODEL) {
-    filtered = filtered.filter(function(c) {
-      return c.model.toLowerCase().trim() === CE_SELECTED_MODEL.toLowerCase().trim();
-    });
-  }
-  // Фильтр по поколению
-  if (CE_SELECTED_GEN) {
-    var genId = parseInt(CE_SELECTED_GEN);
-    filtered = filtered.filter(function(c) { return c.id === genId; });
+  if (!CE_CARS.length) {
+    list.innerHTML = '<div class="ce-empty">Пока нет примеров расчётов</div>';
+    return;
   }
   
-  // Сортировка
-  filtered.sort(function(a, b) {
-    var ba = (a.brand || '').toLowerCase();
-    var bb = (b.brand || '').toLowerCase();
+  var cars = ceGetFilteredCars();
+  
+  if (!cars.length) {
+    list.innerHTML = '<div class="ce-empty">Нет авто по выбранным критериям</div>';
+    return;
+  }
+  
+  // Группировка
+  cars.sort(function(a, b) {
+    var ba = (a.brand || '').toLowerCase(), bb = (b.brand || '').toLowerCase();
     if (ba < bb) return -1;
     if (ba > bb) return 1;
-    var ma = (a.model || '').toLowerCase();
-    var mb = (b.model || '').toLowerCase();
+    var ma = (a.model || '').toLowerCase(), mb = (b.model || '').toLowerCase();
     if (ma < mb) return -1;
     if (ma > mb) return 1;
     return (b.year_from || 0) - (a.year_from || 0);
@@ -249,8 +375,8 @@ function ceGroupCarsFiltered() {
   
   var brands = [];
   var brandMap = {};
-  for (var i = 0; i < filtered.length; i++) {
-    var car = filtered[i];
+  for (var i = 0; i < cars.length; i++) {
+    var car = cars[i];
     var bKey = (car.brand || '').toLowerCase().trim();
     if (!brandMap[bKey]) {
       brandMap[bKey] = { brand: car.brand, models: {} };
@@ -266,84 +392,55 @@ function ceGroupCarsFiltered() {
     for (var mk in brands[i].models) modelArr.push(brands[i].models[mk]);
     brands[i].models = modelArr;
   }
-  return brands;
-}
-
-function ceCarGenInfo(car) {
-  var parts = [];
-  if (car.generation) parts.push(car.generation);
-  if (car.year_from || car.year_to) parts.push((car.year_from || '?') + '–' + (car.year_to || 'н.в.'));
-  return parts.join(' • ');
-}
-
-function getModelWord(n) {
-  if (n === 1) return 'ь';
-  if (n >= 2 && n <= 4) return 'и';
-  return 'ей';
-}
-
-// ============ РЕНДЕР: АВТО + УСЛУГИ ============
-function ceRenderFiltered() {
-  var list = document.getElementById('ceList');
-  if (!list) return;
-  
-  if (!CE_CARS.length) {
-    list.innerHTML = '<div class="ce-empty">Пока нет примеров расчётов</div>';
-    return;
-  }
-  
-  var brands = ceGroupCarsFiltered();
-  
-  if (!brands.length) {
-    list.innerHTML = '<div class="ce-empty">Нет авто по выбранным критериям</div>';
-    return;
-  }
   
   var html = '';
-  
   for (var bi = 0; bi < brands.length; bi++) {
     var brand = brands[bi];
-    var brandName = brand.brand;
-    
     var totalCars = 0;
-    for (var mi = 0; mi < brand.models.length; mi++) {
-      totalCars += brand.models[mi].cars.length;
+    for (var mi = 0; mi < brand.models.length; mi++) totalCars += brand.models[mi].cars.length;
+    
+    // Если выбрано поколение — не группируем, показываем сразу
+    var skipBrandHeader = CE_PICK_GEN && brands.length === 1 && brand.models.length === 1 && brand.models[0].cars.length === 1;
+    
+    if (!skipBrandHeader) {
+      html += '<div class="ce-car-card" id="ceBrand' + bi + '">';
+      html += '<div class="ce-car-header" onclick="ceToggleBrand(' + bi + ')">';
+      html += '<span class="ce-car-icon">🚗</span>';
+      html += '<div class="ce-car-info">';
+      html += '<div class="ce-car-title">' + ceEscape(brand.brand) + '</div>';
+      html += '<div class="ce-car-sub">' + brand.models.length + ' модел' + getModelWord(brand.models.length) + ' • ' + totalCars + ' авто</div>';
+      html += '</div>';
+      html += '<span class="ce-car-arrow">▶</span>';
+      html += '</div>';
+      html += '<div class="ce-car-body">';
     }
-    
-    html += '<div class="ce-car-card" id="ceBrand' + bi + '">';
-    html += '<div class="ce-car-header" onclick="ceToggleBrand(' + bi + ')">';
-    html += '<span class="ce-car-icon">🚗</span>';
-    html += '<div class="ce-car-info">';
-    html += '<div class="ce-car-title">' + ceEscape(brandName) + '</div>';
-    html += '<div class="ce-car-sub">' + brand.models.length + ' модел' + getModelWord(brand.models.length) + ' • ' + totalCars + ' авто</div>';
-    html += '</div>';
-    html += '<span class="ce-car-arrow">▶</span>';
-    html += '</div>';
-    
-    html += '<div class="ce-car-body">';
     
     for (var mi = 0; mi < brand.models.length; mi++) {
       var model = brand.models[mi];
+      var skipModelHeader = CE_PICK_GEN && brand.models.length === 1 && model.cars.length === 1;
       
-      html += '<div class="ce-model-block" id="ceModel' + bi + '_' + mi + '">';
-      html += '<div class="ce-model-header" onclick="ceToggleModel(' + bi + ',' + mi + ')">';
-      html += '<span class="ce-model-arrow">▶</span>';
-      html += '<span class="ce-model-title">' + ceEscape(model.model) + '</span>';
-      html += '<span class="ce-model-count">' + model.cars.length + ' покол.</span>';
-      html += '</div>';
-      html += '<div class="ce-model-body">';
+      if (!skipModelHeader) {
+        html += '<div class="ce-model-block" id="ceModel' + bi + '_' + mi + '">';
+        html += '<div class="ce-model-header" onclick="ceToggleModel(' + bi + ',' + mi + ')">';
+        html += '<span class="ce-model-arrow">▶</span>';
+        html += '<span class="ce-model-title">' + ceEscape(model.model) + '</span>';
+        html += '<span class="ce-model-count">' + model.cars.length + ' покол.</span>';
+        html += '</div>';
+        html += '<div class="ce-model-body">';
+      }
       
       for (var ci = 0; ci < model.cars.length; ci++) {
         var car = model.cars[ci];
         var services = CE_SERVICES.filter(function(s){ return s.car_id === car.id; });
         var genInfo = ceCarGenInfo(car);
+        var classInfo = car.class ? ' • Класс ' + car.class : '';
         
         html += '<div class="ce-gen-block">';
-        html += '<div class="ce-gen-header"><span class="ce-gen-title">' + ceEscape(genInfo || 'Базовая') + '</span></div>';
+        html += '<div class="ce-gen-header"><span class="ce-gen-title">' + ceEscape(genInfo || 'Базовая версия') + classInfo + '</span></div>';
+        
         if (!services.length) {
           html += '<div class="ce-empty" style="padding:12px;">Нет услуг</div>';
         } else {
-          // Группировка по категории → подкатегории
           var groups = {};
           var groupOrder = [];
           for (var j = 0; j < services.length; j++) {
@@ -401,15 +498,26 @@ function ceRenderFiltered() {
         }
         html += '</div>';
       }
+      
+      if (!skipModelHeader) {
+        html += '</div></div>';
+      }
+    }
+    
+    if (!skipBrandHeader) {
       html += '</div></div>';
     }
-    html += '</div></div>';
   }
   list.innerHTML = html;
+  
+  // Если выбрано конкретное поколение — раскрываем всё автоматически
+  if (CE_PICK_GEN) {
+    var brandEl = document.getElementById('ceBrand0');
+    if (brandEl) brandEl.classList.add('expanded');
+    var modelEl = document.getElementById('ceModel0_0');
+    if (modelEl) modelEl.classList.add('expanded');
+  }
 }
-
-// Старое имя для совместимости
-function ceRender() { ceRenderFiltered(); }
 
 function ceToggleBrand(idx) {
   var el = document.getElementById('ceBrand' + idx);
@@ -424,7 +532,7 @@ function ceToggleSrvCat(key) {
   if (el) el.classList.toggle('expanded');
 }
 
-// ============ РЕНДЕР: Работы контрагентов ============
+// ============ РАБОТЫ ============
 function ceRenderWorks() {
   var list = document.getElementById('ceWorksList');
   if (!list) return;
@@ -433,7 +541,6 @@ function ceRenderWorks() {
     return;
   }
   
-  // Группировка по авто → категория → подкатегория
   var carGroups = {};
   var carOrder = [];
   for (var i = 0; i < CE_WORKS.length; i++) {
@@ -505,9 +612,7 @@ function ceRenderWorks() {
       for (var subId in g.subs) {
         var sub = g.subs[subId];
         html += '<div class="ce-srv-sub-block">';
-        if (sub.name) {
-          html += '<div class="ce-srv-sub-title">' + ceEscape(sub.name) + '</div>';
-        }
+        if (sub.name) html += '<div class="ce-srv-sub-title">' + ceEscape(sub.name) + '</div>';
         html += '<table class="ce-services-table"><thead><tr><th>Услуга</th><th>Контрагент</th><th>Цена</th></tr></thead><tbody>';
         for (var k = 0; k < sub.items.length; k++) {
           var item = sub.items[k];
@@ -523,7 +628,6 @@ function ceRenderWorks() {
       }
       html += '</div></div>';
     }
-    
     html += '</div></div>';
   }
   list.innerHTML = html;
@@ -548,7 +652,6 @@ function ceSwitchTab(tab, btn) {
   if (btn) btn.classList.add('active');
 }
 
-// Инициализация
 if (typeof SUPABASE_URL !== 'undefined') {
   ceLoadAll();
 } else {
