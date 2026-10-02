@@ -12,13 +12,12 @@
   <div id="pushStatus" style="font-size: 11px; color: #71717a; margin-top: 4px;"></div>
 </div>
 
-<!-- Меню: Разделы -->
-<div class="divo-sidebar-menu" id="sb-menu-sections">
-  <div class="divo-sidebar-title" onclick="divoToggleSidebar(this)">
-    <span class="divo-sidebar-title-text">📁 Разделы</span>
-    <span class="divo-sidebar-chevron">▼</span>
-  </div>
-  <div class="divo-sidebar-body">
+<!-- ОДИН ЦЕЛЬНЫЙ БЛОК МЕНЮ -->
+<div class="divo-sidebar-menu divo-sidebar-single" id="sb-menu-main">
+  <div class="divo-sidebar-body" style="display:block;">
+    
+    <!-- Подгруппа: Разделы -->
+    <div class="divo-sidebar-group-label">📁 Разделы</div>
     <a href="admin-contacts" class="divo-menu-item" data-level="4">
       <span class="divo-menu-icon">📇</span>
       <span class="divo-menu-text">Контакты</span>
@@ -26,11 +25,6 @@
     <a href="admin-warehouse" class="divo-menu-item" data-level="4">
       <span class="divo-menu-icon">📦</span>
       <span class="divo-menu-text">Склад</span>
-    </a>
-    <a href="admin-calculator" class="divo-menu-item disabled" data-level="4">
-      <span class="divo-menu-icon">🧮</span>
-      <span class="divo-menu-text">Калькулятор</span>
-      <span class="divo-soon-badge">СКОРО</span>
     </a>
     <a href="admin-tasks" class="divo-menu-item" data-level="4">
       <span class="divo-menu-icon">📝</span>
@@ -44,18 +38,11 @@
       <span class="divo-menu-icon">📅</span>
       <span class="divo-menu-text">График записей</span>
     </a>
-  </div>
-</div>
-
-<!-- Меню: Прайсы -->
-<div class="divo-sidebar-menu" id="sb-menu-prices">
-  <div class="divo-sidebar-title" onclick="divoToggleSidebar(this)">
-    <span class="divo-sidebar-title-text">💰 Прайсы</span>
-    <span class="divo-sidebar-chevron">▼</span>
-  </div>
-  <div class="divo-sidebar-body">
+    
+    <!-- Подгруппа: Прайсы и расчёты -->
+    <div class="divo-sidebar-group-label" style="margin-top:14px;">💰 Прайсы и расчёты</div>
     <a href="admin-prices" class="divo-menu-item" data-level="4">
-      <span class="divo-menu-icon">📋</span>
+      <span class="divo-menu-icon">📊</span>
       <span class="divo-menu-text">Прайсы</span>
     </a>
     <a href="admin-partner-prices" class="divo-menu-item" data-level="4">
@@ -66,24 +53,18 @@
       <span class="divo-menu-icon">🔧</span>
       <span class="divo-menu-text">Услуги партнёров</span>
     </a>
-    <a href="admin-calculator" class="divo-menu-item" data-level="4">
-      <span class="divo-menu-icon">🧮</span>
-      <span class="divo-menu-text">Расчёт стоимости</span>
-    </a>
     <a href="admin-calc-examples" class="divo-menu-item" data-level="4">
-      <span class="divo-menu-icon">🧮</span>
+      <span class="divo-menu-icon">🧞</span>
       <span class="divo-menu-text">Примеры расчётов</span>
     </a>
-  </div>
-</div>
-
-<!-- Меню: Система -->
-<div class="divo-sidebar-menu divo-sidebar-system" id="sb-menu-system">
-  <div class="divo-sidebar-title" onclick="divoToggleSidebar(this)">
-    <span class="divo-sidebar-title-text">⚙️ Система</span>
-    <span class="divo-sidebar-chevron">▼</span>
-  </div>
-  <div class="divo-sidebar-body">
+    <a href="admin-calculator" class="divo-menu-item disabled" data-level="4">
+      <span class="divo-menu-icon">🧮</span>
+      <span class="divo-menu-text">Калькулятор</span>
+      <span class="divo-soon-badge">СКОРО</span>
+    </a>
+    
+    <!-- Подгруппа: Система -->
+    <div class="divo-sidebar-group-label" style="margin-top:14px;">⚙️ Система</div>
     <a href="admin-users" class="divo-menu-item" data-level="5">
       <span class="divo-menu-icon">👤</span>
       <span class="divo-menu-text">Пользователи</span>
@@ -92,6 +73,6 @@
       <span class="divo-menu-icon">🔐</span>
       <span class="divo-menu-text">Доступы разделов</span>
     </a>
+    
   </div>
 </div>
-
