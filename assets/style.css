@@ -267,6 +267,11 @@ html, body {
   min-height: 400px;
   min-width: 0;
 }
+
+/* === АДМИНСКИЕ СТРАНИЦЫ — фон на пару тонов светлее === */
+body.admin-page { background: #141417; }
+body.admin-page .divo-content { background: #1f1f23; border-color: #3f3f46; }
+body.admin-page .divo-layout { background: #18181b; }
 .divo-content-empty {
   text-align: center;
   color: #71717a;
