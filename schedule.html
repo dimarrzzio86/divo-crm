@@ -4,15 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — График записей</title>
-<link rel="manifest" href="/manifest.json?v=186">
-<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png?v=186">
+<link rel="manifest" href="/manifest.json?v=187">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png?v=187">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Диво CRM">
 <meta name="theme-color" content="#0a0a0a">
-<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png?v=186">
-<link rel="stylesheet" href="/assets/style.css?v=186">
-<link rel="stylesheet" href="/assets/auth.css?v=186">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png?v=187">
+<link rel="stylesheet" href="/assets/style.css?v=187">
+<link rel="stylesheet" href="/assets/auth.css?v=187">
 <style>
 /* === СТИЛИ СТРАНИЦЫ ГРАФИКА === */
 .sch-page { padding: 0; }
@@ -480,8 +480,8 @@
   </div>
 </div>
 
-<script src="/components/components.js?v=186"></script>
-<script src="/components/access-config.js?v=186"></script>
+<script src="/components/components.js?v=187"></script>
+<script src="/components/access-config.js?v=187"></script>
 <script>
 // Упрощённая инициализация — надёжно показываем страницу
 function divoInitSchedule() {
@@ -491,7 +491,7 @@ function divoInitSchedule() {
     // Не залогинен — показываем форму входа
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=186')
+    fetch('/components/auth-form.html?v=187')
       .then(function(r){ return r.text(); })
       .then(function(html){
         var c = document.getElementById('divoAuthContainer');
@@ -676,7 +676,7 @@ function todayStr(){
 }
 
 // Текущая дата для навигации
-var currentDate = new Date(2026, 8, 24);
+var currentDate = new Date();
 var currentView = 'month';
 
 function initScheduleCalendar(){
@@ -712,7 +712,7 @@ function initScheduleCalendar(){
     renderView();
   });
   document.getElementById('todayBtn').addEventListener('click', function(){
-    currentDate = new Date(2026, 8, 24);
+    currentDate = new Date();
     renderView();
   });
   document.getElementById('schPopup').addEventListener('click', function(e){
