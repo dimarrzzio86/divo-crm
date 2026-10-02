@@ -79,6 +79,15 @@ function divoLoadAccessConfig(callback) {
       return r.json();
     })
     .then(function(config) {
+      // Мердж: дефолтные секции + загруженные из Supabase (новые секции появляются автоматически)
+      if (config && config.sections) {
+        var merged = {};
+        for (var k1 in DIVO_ACCESS_DEFAULT.sections) merged[k1] = DIVO_ACCESS_DEFAULT.sections[k1];
+        for (var k2 in config.sections) merged[k2] = config.sections[k2];
+        config.sections = merged;
+      } else {
+        config = DIVO_ACCESS_DEFAULT;
+      }
       DIVO_ACCESS_CONFIG = config;
       DIVO_ACCESS_LOADING = false;
       if (callback) callback(config);
