@@ -49,6 +49,18 @@ html, body {
 }
 
 /* ============ БОКОВОЕ МЕНЮ ============ */
+
+/* === Подгруппы в сайдбаре (один блок) === */
+.divo-sidebar-single .divo-sidebar-body {
+  display: block !important;
+}
+.divo-sidebar-group-label {
+  font-size: 11px; font-weight: 700; color: #71717a;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 10px 12px 4px; margin-top: 4px;
+}
+.divo-sidebar-group-label:first-child { margin-top: 0; }
+
 .divo-sidebar {
   width: 240px;
   flex-shrink: 0;
@@ -291,7 +303,19 @@ body.admin-page .divo-layout { background: #18181b; }
 /* ============ АДАПТИВ ============ */
 @media (max-width: 700px) {
   .divo-body { flex-direction: column; }
-  .divo-sidebar { width: 100%; }
+  
+/* === Подгруппы в сайдбаре (один блок) === */
+.divo-sidebar-single .divo-sidebar-body {
+  display: block !important;
+}
+.divo-sidebar-group-label {
+  font-size: 11px; font-weight: 700; color: #71717a;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 10px 12px 4px; margin-top: 4px;
+}
+.divo-sidebar-group-label:first-child { margin-top: 0; }
+
+.divo-sidebar { width: 100%; }
   .divo-menu-item { padding: 14px; }
   .divo-title { font-size: 22px; }
   .divo-subtitle { font-size: 11px; }
