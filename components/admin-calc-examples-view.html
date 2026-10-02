@@ -135,7 +135,7 @@ var CE_EDIT_EST_ID = null;
 var CE_EDIT_WORK_ID = null;
 
 function ceHeaders() {
-  return { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+  return { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
 }
 
 function ceShowStatus(msg, type) {
