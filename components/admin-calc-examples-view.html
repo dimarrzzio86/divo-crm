@@ -60,6 +60,14 @@
         <input type="number" class="ce-input" id="ceYearTo" placeholder="2024">
       </div>
     </div>
+    <label class="ce-label">Класс авто *</label>
+    <select class="ce-select" id="ceCarClass">
+      <option value="">— выберите —</option>
+      <option value="1">1 класс</option>
+      <option value="2">2 класс</option>
+      <option value="3">3 класс</option>
+      <option value="4">4 класс</option>
+    </select>
     <label class="ce-label">Комментарий</label>
     <textarea class="ce-textarea" id="ceCarComment" placeholder="Заметка об авто..."></textarea>
     <div class="ce-modal-actions">
@@ -548,7 +556,7 @@ function ceSwitchTab(tab, btn) {
 function ceOpenCarModal() {
   CE_EDIT_CAR_ID = null;
   document.getElementById('ceCarModalTitle').textContent = 'Новое авто';
-  ['ceBrand','ceModel','ceGeneration','ceYearFrom','ceYearTo','ceCarComment'].forEach(function(id){
+  ['ceBrand','ceModel','ceGeneration','ceYearFrom','ceYearTo','ceCarComment','ceCarClass'].forEach(function(id){
     document.getElementById(id).value = '';
   });
   document.getElementById('ceCarModal').classList.add('open');
@@ -569,6 +577,8 @@ function ceEditCar(id) {
   document.getElementById('ceYearFrom').value = car.year_from || '';
   document.getElementById('ceYearTo').value = car.year_to || '';
   document.getElementById('ceCarComment').value = car.comment || '';
+  var ceCarClassEl = document.getElementById('ceCarClass');
+  if (ceCarClassEl) ceCarClassEl.value = car.class || '';
   document.getElementById('ceCarModal').classList.add('open');
 }
 
@@ -583,7 +593,8 @@ function ceSaveCar() {
     generation: document.getElementById('ceGeneration').value.trim() || null,
     year_from: document.getElementById('ceYearFrom').value ? parseInt(document.getElementById('ceYearFrom').value) : null,
     year_to: document.getElementById('ceYearTo').value ? parseInt(document.getElementById('ceYearTo').value) : null,
-    comment: document.getElementById('ceCarComment').value.trim() || null
+    comment: document.getElementById('ceCarComment').value.trim() || null,
+    class: document.getElementById('ceCarClass') ? (document.getElementById('ceCarClass').value ? parseInt(document.getElementById('ceCarClass').value) : null) : null
   };
   
   var method = CE_EDIT_CAR_ID ? 'PATCH' : 'POST';
@@ -697,6 +708,7 @@ function ceAddSrvRow(existing) {
     '</div>' +
     '<input type="text" class="ce-srv-name" placeholder="Название услуги" value="' + ceEscape(existing ? existing.service_name : '') + '" style="display:' + (manual ? 'block' : 'none') + ';flex:1 1 100%;">' +
     '<input type="number" class="ce-srv-price-input" placeholder="Цена" value="' + (existing ? existing.price : '') + '">' +
+    '<input type="text" class="ce-srv-comment-input" placeholder="Комментарий" value="' + ceEscape(existing ? existing.comment : '') + '" style="flex:1 1 100%;">' +
     '<button class="ce-srv-del">🗑</button>';
   
   var catSel = div.querySelector('.ce-srv-cat');
@@ -887,6 +899,7 @@ function ceAddWorkRow(existing) {
     '</div>' +
     '<input type="text" class="ce-srv-name" placeholder="Название услуги" value="' + ceEscape(existing ? existing.service_name : '') + '" style="display:' + (manual ? 'block' : 'none') + ';flex:1 1 100%;">' +
     '<input type="number" class="ce-srv-price-input" placeholder="Цена" value="' + (existing ? existing.price : '') + '">' +
+    '<input type="text" class="ce-srv-comment-input" placeholder="Комментарий" value="' + ceEscape(existing ? existing.comment : '') + '" style="flex:1 1 100%;">' +
     '<button class="ce-srv-del">🗑</button>';
   
   var catSel = div.querySelector('.ce-srv-cat');
