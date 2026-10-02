@@ -185,7 +185,7 @@
     var day = String(d.getDate()).padStart(2, '0');
     return year + '-' + month + '-' + day;
   }
-  var currentDate = toLocalDateStr(new Date());
+  var currentDate = (typeof window.DIVO_TASKS_DATE !== 'undefined' && window.DIVO_TASKS_DATE) ? window.DIVO_TASKS_DATE : toLocalDateStr(new Date());
 
   function $(id) { return document.getElementById(id); }
   function showStatus(msg, type) { var s = $('dtStatus'); s.textContent = msg; s.className = 'dt-status show ' + type; }
