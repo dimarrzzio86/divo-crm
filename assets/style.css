@@ -63,6 +63,7 @@ html, body {
   border: 1.5px solid #27272a;
   border-radius: 16px;
   padding: 16px 18px;
+  text-align: center;
 }
 .divo-greeting-label {
   font-size: 11px;
@@ -70,16 +71,24 @@ html, body {
   text-transform: uppercase;
   letter-spacing: 2px;
   font-weight: 600;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
-.divo-greeting-text {
-  font-size: 15px;
+.divo-greeting-name {
+  font-size: 18px;
   color: #fafafa;
-  font-weight: 500;
+  font-weight: 800;
 }
-.divo-greeting-text b {
-  color: #22c55e;
-  font-weight: 700;
+.divo-greeting-date {
+  font-size: 13px;
+  color: #60a5fa;
+  margin-top: 4px;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  font-weight: 600;
+  transition: color .15s;
+}
+.divo-greeting-date:hover {
+  color: #93c5fd;
 }
 .divo-greeting-row {
   display: flex;
@@ -329,4 +338,141 @@ html, body {
 }
 .divo-settings-text {
   white-space: nowrap;
+}
+
+
+/* ============ POPUP С ЗАДАЧАМИ НА ДЕНЬ ============ */
+.divo-day-popup-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.divo-day-popup-overlay.open {
+  display: flex;
+}
+.divo-day-popup {
+  background: #0a0a0a;
+  border: 1.5px solid #27272a;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 480px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.divo-day-popup-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #fafafa;
+  text-align: center;
+}
+.divo-day-popup-sub {
+  font-size: 14px;
+  color: #a1a1aa;
+  text-align: center;
+  margin-bottom: 20px;
+  margin-top: 4px;
+}
+.divo-day-popup-empty {
+  text-align: center;
+  color: #52525b;
+  font-size: 15px;
+  padding: 20px;
+}
+.divo-day-popup-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.divo-day-task-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #18181b;
+  border: 1px solid #27272a;
+  border-radius: 10px;
+}
+.divo-day-task-item.done {
+  opacity: 0.5;
+}
+.divo-day-task-item.done .divo-day-task-text {
+  text-decoration: line-through;
+}
+.divo-day-task-check {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  border: 2px solid #3f3f46;
+  background: transparent;
+  flex-shrink: 0;
+}
+.divo-day-task-check.checked {
+  background: #22c55e;
+  border-color: #22c55e;
+}
+.divo-day-task-check.checked::after {
+  content: '✓';
+  color: #0a0a0a;
+  font-size: 14px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+.divo-day-task-text {
+  flex: 1;
+  font-size: 15px;
+  color: #fafafa;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.divo-day-task-time {
+  font-size: 12px;
+  color: #fbbf24;
+  background: #1a1410;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.divo-day-popup-close {
+  display: block;
+  width: 100%;
+  margin-top: 20px;
+  padding: 10px;
+  background: #27272a;
+  border: 1px solid #3f3f46;
+  color: #d4d4d8;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .15s;
+}
+.divo-day-popup-close:hover {
+  background: #3f3f46;
+  color: #fafafa;
+}
+.divo-day-popup-goto {
+  display: block;
+  text-align: center;
+  margin-top: 10px;
+  color: #60a5fa;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 8px;
+}
+.divo-day-popup-goto:hover {
+  color: #93c5fd;
 }

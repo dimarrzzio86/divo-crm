@@ -2,7 +2,7 @@
    DIVO CRM v2 — ЛОГИКА КОМПОНЕНТОВ
    ========================================== */
 
-var DIVO_VERSION = 'v191';
+var DIVO_VERSION = 'v192';
 
 var SUPABASE_URL = 'https://jnbqzngsglnjzzpsvvgn.supabase.co';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuYnF6bmdzZ2xuanp6cHN2dmduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyMzIwOTEsImV4cCI6MjEwNDgwODA5MX0.uHVMUKBtO0326KB3bAHQ8rywBvBms7WvfaxPrhm3_Y0';
@@ -314,6 +314,24 @@ function divoSetGreeting() {
   var username = divoGetUsername();
   var el = document.getElementById('userGreeting');
   if (el) el.textContent = username;
+
+  // Текущая дата в блок приветствия
+  var dateEl = document.getElementById('greetingDate');
+  if (dateEl) {
+    var d = new Date();
+    var months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+    var dows = ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
+    dateEl.textContent = dows[d.getDay()] + ', ' + d.getDate() + ' ' + months[d.getMonth()];
+    dateEl.dataset.date = divoTodayStr();
+  }
+}
+
+function divoTodayStr() {
+  var d = new Date();
+  var y = d.getFullYear();
+  var m = String(d.getMonth() + 1).padStart(2, '0');
+  var day = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + day;
 }
 
 function divoIsAdmin() {
@@ -630,4 +648,92 @@ function divoInitSidebarAccordion() {
     menus[0].classList.remove('collapsed');
   }
 }
- 
+
+
+// ============ POPUP С ЗАДАЧАМИ НА ДЕНЬ (из блока приветствия) ============
+
+function divoOpenDayTasksPopup() {
+  var dateEl = document.getElementById('greetingDate');
+  var dateStr = dateEl ? dateEl.dataset.date : '';
+  if (!dateStr) return;
+
+  var parts = dateStr.split('-');
+  if (parts.length !== 3) return;
+  var d = new Date(parts[0], parts[1] - 1, parts[2]);
+  var months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  var dows = ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
+  var dateTitle = d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+  var dowTitle = dows[d.getDay()];
+
+  // Создаём overlay если ещё нет
+  var overlay = document.getElementById('divoDayTasksPopup');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'divoDayTasksPopup';
+    overlay.className = 'divo-day-popup-overlay';
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) overlay.classList.remove('open');
+    });
+    overlay.innerHTML = '<div class="divo-day-popup" id="divoDayPopupContent"></div>';
+    document.body.appendChild(overlay);
+  }
+
+  var popup = document.getElementById('divoDayPopupContent');
+  popup.innerHTML = '<div class="divo-day-popup-title">' + dateTitle + '</div>' +
+                     '<div class="divo-day-popup-sub">' + dowTitle + ' · загрузка задач...</div>';
+
+  overlay.classList.add('open');
+
+  // Грузим задачи из Supabase
+  var url = SUPABASE_URL + '/rest/v1/daily_tasks?task_date=eq.' + dateStr +
+    '&select=id,task_text,task_time,is_done&order=task_time.asc,created_at.asc';
+
+  fetch(url, { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } })
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(data) {
+      var tasks = data || [];
+      var sub = tasks.length ? dowTitle + ' · задач: ' + tasks.length : dowTitle + ' · задач нет';
+      var html = '<div class="divo-day-popup-title">' + dateTitle + '</div>' +
+                 '<div class="divo-day-popup-sub">' + sub + '</div>';
+
+      if (!tasks.length) {
+        html += '<div class="divo-day-popup-empty">На этот день задач нет 🎉</div>';
+      } else {
+        html += '<div class="divo-day-popup-list">';
+        for (var i = 0; i < tasks.length; i++) {
+          var t = tasks[i];
+          var doneCls = t.is_done ? ' done' : '';
+          var timeStr = t.task_time ? '<span class="divo-day-task-time">🕐 ' + t.task_time.substring(0,5) + '</span>' : '';
+          html += '<div class="divo-day-task-item' + doneCls + '">' +
+                    '<div class="divo-day-task-check' + (t.is_done ? ' checked' : '') + '"></div>' +
+                    '<div class="divo-day-task-text">' + divoEscapeHtml(t.task_text || '') + '</div>' +
+                    timeStr +
+                  '</div>';
+        }
+        html += '</div>';
+      }
+
+      html += '<button class="divo-day-popup-close" onclick="divoCloseDayTasksPopup()">Закрыть</button>';
+      html += '<a href="tasks" class="divo-day-popup-goto">📝 Перейти к задачам →</a>';
+
+      popup.innerHTML = html;
+    })
+    .catch(function(e) {
+      popup.innerHTML = '<div class="divo-day-popup-title">' + dateTitle + '</div>' +
+                        '<div class="divo-day-popup-sub">' + dowTitle + '</div>' +
+                        '<div class="divo-day-popup-empty">Ошибка загрузки: ' + e.message + '</div>' +
+                        '<button class="divo-day-popup-close" onclick="divoCloseDayTasksPopup()">Закрыть</button>';
+    });
+}
+
+function divoCloseDayTasksPopup() {
+  var overlay = document.getElementById('divoDayTasksPopup');
+  if (overlay) overlay.classList.remove('open');
+}
+
+function divoEscapeHtml(s) {
+  if (s == null) return '';
+  var d = document.createElement('div');
+  d.textContent = String(s);
+  return d.innerHTML;
+}

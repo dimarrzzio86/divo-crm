@@ -3,7 +3,8 @@
 <!-- Блок приветствия -->
 <div class="divo-greeting">
   <div class="divo-greeting-label">Приветствую</div>
-  <div class="divo-greeting-text"><b id="userGreeting">Гость</b>!</div>
+  <div class="divo-greeting-name" id="userGreeting">Гость</div>
+  <div class="divo-greeting-date" id="greetingDate" onclick="divoOpenDayTasksPopup()" title="Задачи на день">—</div>
   <div class="divo-greeting-actions">
     <button class="divo-push-btn" id="greetingPushBtn" onclick="divoPushToggle()" title="Уведомления">🔔 Уведомления</button>
     <button class="divo-logout-btn" onclick="divoLogout()" title="Выйти">🚪 Выйти</button>
