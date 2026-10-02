@@ -269,9 +269,9 @@ html, body {
 }
 
 /* === АДМИНСКИЕ СТРАНИЦЫ — фон на пару тонов светлее === */
-body.admin-page { background: #1a1a1f; }
-body.admin-page .divo-content { background: #232328; border-color: #52525b; }
-body.admin-page .divo-layout { background: #1a1a1f; }
+body.admin-page { background: #18181b; }
+body.admin-page .divo-content { background: #2a2a30; border-color: #52525b; }
+body.admin-page .divo-layout { background: #18181b; }
 .divo-content-empty {
   text-align: center;
   color: #71717a;
