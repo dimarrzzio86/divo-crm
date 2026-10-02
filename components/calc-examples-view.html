@@ -175,7 +175,7 @@ function ceRender() {
           html += '<table class="ce-services-table"><thead><tr><th>Услуга</th><th>Цена</th></tr></thead><tbody>';
           for (var j = 0; j < services.length; j++) {
             var srv = services[j];
-            html += '<tr><td>' + ceEscape(srv.service_name) + '</td><td class="ce-srv-price">' + (srv.price ? Number(srv.price).toLocaleString('ru') + ' ₽' : '—') + '</td></tr>';
+            html += '<tr><td>' + ceEscape(srv.service_name) + (srv.comment ? '<div class="ce-srv-comment">' + ceEscape(srv.comment) + '</div>' : '') + '</td><td class="ce-srv-price">' + (srv.price ? Number(srv.price).toLocaleString('ru') + ' ₽' : '—') + '</td></tr>';
           }
           
           html += '</tbody></table>';
