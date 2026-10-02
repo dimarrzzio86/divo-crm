@@ -271,7 +271,17 @@ function ceRender() {
     html += '<span class="ce-car-icon">🚗</span>';
     html += '<div class="ce-car-info">';
     html += '<div class="ce-car-title">' + ceEscape(brandName) + '</div>';
-    html += '<div class="ce-car-sub">' + brand.models.length + ' модел' + getModelWord(brand.models.length) + ' • ' + totalCars + ' авто</div>';
+    var allClasses = [];
+    for (var mi2 = 0; mi2 < brand.models.length; mi2++) {
+      for (var ci2 = 0; ci2 < brand.models[mi2].cars.length; ci2++) {
+        if (brand.models[mi2].cars[ci2].class && allClasses.indexOf(brand.models[mi2].cars[ci2].class) === -1) {
+          allClasses.push(brand.models[mi2].cars[ci2].class);
+        }
+      }
+    }
+    allClasses.sort();
+    var classStr = allClasses.length ? ' • Класс ' + allClasses.join(',') : '';
+    html += '<div class="ce-car-sub">' + brand.models.length + ' модел' + getModelWord(brand.models.length) + ' • ' + totalCars + ' авто' + classStr + '</div>';
     html += '</div>';
     html += '<span class="ce-car-arrow">▶</span>';
     html += '</div>';
@@ -300,7 +310,8 @@ function ceRender() {
         
         html += '<div class="ce-gen-block">';
         html += '<div class="ce-gen-header">';
-        html += '<span class="ce-gen-title">' + ceEscape(genInfo || 'Базовая версия') + '</span>';
+        var classInfo = car.class ? ' • Класс ' + car.class : '';
+        html += '<span class="ce-gen-title">' + ceEscape(genInfo || 'Базовая версия') + classInfo + '</span>';
         html += '<div class="ce-gen-actions" onclick="event.stopPropagation()">';
         html += '<button onclick="ceOpenSrvModal(' + car.id + ')">🔧 Услуги (' + services.length + ')</button>';
         html += '<button onclick="ceOpenWorkModalForCar(' + car.id + ')">🏗 Работа</button>';
@@ -763,13 +774,16 @@ function ceSaveServices() {
     }
     if (!name) return;
     var price = row.querySelector('.ce-srv-price-input').value;
+    var commentInput = row.querySelector('.ce-srv-comment-input');
+    var comment = commentInput ? commentInput.value.trim() : '';
     
     var item = {
       car_id: carId,
       service_name: name,
       service_id: serviceId ? parseInt(serviceId) : null,
       manual: isManual,
-      price: price ? parseFloat(price) : null
+      price: price ? parseFloat(price) : null,
+      comment: comment || null
     };
     
     if (id) {
@@ -953,6 +967,8 @@ function ceSaveWorks() {
     }
     if (!name) return;
     var price = row.querySelector('.ce-srv-price-input').value;
+    var commentInput = row.querySelector('.ce-srv-comment-input');
+    var comment = commentInput ? commentInput.value.trim() : '';
     
     var item = {
       car_id: parseInt(carId),
@@ -960,7 +976,8 @@ function ceSaveWorks() {
       service_name: name,
       service_id: serviceId ? parseInt(serviceId) : null,
       manual: isManual,
-      price: price ? parseFloat(price) : null
+      price: price ? parseFloat(price) : null,
+      comment: comment || null
     };
     
     if (id) {
