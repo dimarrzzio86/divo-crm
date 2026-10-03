@@ -27,6 +27,12 @@
       <button class="ce-pick-reset" id="cePickReset" onclick="ceResetPick()" style="display:none;">✕ Сбросить</button>
     </div>
 
+    <!-- Поиск по модели -->
+    <div class="ce-search-wrap" id="ceSearchWrap">
+      <span class="ce-search-icon">🔍</span>
+      <input type="text" id="ceSearch" class="ce-search-input" placeholder="Поиск по марке, модели, поколению..." oninput="ceRenderList()">
+    </div>
+
     <!-- Список -->
     <div class="ce-list" id="ceList">
       <div class="ce-loading">Загрузка...</div>
@@ -343,6 +349,15 @@ function ceGetFilteredCars() {
   if (CE_PICK_GEN) {
     filtered = filtered.filter(function(c){ return c.id === CE_PICK_GEN; });
   }
+  // Поиск по модели
+  var q = (document.getElementById('ceSearch') ? document.getElementById('ceSearch').value : '').toLowerCase().trim();
+  if (q) {
+    filtered = filtered.filter(function(c){
+      return (c.model || '').toLowerCase().indexOf(q) !== -1 ||
+             (c.brand || '').toLowerCase().indexOf(q) !== -1 ||
+             (c.generation || '').toLowerCase().indexOf(q) !== -1;
+    });
+  }
   return filtered;
 }
 
@@ -350,9 +365,34 @@ function ceRenderList() {
   var list = document.getElementById('ceList');
   if (!list) return;
   
-  // Без выбора авто — не показываем ничего
+  // Если есть поисковый запрос — показываем результаты поиска
+  var q = (document.getElementById('ceSearch') ? document.getElementById('ceSearch').value : '').toLowerCase().trim();
+  
+  if (q) {
+    // Режим поиска — показываем все совпадения
+    if (!CE_CARS.length) {
+      list.innerHTML = '<div class="ce-empty">Нет данных</div>';
+      return;
+    }
+    
+    var cars = CE_CARS.filter(function(c){
+      return (c.model || '').toLowerCase().indexOf(q) !== -1 ||
+             (c.brand || '').toLowerCase().indexOf(q) !== -1 ||
+             (c.generation || '').toLowerCase().indexOf(q) !== -1;
+    });
+    
+    if (!cars.length) {
+      list.innerHTML = '<div class="ce-empty" style="padding:40px 20px;text-align:center;">Ничего не найдено по запросу «' + ceEscape(q) + '»</div>';
+      return;
+    }
+    
+    ceRenderCarsList(cars);
+    return;
+  }
+  
+  // Без выбора авто и без поиска — не показываем ничего
   if (!CE_PICK_BRAND && !CE_PICK_MODEL && !CE_PICK_GEN) {
-    list.innerHTML = '<div class="ce-empty" style="padding:40px 20px;text-align:center;">👆 Нажмите «Выбрать марку» чтобы посмотреть услуги</div>';
+    list.innerHTML = '<div class="ce-empty" style="padding:40px 20px;text-align:center;">👆 Выберите марку через пикер или введите запрос в поиск</div>';
     return;
   }
   
@@ -367,6 +407,14 @@ function ceRenderList() {
     list.innerHTML = '<div class="ce-empty">Нет авто по выбранным критериям</div>';
     return;
   }
+  
+  ceRenderCarsList(cars);
+}
+
+// Рендер списка авто (вынес в отдельную функцию)
+function ceRenderCarsList(cars) {
+  var list = document.getElementById('ceList');
+  if (!list) return;
   
   // Группировка
   cars.sort(function(a, b) {
