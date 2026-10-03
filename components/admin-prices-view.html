@@ -1100,7 +1100,7 @@
       var group = groups[groupOrder[g]];
       if (group.catName !== prevCat) {
         var catId = 'cat-' + catIdx;
-        html += '<tr class="apr-cat-divider" data-cat-id="' + catId + '" onclick="window.prToggleCat(this)">';
+        html += '<tr class="apr-cat-divider collapsed" data-cat-id="' + catId + '" onclick="window.prToggleCat(this)">';
         html += '<td colspan="6"><div class="apr-cat-header">';
         html += '<span class="apr-cat-chevron">▼</span>';
         html += '<span class="apr-cat-title">📁 ' + escapeHtml(group.catName) + '</span>';
@@ -1112,7 +1112,7 @@
       }
       var subId = 'sub-' + (catIdx - 1) + '-' + subIdx;
       if (group.subName) {
-        html += '<tr class="apr-subcat-divider" data-cat-parent="cat-' + (catIdx-1) + '" data-sub-id="' + subId + '" onclick="window.prToggleSub(this)">';
+        html += '<tr class="apr-subcat-divider collapsed" data-cat-parent="cat-' + (catIdx-1) + '" data-sub-id="' + subId + '" onclick="window.prToggleSub(this)">';
         html += '<td colspan="6"><div class="apr-subcat-header">';
         html += '<span class="apr-subcat-chevron">▼</span>';
         html += '<span class="apr-subcat-title">↳ ' + escapeHtml(group.subName) + '</span>';
@@ -1124,7 +1124,7 @@
         var item = group.items[k];
         var cc = item.class_count != null ? Number(item.class_count) : 4;
         if (isNaN(cc)) cc = 4;
-        html += '<tr class="apr-svc-row" data-cat-parent="cat-' + (catIdx-1) + '"' + (group.subName ? ' data-sub-parent="' + subId + '"' : '') + '>';
+        html += '<tr class="apr-svc-row apr-hidden" data-cat-parent="cat-' + (catIdx-1) + '"' + (group.subName ? ' data-sub-parent="' + subId + '"' : '') + '>';
         html += '<td><div class="apr-service-name">' + escapeHtml(item.name) + '</div></td>';
         if (cc === 0) {
           html += renderPriceCell(item.price_c1_client, item.price_c1_partner);
@@ -1339,7 +1339,7 @@
       for (var s = 0; s < subcategories.length; s++) {
         if (subcategories[s].category_id === cat.id) subCount++;
       }
-      html += '<div class="apr-cat-item" data-cat-id="' + cat.id + '">';
+      html += '<div class="apr-cat-item collapsed" data-cat-id="' + cat.id + '">';
       // Заголовок категории
       html += '<div class="apr-cat-item-header" onclick="window.prToggleCatItem(' + cat.id + ')">';
       html += '<span class="apr-cat-item-chevron">▼</span>';
