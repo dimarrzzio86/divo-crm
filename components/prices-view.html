@@ -404,7 +404,7 @@
     for (var ci = 0; ci < catOrder.length; ci++) {
       var catName = catOrder[ci];
       var catItems = catGroups[catName];
-      var catCollapsed = collapsedCats[ci] ? ' collapsed' : '';
+      var catCollapsed = collapsedCats[ci] === false ? '' : ' collapsed';
       html += '<div class="prv-cat-block' + catCollapsed + '" data-cat-idx="' + ci + '">';
       html += '<div class="prv-cat-header" onclick="window.prvToggleCat(' + ci + ')">';
       html += '<span class="prv-cat-chevron">▼</span>';
@@ -438,7 +438,7 @@
         var subName = subOrder[sgi];
         var subItems = subGroups[subName];
         var subIdx = ci + '_' + sgi;
-        var subCollapsed = collapsedSubs[subIdx] ? ' collapsed' : '';
+        var subCollapsed = collapsedSubs[subIdx] === false ? '' : ' collapsed';
         html += '<div class="prv-subcat-block' + subCollapsed + '" data-sub-idx="' + subIdx + '">';
         html += '<div class="prv-subcat-header" onclick="window.prvToggleSub(\'' + subIdx + '\')">';
         html += '<span class="prv-subcat-chevron">▼</span>';
