@@ -35,6 +35,11 @@ export default {
       return handleSendPush(request);
     }
 
+    // === ПРОКСИ К SUPABASE — обходит блокировку supabase.co в РФ ===
+    if (path.startsWith('/api/rest/') || path.startsWith('/api/realtime/') || path.startsWith('/api/auth/')) {
+      return handleSupabaseProxy(request, path, url);
+    }
+
     if (env.ASSETS) {
       return env.ASSETS.fetch(request);
     }
@@ -42,6 +47,41 @@ export default {
     return new Response('Not found', { status: 404 });
   }
 };
+
+// === ПРОКСИ К SUPABASE ===
+// Запросы /api/rest/v1/... → https://jnbqzngsglnjzzpsvvgn.supabase.co/rest/v1/...
+async function handleSupabaseProxy(request, path, url) {
+  const SUPABASE_HOST = 'jnbqzngsglnjzzpsvvgn.supabase.co';
+  
+  // Заменяем /api/rest/ на /rest/, /api/realtime/ на /realtime/ и т.д.
+  const supaPath = path.replace(/^\/api\//, '/');
+  const supaUrl = 'https://' + SUPABASE_HOST + supaPath + url.search;
+
+  // Копируем заголовки, меняем Host на supabase.co
+  const headers = new Headers(request.headers);
+  headers.delete('host');
+  headers.set('Host', SUPABASE_HOST);
+
+  const newRequest = new Request(supaUrl, {
+    method: request.method,
+    headers: headers,
+    body: request.body,
+    redirect: 'manual'
+  });
+
+  const response = await fetch(newRequest);
+
+  const newHeaders = new Headers(response.headers);
+  newHeaders.set('Access-Control-Allow-Origin', '*');
+  newHeaders.set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  newHeaders.set('Access-Control-Allow-Headers', '*');
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: newHeaders
+  });
+}
 
 async function handleSendPush(request) {
   try {

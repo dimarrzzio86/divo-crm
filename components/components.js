@@ -2,9 +2,11 @@
    DIVO CRM v2 — ЛОГИКА КОМПОНЕНТОВ
    ========================================== */
 
-var DIVO_VERSION = 'v255';
+var DIVO_VERSION = 'v256';
 
-var SUPABASE_URL = 'https://jnbqzngsglnjzzpsvvgn.supabase.co';
+// Прокси через Cloudflare Worker — обходит блокировку supabase.co в РФ
+// Запросы идут через divo-crm.pages.dev/api/rest/v1/... → Supabase
+var SUPABASE_URL = '/api';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuYnF6bmdzZ2xuanp6cHN2dmduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyMzIwOTEsImV4cCI6MjEwNDgwODA5MX0.uHVMUKBtO0326KB3bAHQ8rywBvBms7WvfaxPrhm3_Y0';
 
 // VAPID ключи для Web Push уведомлений
