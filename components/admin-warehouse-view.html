@@ -306,12 +306,23 @@
 /* === Карточка Заявки кликабельна === */
 .awh-stat-req {
   cursor: pointer;
-  border-color: #1e40af;
   transition: all 0.15s;
 }
+.awh-stat-req.has-reqs {
+  background: #fbbf24 !important;
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 20px rgba(251,191,36,0.4);
+}
+.awh-stat-req.has-reqs .awh-stat-label { color: #78350f !important; }
+.awh-stat-req.has-reqs .awh-stat-value { color: #0a0a0a !important; }
 .awh-stat-req:hover {
   border-color: #3b82f6;
   box-shadow: 0 0 16px rgba(59,130,247,0.2);
+}
+.awh-stat-req.has-reqs:hover {
+  border-color: #d97706 !important;
+  box-shadow: 0 0 28px rgba(251,191,36,0.6) !important;
+  transform: translateY(-1px);
 }
 
 /* === Модалка заявок === */
@@ -639,6 +650,9 @@
     .then(function(reqs) {
       WH_REQS = reqs || [];
       $('awhReqStat').textContent = WH_REQS.length;
+      var card = $('awhReqStat').parentElement;
+      if (WH_REQS.length) card.classList.add('has-reqs');
+      else card.classList.remove('has-reqs');
     })
     .catch(function(e) { console.error('loadRequests error:', e); });
   }
