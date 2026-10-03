@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Диво Детейлинг — Расчёт стоимости услуг</title>
+<title>Диво Детейлинг — Заявки на закупку</title>
 <link rel="stylesheet" href="/assets/style.css?v=245">
 <link rel="stylesheet" href="/assets/auth.css?v=245">
 <link rel="stylesheet" href="/assets/cash.css?v=245">
@@ -27,7 +27,6 @@
 </div>
 
 <script src="/components/components.js?v=245"></script>
-<script src="/components/access-config.js?v=245"></script>
 <script>
 function divoCheckAuthAndInit() {
   var user = divoGetUser();
@@ -56,7 +55,7 @@ function divoCheckAuthAndInit() {
   var authContainer = document.getElementById('divoAuthContainer');
   if (authContainer) authContainer.innerHTML = '';
   divoInit();
-  fetch('/components/admin-calculator-view.html?v=245')
+  fetch('/components/admin-warehouse-requests-view.html?v=245')
     .then(function(r) { return r.text(); })
     .then(function(html) {
       var content = document.getElementById('divoContent');

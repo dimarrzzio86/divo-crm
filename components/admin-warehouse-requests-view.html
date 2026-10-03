@@ -1,0 +1,188 @@
+<!-- Админка: Заявки на закупку -->
+<!-- Уровень: 4 (админ) -->
+
+<div class="cs-page-header">
+  <h1 class="cnt-page-title">📝 Заявки на закупку</h1>
+  <div class="cs-summary" id="whReqSummary">
+    <div class="cs-summary-item">
+      <div class="cs-summary-label">Открыто</div>
+      <div class="cs-summary-value blue" id="whReqOpen">—</div>
+    </div>
+    <div class="cs-summary-item">
+      <div class="cs-summary-label">Всего пунктов</div>
+      <div class="cs-summary-value" style="color:#fbbf24" id="whReqTotal">—</div>
+    </div>
+    <div class="cs-summary-item">
+      <div class="cs-summary-label">Выполнено</div>
+      <div class="cs-summary-value green" id="whReqDone">—</div>
+    </div>
+  </div>
+</div>
+
+<div class="wh-req-admin-toolbar">
+  <label class="wh-req-filter">
+    <input type="checkbox" id="whReqShowDone" onchange="window.whReqAdminLoad()">
+    <span>Показать выполненные</span>
+  </label>
+  <button class="wh-req-refresh" onclick="window.whReqAdminLoad()">↻ Обновить</button>
+</div>
+
+<div class="cs-status" id="whReqStatus"></div>
+
+<div class="wh-req-admin-list" id="whReqAdminList">
+  <div class="cs-loading">Загрузка...</div>
+</div>
+
+<style>
+.wh-req-admin-toolbar {
+  display: flex; gap: 12px; align-items: center;
+  margin-bottom: 16px; flex-wrap: wrap;
+}
+.wh-req-filter {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: #a1a1aa; cursor: pointer;
+}
+.wh-req-filter input { width: 16px; height: 16px; cursor: pointer; }
+.wh-req-refresh {
+  padding: 8px 16px; background: #27272a; color: #a1a1aa;
+  border: 1.5px solid #3f3f46; border-radius: 8px;
+  font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+  transition: all .15s;
+}
+.wh-req-refresh:hover { background: #3f3f46; color: #fafafa; }
+
+.wh-req-admin-list { display: flex; flex-direction: column; gap: 8px; }
+.wh-req-card {
+  background: #18181b; border: 1.5px solid #27272a; border-radius: 12px;
+  padding: 14px 18px; display: flex; align-items: center; gap: 14px;
+  transition: all .15s;
+}
+.wh-req-card:hover { border-color: #3f3f46; }
+.wh-req-card.done { opacity: 0.5; }
+.wh-req-card.done .wh-req-card-name { text-decoration: line-through; }
+.wh-req-card-num {
+  width: 30px; height: 30px; border-radius: 8px; background: #1e40af;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; color: #fff; font-weight: 700; flex-shrink: 0;
+}
+.wh-req-card.done .wh-req-card-num { background: #166534; }
+.wh-req-card-info { flex: 1; min-width: 0; }
+.wh-req-card-name { font-size: 15px; color: #fafafa; font-weight: 600; }
+.wh-req-card-meta { font-size: 12px; color: #71717a; margin-top: 2px; }
+.wh-req-card-note { font-size: 12px; color: #fbbf24; margin-top: 2px; }
+.wh-req-card-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.wh-req-card-btn {
+  padding: 8px 12px; border: 1.5px solid #3f3f46; background: #27272a;
+  color: #a1a1aa; border-radius: 8px; font-size: 13px; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: all .15s;
+}
+.wh-req-card-btn.done-btn:hover { background: #166534; color: #fff; border-color: #22c55e; }
+.wh-req-card-btn.del-btn:hover { background: #7f1d1d; color: #fff; border-color: #dc2626; }
+.wh-req-empty { text-align: center; padding: 40px; color: #52525b; }
+</style>
+
+<script>
+window.whReqAdminLoad = function() {
+  var status = document.getElementById('whReqStatus');
+  var list = document.getElementById('whReqAdminList');
+  if (status) { status.textContent = 'Загрузка...'; status.className = 'cs-status show loading'; }
+  if (list) list.innerHTML = '<div class="cs-loading">Загрузка...</div>';
+
+  var showDone = document.getElementById('whReqShowDone').checked;
+  var filter = showDone ? '' : '&status=eq.open';
+
+  fetch(SUPABASE_URL + '/rest/v1/warehouse_requests?select=*&order=created_at.desc' + filter, {
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+  })
+    .then(function(r){ return r.json(); })
+    .then(function(items) {
+      if (status) status.className = 'cs-status';
+      window.whReqAdminRender(items);
+    })
+    .catch(function(e) {
+      if (status) { status.textContent = '❌ ' + e.message; status.className = 'cs-status show error'; }
+    });
+};
+
+window.whReqAdminRender = function(items) {
+  var list = document.getElementById('whReqAdminList');
+  if (!list) return;
+
+  // Статистика
+  var openCount = items.filter(function(i){ return i.status === 'open'; }).length;
+  var doneCount = items.filter(function(i){ return i.status === 'done'; }).length;
+  document.getElementById('whReqOpen').textContent = openCount;
+  document.getElementById('whReqTotal').textContent = items.length;
+  document.getElementById('whReqDone').textContent = doneCount;
+
+  if (!items.length) {
+    list.innerHTML = '<div class="wh-req-empty">Нет заявок 🎉</div>';
+    return;
+  }
+
+  var html = '';
+  for (var i = 0; i < items.length; i++) {
+    var item = items[i];
+    var date = new Date(item.created_at);
+    var dateStr = date.toLocaleString('ru', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' });
+    var done = item.status === 'done';
+    var name = (item.item_name || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    var note = item.note ? ((item.note || '').replace(/</g,'&lt;').replace(/>/g,'&gt;')) : '';
+    var by = item.created_by || '—';
+
+    html += '<div class="wh-req-card' + (done ? ' done' : '') + '">';
+    html += '<div class="wh-req-card-num">' + (i+1) + '</div>';
+    html += '<div class="wh-req-card-info">';
+    html += '<div class="wh-req-card-name">' + name + '</div>';
+    html += '<div class="wh-req-card-meta">' + dateStr + ' · автор: ' + by + '</div>';
+    if (note) html += '<div class="wh-req-card-note">💬 ' + note + '</div>';
+    html += '</div>';
+    html += '<div class="wh-req-card-actions">';
+    if (!done) {
+      html += '<button class="wh-req-card-btn done-btn" onclick="window.whReqAdminDone(' + item.id + ')">✓ Выполнено</button>';
+    }
+    html += '<button class="wh-req-card-btn del-btn" onclick="window.whReqAdminDel(' + item.id + ')">🗑 Удалить</button>';
+    html += '</div>';
+    html += '</div>';
+  }
+  list.innerHTML = html;
+};
+
+window.whReqAdminDone = function(id) {
+  if (!confirm('Отметить как выполнено?')) return;
+  fetch(SUPABASE_URL + '/rest/v1/warehouse_requests?id=eq.' + id, {
+    method: 'PATCH',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify({ status: 'done', closed_at: new Date().toISOString() })
+  }).then(function() {
+    window.whReqAdminLoad();
+  }).catch(function(e) {
+    alert('Ошибка: ' + e.message);
+  });
+};
+
+window.whReqAdminDel = function(id) {
+  if (!confirm('Удалить заявку?')) return;
+  fetch(SUPABASE_URL + '/rest/v1/warehouse_requests?id=eq.' + id, {
+    method: 'DELETE',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY
+    }
+  }).then(function() {
+    window.whReqAdminLoad();
+  }).catch(function(e) {
+    alert('Ошибка: ' + e.message);
+  });
+};
+
+// Автозагрузка
+if (typeof SUPABASE_URL !== 'undefined') {
+  window.whReqAdminLoad();
+}
+</script>

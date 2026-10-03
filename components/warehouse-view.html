@@ -19,7 +19,7 @@
   </div>
 </div>
 
-<!-- Кнопки сверки -->
+<!-- Кнопки: сверка + заявка -->
 <div class="wh-audit-buttons" id="whAuditButtons">
   <button class="wh-audit-btn weekly" id="whBtnWeekly" onclick="window.whOpenAudit('weekly')">
     <span class="wh-audit-btn-icon">📊</span>
@@ -33,6 +33,13 @@
     <span class="wh-audit-btn-text">
       <span class="wh-audit-btn-title">Полная сверка</span>
       <span class="wh-audit-btn-desc">Все товары склада</span>
+    </span>
+  </button>
+  <button class="wh-audit-btn request" onclick="window.whOpenRequest()">
+    <span class="wh-audit-btn-icon">📝</span>
+    <span class="wh-audit-btn-text">
+      <span class="wh-audit-btn-title">Создать заявку</span>
+      <span class="wh-audit-btn-desc">Сообщить о нехватке</span>
     </span>
   </button>
 </div>
@@ -61,8 +68,175 @@
   </table>
 </div>
 
-<!-- Модалка сверки -->
-<div class="wh-audit-overlay" id="whAuditModal" style="display:none;">
+<!-- Модалка создания заявки -->
+<div class="wh-audit-overlay" id="whRequestModal" style="display:none;">
+  <div class="wh-audit-modal-box">
+    <div class="wh-audit-modal-header">
+      <div class="wh-audit-modal-title">📝 Заявка на закупку</div>
+      <button class="wh-audit-close" onclick="window.whCloseRequest()">✕</button>
+    </div>
+    <div class="wh-audit-modal-desc">Добавьте пункты, которые нужно закупить. Количество не указывается — только наименование.</div>
+    <div class="wh-req-list" id="whReqList"></div>
+    <div class="wh-req-add-row">
+      <input type="text" id="whReqInput" class="wh-req-input" placeholder="Наименование товара..." onkeydown="if(event.key==='Enter'){window.whReqAdd();}">
+      <button class="wh-req-add-btn" onclick="window.whReqAdd()">+ Добавить</button>
+    </div>
+    <div class="wh-req-note-wrap">
+      <input type="text" id="whReqNote" class="wh-req-input" placeholder="Комментарий (необязательно)">
+    </div>
+    <div class="wh-audit-modal-footer">
+      <span class="wh-audit-changes" id="whReqCount">Пунктов: 0</span>
+      <div class="wh-audit-footer-btns">
+        <button class="wh-audit-btn-cancel" onclick="window.whCloseRequest()">Отмена</button>
+        <button class="wh-audit-btn-save" id="whReqSave" onclick="window.whReqSubmit()">📤 Отправить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.wh-audit-btn.request { border-color: #1e40af; }
+.wh-audit-btn.request:hover { border-color: #3b82f6; box-shadow: 0 0 16px rgba(59,130,247,0.15); }
+
+.wh-req-list {
+  flex: 1; max-height: 320px; overflow-y: auto;
+  border: 1px solid #27272a; border-radius: 10px;
+  background: #0a0a0a; margin-bottom: 12px; min-height: 80px;
+}
+.wh-req-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border-bottom: 1px solid #27272a;
+}
+.wh-req-item:last-child { border-bottom: none; }
+.wh-req-item-num {
+  width: 22px; height: 22px; border-radius: 6px; background: #1e40af;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; color: #fff; font-weight: 700; flex-shrink: 0;
+}
+.wh-req-item-name { flex: 1; font-size: 14px; color: #fafafa; }
+.wh-req-item-del {
+  background: #27272a; border: none; color: #a1a1aa;
+  width: 26px; height: 26px; border-radius: 6px; cursor: pointer;
+  font-size: 14px; transition: all .15s;
+}
+.wh-req-item-del:hover { background: #7f1d1d; color: #fff; }
+.wh-req-empty { text-align: center; padding: 24px; color: #52525b; font-size: 13px; }
+
+.wh-req-add-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.wh-req-input {
+  flex: 1; padding: 10px 14px; background: #0a0a0a;
+  border: 1.5px solid #3f3f46; border-radius: 8px; color: #fafafa;
+  font-size: 14px; font-family: inherit; outline: none;
+}
+.wh-req-input:focus { border-color: #3b82f6; }
+.wh-req-add-btn {
+  padding: 10px 18px; background: #1e40af; color: #fff;
+  border: none; border-radius: 8px; font-size: 14px; font-weight: 600;
+  cursor: pointer; font-family: inherit; white-space: nowrap; transition: all .15s;
+}
+.wh-req-add-btn:hover { background: #3b82f6; }
+.wh-req-note-wrap { margin-bottom: 12px; }
+</style>
+
+<script>
+window.WH_REQ_ITEMS = [];
+
+window.whOpenRequest = function() {
+  window.WH_REQ_ITEMS = [];
+  document.getElementById('whReqNote').value = '';
+  window.whReqRender();
+  document.getElementById('whRequestModal').style.display = 'flex';
+  setTimeout(function(){ document.getElementById('whReqInput').focus(); }, 100);
+};
+
+window.whCloseRequest = function() {
+  document.getElementById('whRequestModal').style.display = 'none';
+};
+
+window.whReqAdd = function() {
+  var input = document.getElementById('whReqInput');
+  var val = input.value.trim();
+  if (!val) return;
+  window.WH_REQ_ITEMS.push(val);
+  input.value = '';
+  window.whReqRender();
+  input.focus();
+};
+
+window.whReqDel = function(idx) {
+  window.WH_REQ_ITEMS.splice(idx, 1);
+  window.whReqRender();
+};
+
+window.whReqRender = function() {
+  var list = document.getElementById('whReqList');
+  var count = document.getElementById('whReqCount');
+  var items = window.WH_REQ_ITEMS;
+  count.textContent = 'Пунктов: ' + items.length;
+  if (!items.length) {
+    list.innerHTML = '<div class="wh-req-empty">Список пуст. Добавьте товары кнопкой «+ Добавить» или Enter.</div>';
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < items.length; i++) {
+    html += '<div class="wh-req-item">';
+    html += '<div class="wh-req-item-num">' + (i+1) + '</div>';
+    html += '<div class="wh-req-item-name">' + items[i].replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>';
+    html += '<button class="wh-req-item-del" onclick="window.whReqDel(' + i + ')">✕</button>';
+    html += '</div>';
+  }
+  list.innerHTML = html;
+};
+
+window.whReqSubmit = function() {
+  var items = window.WH_REQ_ITEMS;
+  if (!items.length) {
+    alert('Добавьте хотя бы один пункт');
+    return;
+  }
+  var note = document.getElementById('whReqNote').value.trim();
+  var user = (typeof divoGetUser === 'function') ? divoGetUser() : null;
+  var createdBy = user ? user.username : 'unknown';
+
+  var btn = document.getElementById('whReqSave');
+  btn.disabled = true;
+  btn.textContent = 'Отправка...';
+
+  var promises = items.map(function(item) {
+    return fetch(SUPABASE_URL + '/rest/v1/warehouse_requests', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({
+        item_name: item,
+        note: note || null,
+        status: 'open',
+        created_by: createdBy
+      })
+    });
+  });
+
+  Promise.all(promises).then(function() {
+    btn.disabled = false;
+    btn.textContent = '📤 Отправить';
+    window.whCloseRequest();
+    var status = document.getElementById('whStatus');
+    if (status) {
+      status.textContent = '✅ Заявка отправлена: ' + items.length + ' пунктов';
+      status.className = 'cs-status show success';
+      setTimeout(function(){ status.className = 'cs-status'; }, 3000);
+    }
+  }).catch(function(e) {
+    btn.disabled = false;
+    btn.textContent = '📤 Отправить';
+    alert('Ошибка отправки: ' + e.message);
+  });
+};
+</script>
   <div class="wh-audit-modal-box">
     <div class="wh-audit-modal-header">
       <div class="wh-audit-modal-title" id="whAuditTitle">📊 Сверка</div>
