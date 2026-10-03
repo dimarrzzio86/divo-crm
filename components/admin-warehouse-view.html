@@ -20,6 +20,10 @@
         <div class="awh-stat-label">Критично</div>
         <div class="awh-stat-value red" id="awhLow">—</div>
       </div>
+      <div class="awh-stat awh-stat-req" onclick="window.awhOpenReqModal()">
+        <div class="awh-stat-label">📝 Заявки</div>
+        <div class="awh-stat-value" style="color:#60a5fa" id="awhReqStat">—</div>
+      </div>
       <div class="awh-stat">
         <div class="awh-stat-label">В сверке</div>
         <div class="awh-stat-value" style="color:#818cf8" id="awhAudit">—</div>
@@ -52,15 +56,6 @@
   </div>
 
   <div class="awh-status" id="whStatus"></div>
-
-  <!-- Блок заявок на закупку -->
-  <div class="awh-req-block" id="awhReqBlock" style="display:none;">
-    <div class="awh-req-header">
-      <div class="awh-req-title">📝 Заявки на закупку <span class="awh-req-count" id="awhReqCount">0</span></div>
-      <button class="awh-req-toggle" onclick="window.awhToggleReqs()">Свернуть ▲</button>
-    </div>
-    <div class="awh-req-list" id="awhReqList"></div>
-  </div>
 
   <div class="awh-search-wrap">
     <span class="awh-search-icon">🔍</span>
@@ -118,6 +113,17 @@
     <div class="awh-modal-buttons">
       <button class="awh-modal-btn cancel" id="whEditCancel">Отмена</button>
       <button class="awh-modal-btn save" id="whEditSave">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- Модалка просмотра заявок на закупку -->
+<div class="awh-modal-overlay" id="whReqModal" style="display:none;">
+  <div class="awh-modal-box awh-req-modal-box">
+    <div class="awh-modal-title">📝 Заявки на закупку</div>
+    <div class="awh-req-modal-list" id="whReqModalList"></div>
+    <div class="awh-modal-buttons">
+      <button class="awh-modal-btn cancel" onclick="window.awhCloseReqModal()">Закрыть</button>
     </div>
   </div>
 </div>
@@ -297,6 +303,61 @@
   .awh-header { flex-direction: column; align-items: flex-start; }
 }
 
+/* === Карточка Заявки кликабельна === */
+.awh-stat-req {
+  cursor: pointer;
+  border-color: #1e40af;
+  transition: all 0.15s;
+}
+.awh-stat-req:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 0 16px rgba(59,130,247,0.2);
+}
+
+/* === Модалка заявок === */
+.awh-req-modal-box { max-width: 720px; max-height: 85vh; display: flex; flex-direction: column; }
+.awh-req-modal-list { flex: 1; overflow-y: auto; margin: 16px 0; display: flex; flex-direction: column; gap: 10px; }
+
+.awh-req-card {
+  background: #0a0a0a;
+  border: 1px solid #27272a;
+  border-radius: 10px;
+  padding: 14px;
+}
+.awh-req-card-head {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 8px;
+}
+.awh-req-date { font-size: 13px; font-weight: 700; color: #fafafa; margin-right: 10px; }
+.awh-req-author {
+  font-size: 12px; color: #71717a;
+  background: #18181b; padding: 2px 8px; border-radius: 6px;
+}
+.awh-req-note {
+  font-size: 13px; color: #a1a1aa;
+  margin-bottom: 8px; padding: 6px 10px;
+  background: #18181b; border-radius: 6px;
+}
+.awh-req-items { display: flex; flex-direction: column; gap: 4px; }
+.awh-req-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 10px; background: #18181b; border-radius: 6px;
+}
+.awh-req-item-n {
+  width: 20px; height: 20px; border-radius: 5px;
+  background: #1e40af; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; flex-shrink: 0;
+}
+.awh-req-item-text { font-size: 14px; color: #d4d4d8; }
+.awh-req-del {
+  background: #7f1d1d; border: none; color: #fca5a5;
+  padding: 6px 12px; border-radius: 8px; cursor: pointer;
+  font-size: 12px; font-family: inherit; font-weight: 600;
+  transition: all .15s;
+}
+.awh-req-del:hover { background: #dc2626; color: #fff; }
+</style>
 /* === Блок заявок на закупку === */
 .awh-req-block {
   background: #18181b;
@@ -568,43 +629,56 @@
   document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && $('whEditModal').style.display === 'flex') closeEdit(); });
 
   // === ЗАЯВКИ НА ЗАКУПКУ ===
+  var WH_REQS = [];
+
   function loadRequests() {
     fetch(SUPABASE_URL + '/rest/v1/warehouse_requests?select=*&order=created_at.desc', {
       headers: getHeaders()
     })
     .then(function(r) { return r.ok ? r.json() : []; })
     .then(function(reqs) {
-      var block = $('awhReqBlock');
-      var list = $('awhReqList');
-      var cnt = $('awhReqCount');
-      if (!reqs.length) {
-        block.style.display = 'none';
-        return;
-      }
-      block.style.display = 'block';
-      cnt.textContent = reqs.length;
-      var html = '';
-      reqs.forEach(function(req) {
-        var items = [];
-        try { items = JSON.parse(req.items || '[]'); } catch(e) {}
-        var date = new Date(req.created_at);
-        var dateStr = date.toLocaleDateString('ru-RU') + ' ' + date.toLocaleTimeString('ru-RU', {hour:'2-digit',minute:'2-digit'});
-        html += '<div class="awh-req-card">';
-        html += '<div class="awh-req-card-head">';
-        html += '<div><span class="awh-req-date">' + escapeHtml(dateStr) + '</span><span class="awh-req-author">' + escapeHtml(req.created_by || '') + '</span></div>';
-        html += '<button class="awh-req-del" onclick="window.awhDelReq(' + req.id + ')">🗑 Удалить</button>';
-        html += '</div>';
-        if (req.note) html += '<div class="awh-req-note">💬 ' + escapeHtml(req.note) + '</div>';
-        html += '<div class="awh-req-items">';
-        items.forEach(function(item, idx) {
-          html += '<div class="awh-req-item"><span class="awh-req-item-n">' + (idx+1) + '</span><span class="awh-req-item-text">' + escapeHtml(item) + '</span></div>';
-        });
-        html += '</div></div>';
-      });
-      list.innerHTML = html;
+      WH_REQS = reqs || [];
+      $('awhReqStat').textContent = WH_REQS.length;
     })
     .catch(function(e) { console.error('loadRequests error:', e); });
   }
+
+  function renderReqModalList() {
+    var list = $('whReqModalList');
+    if (!WH_REQS.length) {
+      list.innerHTML = '<div class="awh-empty" style="padding:30px;text-align:center;">Заявок пока нет</div>';
+      return;
+    }
+    var html = '';
+    WH_REQS.forEach(function(req) {
+      var items = [];
+      if (Array.isArray(req.items)) items = req.items;
+      else { try { items = JSON.parse(req.items || '[]'); } catch(e) {} }
+      var date = new Date(req.created_at);
+      var dateStr = date.toLocaleDateString('ru-RU') + ' ' + date.toLocaleTimeString('ru-RU', {hour:'2-digit',minute:'2-digit'});
+      html += '<div class="awh-req-card">';
+      html += '<div class="awh-req-card-head">';
+      html += '<div><span class="awh-req-date">' + escapeHtml(dateStr) + '</span><span class="awh-req-author">' + escapeHtml(req.created_by || '') + '</span></div>';
+      html += '<button class="awh-req-del" onclick="window.awhDelReq(' + req.id + ')">🗑 Удалить</button>';
+      html += '</div>';
+      if (req.note) html += '<div class="awh-req-note">💬 ' + escapeHtml(req.note) + '</div>';
+      html += '<div class="awh-req-items">';
+      items.forEach(function(item, idx) {
+        html += '<div class="awh-req-item"><span class="awh-req-item-n">' + (idx+1) + '</span><span class="awh-req-item-text">' + escapeHtml(item) + '</span></div>';
+      });
+      html += '</div></div>';
+    });
+    list.innerHTML = html;
+  }
+
+  window.awhOpenReqModal = function() {
+    renderReqModalList();
+    $('whReqModal').style.display = 'flex';
+  };
+
+  window.awhCloseReqModal = function() {
+    $('whReqModal').style.display = 'none';
+  };
 
   window.awhDelReq = function(id) {
     if (!confirm('Удалить заявку?')) return;
@@ -612,21 +686,13 @@
       method: 'DELETE',
       headers: getHeaders()
     })
-    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); loadRequests(); })
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); loadRequests(); renderReqModalList(); })
     .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); });
   };
 
-  window.awhToggleReqs = function() {
-    var list = $('awhReqList');
-    var btn = document.querySelector('.awh-req-toggle');
-    if (list.style.display === 'none') {
-      list.style.display = 'block';
-      btn.textContent = 'Свернуть ▲';
-    } else {
-      list.style.display = 'none';
-      btn.textContent = 'Развернуть ▼';
-    }
-  };
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && $('whReqModal').style.display === 'flex') window.awhCloseReqModal();
+  });
 
   loadRequests();
   loadData();
