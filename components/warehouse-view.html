@@ -202,25 +202,21 @@ window.whReqSubmit = function() {
   btn.disabled = true;
   btn.textContent = 'Отправка...';
 
-  var promises = items.map(function(item) {
-    return fetch(SUPABASE_URL + '/rest/v1/warehouse_requests', {
-      method: 'POST',
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_KEY,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify({
-        item_name: item,
-        note: note || null,
-        status: 'open',
-        created_by: createdBy
-      })
-    });
-  });
-
-  Promise.all(promises).then(function() {
+  fetch(SUPABASE_URL + '/rest/v1/warehouse_requests', {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify({
+      items: items,
+      note: note || null,
+      created_by: createdBy
+    })
+  }).then(function(r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
     btn.disabled = false;
     btn.textContent = '📤 Отправить';
     window.whCloseRequest();
@@ -235,8 +231,7 @@ window.whReqSubmit = function() {
     btn.textContent = '📤 Отправить';
     alert('Ошибка отправки: ' + e.message);
   });
-};
-</script>
+};</script>
   <div class="wh-audit-modal-box">
     <div class="wh-audit-modal-header">
       <div class="wh-audit-modal-title" id="whAuditTitle">📊 Сверка</div>
