@@ -53,6 +53,15 @@
 
   <div class="awh-status" id="whStatus"></div>
 
+  <!-- Блок заявок на закупку -->
+  <div class="awh-req-block" id="awhReqBlock" style="display:none;">
+    <div class="awh-req-header">
+      <div class="awh-req-title">📝 Заявки на закупку <span class="awh-req-count" id="awhReqCount">0</span></div>
+      <button class="awh-req-toggle" onclick="window.awhToggleReqs()">Свернуть ▲</button>
+    </div>
+    <div class="awh-req-list" id="awhReqList"></div>
+  </div>
+
   <div class="awh-search-wrap">
     <span class="awh-search-icon">🔍</span>
     <input type="text" id="whSearch" class="awh-search-input" placeholder="Поиск по названию...">
@@ -486,6 +495,68 @@
   $('whEditSave').addEventListener('click', saveEdit);
   document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && $('whEditModal').style.display === 'flex') closeEdit(); });
 
+  // === ЗАЯВКИ НА ЗАКУПКУ ===
+  function loadRequests() {
+    fetch(SUPABASE_URL + '/rest/v1/warehouse_requests?select=*&order=created_at.desc', {
+      headers: getHeaders()
+    })
+    .then(function(r) { return r.ok ? r.json() : []; })
+    .then(function(reqs) {
+      var block = $('awhReqBlock');
+      var list = $('awhReqList');
+      var cnt = $('awhReqCount');
+      if (!reqs.length) {
+        block.style.display = 'none';
+        return;
+      }
+      block.style.display = 'block';
+      cnt.textContent = reqs.length;
+      var html = '';
+      reqs.forEach(function(req) {
+        var items = [];
+        try { items = JSON.parse(req.items || '[]'); } catch(e) {}
+        var date = new Date(req.created_at);
+        var dateStr = date.toLocaleDateString('ru-RU') + ' ' + date.toLocaleTimeString('ru-RU', {hour:'2-digit',minute:'2-digit'});
+        html += '<div class="awh-req-card">';
+        html += '<div class="awh-req-card-head">';
+        html += '<div><span class="awh-req-date">' + escapeHtml(dateStr) + '</span><span class="awh-req-author">' + escapeHtml(req.created_by || '') + '</span></div>';
+        html += '<button class="awh-req-del" onclick="window.awhDelReq(' + req.id + ')">🗑 Удалить</button>';
+        html += '</div>';
+        if (req.note) html += '<div class="awh-req-note">💬 ' + escapeHtml(req.note) + '</div>';
+        html += '<div class="awh-req-items">';
+        items.forEach(function(item, idx) {
+          html += '<div class="awh-req-item"><span class="awh-req-item-n">' + (idx+1) + '</span><span class="awh-req-item-text">' + escapeHtml(item) + '</span></div>';
+        });
+        html += '</div></div>';
+      });
+      list.innerHTML = html;
+    })
+    .catch(function(e) { console.error('loadRequests error:', e); });
+  }
+
+  window.awhDelReq = function(id) {
+    if (!confirm('Удалить заявку?')) return;
+    fetch(SUPABASE_URL + '/rest/v1/warehouse_requests?id=eq.' + id, {
+      method: 'DELETE',
+      headers: getHeaders()
+    })
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); loadRequests(); })
+    .catch(function(e) { showStatus('Ошибка: ' + e.message, 'error'); });
+  };
+
+  window.awhToggleReqs = function() {
+    var list = $('awhReqList');
+    var btn = document.querySelector('.awh-req-toggle');
+    if (list.style.display === 'none') {
+      list.style.display = 'block';
+      btn.textContent = 'Свернуть ▲';
+    } else {
+      list.style.display = 'none';
+      btn.textContent = 'Развернуть ▼';
+    }
+  };
+
+  loadRequests();
   loadData();
 })();
 </script>
