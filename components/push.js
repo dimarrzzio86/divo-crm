@@ -118,10 +118,15 @@ function divoPushSendTaskList(taskDate, tasksCount) {
     tasks_count: tasksCount
   };
 
-  return fetch(PUSH_WORKER_URL + '/send-tasks', {
+  return fetch(PUSH_WORKER_URL + '/api/send-push', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
+    body: JSON.stringify({
+      secret: 'divo-push-2026-secret',
+      title: '📋 Задачи на ' + taskDate,
+      body: 'На завтра ' + tasksCount + ' задач(и). Открой раздел «Задачи»',
+      url: '/tasks.html'
+    })
   })
     .then(function(r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
