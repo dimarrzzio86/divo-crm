@@ -4,16 +4,86 @@
 
 var DIVO_VERSION = 'v259';
 
-// Прокси через Cloudflare Worker — обходит блокировку supabase.co в РФ
-// Запросы идут через divo-crm.pages.dev/api/rest/v1/... → Supabase
-var SUPABASE_URL = '/api';
+// Прокси к Supabase:
+// - Cloudflare Pages (divo-crm.pages.dev): через _worker.js (/api/rest/v1/...)
+// - Yandex Cloud Object Storage (divo-crm.website.yandexcloud.net): через Yandex Cloud Function
+//
+// Определяем хост и подставляем правильный URL
+var DIVO_HOST = location.hostname;
+var DIVO_IS_YANDEX = DIVO_HOST.indexOf('yandexcloud') !== -1;
+var DIVO_IS_CLOUDFLARE = DIVO_HOST.indexOf('pages.dev') !== -1;
+
+// Yandex Cloud Function "divo-proxy" (ID: d4e6ara4l461df1e8f46)
+// Принимает: ?path=/rest/v1/contractors&select=*&limit=3
+// Проксирует на Supabase, обходя блокировку supabase.co в РФ
+var YANDEX_FUNC_URL = 'https://functions.yandexcloud.net/d4e6ara4l461df1e8f46';
+
+var SUPABASE_URL = DIVO_IS_YANDEX ? YANDEX_FUNC_URL : '/api';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuYnF6bmdzZ2xuanp6cHN2dmduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyMzIwOTEsImV4cCI6MjEwNDgwODA5MX0.uHVMUKBtO0326KB3bAHQ8rywBvBms7WvfaxPrhm3_Y0';
 
 // VAPID ключи для Web Push уведомлений
 var VAPID_PUBLIC_KEY = 'BBm7wE8GeMlHtqQ3ViS5MllI2KdQFYcnfVONDbDZJ_lrOJKKEV9vIdsbC8XCMMi-mZNJ1AU2fIa2HXc7VLDHZ3g';
 
-// URL Cloudflare Pages Function для отправки push
-var PUSH_WORKER_URL = 'https://divo-crm.pages.dev';
+// URL для отправки push:
+// - Cloudflare Pages: https://divo-crm.pages.dev/api/send-push
+// - Yandex Cloud: https://functions.yandexcloud.net/d4e6ara4l461df1e8f46?path=/send-push
+var PUSH_WORKER_URL = DIVO_IS_YANDEX ? YANDEX_FUNC_URL : 'https://divo-crm.pages.dev';
+
+// ===== ПЕРЕХВАТ FETCH И XHR ДЛЯ YANDEX CLOUD =====
+// На Yandex Cloud Object Storage нет Cloudflare Worker, который проксирует /api/rest/v1/...
+// Любой POST/PUT/DELETE на статику → 405 Method Not Allowed.
+// Поэтому перехватываем все запросы, начинающиеся с /api/, и перенаправляем их
+// на Yandex Cloud Function через ?path=...
+if (DIVO_IS_YANDEX) {
+  // Функция-преобразователь URL: /api/rest/v1/contractors?select=* → YANDEX_FUNC_URL?path=/rest/v1/contractors&select=*
+  function _divoRewriteUrl(originalUrl) {
+    if (typeof originalUrl !== 'string') return originalUrl;
+    if (originalUrl.indexOf('/api/') !== 0 && originalUrl.indexOf('api/') !== 0) {
+      // Не /api/ путь — оставляем как есть
+      return originalUrl;
+    }
+    try {
+      // Парсим URL относительно текущей страницы
+      var parsed = new URL(originalUrl, location.origin);
+      // Извлекаем путь: /api/rest/v1/contractors → /rest/v1/contractors
+      var apiPath = parsed.pathname;
+      if (apiPath.indexOf('/api/') === 0) apiPath = apiPath.replace(/^\/api/, '');
+      // Query string: select=*&limit=3
+      var query = parsed.search.replace(/^\?/, '');
+      // Собираем новый URL для Cloud Function:
+      // YANDEX_FUNC_URL?path=/rest/v1/contractors&select=*&limit=3
+      var newUrl = YANDEX_FUNC_URL + '?path=' + encodeURIComponent(apiPath) + (query ? '&' + query : '');
+      return newUrl;
+    } catch (e) {
+      // Если URL не парсится — возвращаем как есть
+      return originalUrl;
+    }
+  }
+
+  // Перехватываем window.fetch
+  var _originalFetch = window.fetch;
+  window.fetch = function(input, init) {
+    if (typeof input === 'string') {
+      input = _divoRewriteUrl(input);
+    } else if (input && input.url) {
+      // Request объект
+      var newUrl = _divoRewriteUrl(input.url);
+      if (newUrl !== input.url) {
+        input = new Request(newUrl, input);
+      }
+    }
+    return _originalFetch.call(window, input, init);
+  };
+
+  // Перехватываем XMLHttpRequest.open
+  var _originalXhrOpen = XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
+    if (typeof url === 'string') {
+      url = _divoRewriteUrl(url);
+    }
+    return _originalXhrOpen.call(this, method, url, async, user, password);
+  };
+}
 
 // ============ УРОВНИ ДОСТУПА ============
 
