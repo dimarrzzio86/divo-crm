@@ -2,7 +2,7 @@
    DIVO CRM v2 — ЛОГИКА КОМПОНЕНТОВ
    ========================================== */
 
-var DIVO_VERSION = 'v260';
+var DIVO_VERSION = 'v261';
 
 // Прокси к Supabase:
 // - Cloudflare Pages (divo-crm.pages.dev): через _worker.js (/api/rest/v1/...)
@@ -18,7 +18,7 @@ var DIVO_IS_CLOUDFLARE = DIVO_HOST.indexOf('pages.dev') !== -1;
 // Проксирует на Supabase, обходя блокировку supabase.co в РФ
 var YANDEX_FUNC_URL = 'https://functions.yandexcloud.net/d4e6ara4l461df1e8f46';
 
-var SUPABASE_URL = DIVO_IS_YANDEX ? YANDEX_FUNC_URL : '/api';
+var SUPABASE_URL = '/api';  // На Yandex перехватчик fetch/XHR перепишет /api/ → ?path=
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuYnF6bmdzZ2xuanp6cHN2dmduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyMzIwOTEsImV4cCI6MjEwNDgwODA5MX0.uHVMUKBtO0326KB3bAHQ8rywBvBms7WvfaxPrhm3_Y0';
 
 // VAPID ключи для Web Push уведомлений
@@ -27,7 +27,7 @@ var VAPID_PUBLIC_KEY = 'BBm7wE8GeMlHtqQ3ViS5MllI2KdQFYcnfVONDbDZJ_lrOJKKEV9vIdsb
 // URL для отправки push:
 // - Cloudflare Pages: https://divo-crm.pages.dev/api/send-push
 // - Yandex Cloud: https://functions.yandexcloud.net/d4e6ara4l461df1e8f46?path=/send-push
-var PUSH_WORKER_URL = DIVO_IS_YANDEX ? YANDEX_FUNC_URL : 'https://divo-crm.pages.dev';
+var PUSH_WORKER_URL = DIVO_IS_YANDEX ? '' : 'https://divo-crm.pages.dev';
 
 // ===== ПЕРЕХВАТ FETCH И XHR ДЛЯ YANDEX CLOUD =====
 // На Yandex Cloud Object Storage нет Cloudflare Worker, который проксирует /api/rest/v1/...

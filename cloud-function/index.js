@@ -1,29 +1,34 @@
 // DIVO CRM — Yandex Cloud Function (Node.js 18+)
 // Прокси к Supabase: обходит блокировку supabase.co в РФ
 // Эндпоинты: /rest/v1/*, /realtime/*, /auth/*, /send-push
+//
+// ВАЖНО: НЕ устанавливаем CORS-заголовки сами!
+// Yandex Cloud gateway автоматически добавляет:
+//   Access-Control-Allow-Origin: <origin>
+//   Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS
+//   Access-Control-Allow-Headers: *
+// Если мы добавим свои — будет дубль → браузер заблокирует
 
 const SUPABASE_URL = 'https://jnbqzngsglnjzzpsvvgn.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuYnF6bmdzZ2xuanp6cHN2dmduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyMzIwOTEsImV4cCI6MjEwNDgwODA5MX0.uHVMUKBtO0326KB3bAHQ8rywBvBms7WvfaxPrhm3_Y0';
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': '*',
-  'Access-Control-Max-Age': '86400',
-};
+// CORS заголовки которые Yandex gateway добавляет сам — НЕ возвращаем из функции
+const CORS_HEADER_NAMES = [
+  'access-control-allow-origin',
+  'access-control-allow-methods',
+  'access-control-allow-headers',
+  'access-control-expose-headers',
+  'access-control-max-age'
+];
 
-function corsResponse(statusCode, body, extraHeaders = {}) {
-  return {
-    statusCode,
-    headers: { ...CORS_HEADERS, ...extraHeaders },
-    body: typeof body === 'string' ? body : JSON.stringify(body),
-  };
+function isCorsHeader(name) {
+  return CORS_HEADER_NAMES.indexOf((name || '').toLowerCase()) !== -1;
 }
 
 module.exports.handler = async (event, context) => {
-  // CORS preflight
+  // CORS preflight — Yandex gateway обработает сам, просто возвращаем 200
   if (event.httpMethod === 'OPTIONS') {
-    return corsResponse(200, '');
+    return { statusCode: 200, headers: {}, body: '' };
   }
 
   try {
@@ -34,7 +39,7 @@ module.exports.handler = async (event, context) => {
     if (!path.startsWith('/')) path = '/' + path;
     // Защита от выхода за пределы
     if (path.includes('..')) {
-      return corsResponse(400, { error: 'Invalid path' });
+      return { statusCode: 400, headers: {}, body: JSON.stringify({ error: 'Invalid path' }) };
     }
 
     // Query параметры
@@ -53,6 +58,11 @@ module.exports.handler = async (event, context) => {
     delete headers['Host'];
     delete headers['x-yc-api-key'];
     delete headers['x-function'];
+    // Удаляем apikey/Authorization от клиента — подставим свой
+    delete headers['apikey'];
+    delete headers['Apikey'];
+    delete headers['Authorization'];
+    delete headers['authorization'];
     // Добавляем Supabase ключи
     headers['apikey'] = SUPABASE_KEY;
     headers['Authorization'] = 'Bearer ' + SUPABASE_KEY;
@@ -73,23 +83,28 @@ module.exports.handler = async (event, context) => {
     }
 
     const response = await fetch(supabaseUrl, fetchOptions);
+    
+    // Собираем заголовки от Supabase, но НЕ дублируем CORS-заголовки
     const responseHeaders = {};
     response.headers.forEach((value, key) => {
-      responseHeaders[key] = value;
+      if (!isCorsHeader(key)) {
+        responseHeaders[key] = value;
+      }
     });
 
     const text = await response.text();
 
     return {
       statusCode: response.status,
-      headers: { ...responseHeaders, ...CORS_HEADERS },
+      headers: responseHeaders,
       body: text,
     };
   } catch (error) {
     console.error('Proxy error:', error);
-    return corsResponse(500, {
-      error: 'Proxy error',
-      message: error.message,
-    });
+    return {
+      statusCode: 500,
+      headers: {},
+      body: JSON.stringify({ error: 'Proxy error', message: error.message })
+    };
   }
 };
