@@ -2,7 +2,7 @@
    DIVO CRM v2 — ЛОГИКА КОМПОНЕНТОВ
    ========================================== */
 
-var DIVO_VERSION = 'v262';
+var DIVO_VERSION = 'v263';
 
 // Прокси к Supabase:
 // - Cloudflare Pages (divo-crm.pages.dev): через _worker.js (/api/rest/v1/...)
@@ -19,7 +19,8 @@ var DIVO_IS_CLOUDFLARE = DIVO_HOST.indexOf('pages.dev') !== -1;
 // Используем Cloudflare Worker (divo-crm.pages.dev) вместо Yandex Function
 // Yandex Function дублирует CORS-заголовки → браузер блокирует
 // Cloudflare Worker не дублирует, CORS работает чисто
-var YANDEX_FUNC_URL = 'https://divo-crm.pages.dev/api';
+// Worker обрабатывает /api/rest/... /api/realtime/... /api/auth/... /api/send-push
+var YANDEX_FUNC_URL = 'https://divo-crm.pages.dev';
 
 var SUPABASE_URL = '/api';  // На Yandex перехватчик fetch/XHR перепишет /api/ → ?path=
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuYnF6bmdzZ2xuanp6cHN2dmduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyMzIwOTEsImV4cCI6MjEwNDgwODA5MX0.uHVMUKBtO0326KB3bAHQ8rywBvBms7WvfaxPrhm3_Y0';
