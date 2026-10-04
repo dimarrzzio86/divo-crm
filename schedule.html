@@ -4,15 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — График записей</title>
-<link rel="manifest" href="/manifest.json?v=256">
-<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png?v=256">
+<link rel="manifest" href="/manifest.json?v=257">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png?v=257">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Диво CRM">
 <meta name="theme-color" content="#0a0a0a">
-<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png?v=256">
-<link rel="stylesheet" href="/assets/style.css?v=256">
-<link rel="stylesheet" href="/assets/auth.css?v=256">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png?v=257">
+<link rel="stylesheet" href="/assets/style.css?v=257">
+<link rel="stylesheet" href="/assets/auth.css?v=257">
 <style>
 /* === СТИЛИ СТРАНИЦЫ ГРАФИКА === */
 .sch-page { padding: 0; }
@@ -470,8 +470,8 @@
   </div>
 </div>
 
-<script src="/components/components.js?v=256"></script>
-<script src="/components/access-config.js?v=256"></script>
+<script src="/components/components.js?v=257"></script>
+<script src="/components/access-config.js?v=257"></script>
 <script>
 // Упрощённая инициализация — надёжно показываем страницу
 function divoInitSchedule() {
@@ -481,7 +481,7 @@ function divoInitSchedule() {
     // Не залогинен — показываем форму входа
     var mainLayout = document.getElementById('divoMainLayout');
     if (mainLayout) mainLayout.style.display = 'none';
-    fetch('/components/auth-form.html?v=256')
+    fetch('/components/auth-form.html?v=257')
       .then(function(r){ return r.text(); })
       .then(function(html){
         var c = document.getElementById('divoAuthContainer');
@@ -796,19 +796,24 @@ function renderMonth(){
     else if(isHoliday(c.dateStr)) cls+=' shortday';
     if(c.dateStr===today) cls+=' today';
 
-    var cars = CARS.filter(function(car){ return carOnPost(car, c.dateStr); });
     var dayIsWeekend = isWeekend(dow) || isDayOff(c.dateStr);
     var bars = '';
-    if(cars.length){
+    if(!c.off){
       bars = '<div class="sch-day-bars">';
-      cars.forEach(function(car){
-        var barColor = dayIsWeekend ? '#52525b' : car.color;
-        var barText = dayIsWeekend ? '#a1a1aa' : '#0a0a0a';
-        bars += '<div class="sch-bar" style="background:'+barColor+';color:'+barText+';">'+car.name+'</div>';
-      });
+      // Всегда 4 поста на своих местах (1, 2, 3, 4) — чтобы визуально не сползали
+      for(var postNum=1; postNum<=4; postNum++){
+        var car = CARS.filter(function(x){ return x.post===postNum && carOnPost(x, c.dateStr); });
+        if(car.length){
+          var carObj = car[0];
+          var barColor = dayIsWeekend ? '#52525b' : carObj.color;
+          var barText = dayIsWeekend ? '#a1a1aa' : '#0a0a0a';
+          bars += '<div class="sch-bar" style="background:'+barColor+';color:'+barText+';">'+carObj.name+'</div>';
+        } else {
+          // Пост свободен — показываем пустую строку-плейсхолдер
+          bars += '<div class="sch-free-slot">П'+postNum+' своб.</div>';
+        }
+      }
       bars += '</div>';
-    } else if(!c.off){
-      bars = '<div class="sch-day-bars"><div class="sch-free-slot">свободно</div></div>';
     }
 
     var dayLabel = c.off ? '<span style="color:#52525b;">'+c.day+'</span>' : c.day;

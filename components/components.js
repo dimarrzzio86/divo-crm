@@ -2,7 +2,7 @@
    DIVO CRM v2 — ЛОГИКА КОМПОНЕНТОВ
    ========================================== */
 
-var DIVO_VERSION = 'v256';
+var DIVO_VERSION = 'v257';
 
 // Прокси через Cloudflare Worker — обходит блокировку supabase.co в РФ
 // Запросы идут через divo-crm.pages.dev/api/rest/v1/... → Supabase
