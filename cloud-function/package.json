@@ -1,0 +1,8 @@
+{
+  "name": "divo-proxy",
+  "version": "1.0.0",
+  "description": "DIVO CRM proxy to Supabase for Yandex Cloud Function",
+  "main": "index.js",
+  "dependencies": {},
+  "private": true
+}

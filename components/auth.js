@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Диво Детейлинг — CRM</title>
-<link rel="stylesheet" href="/assets/style.css?v=77">
-<link rel="stylesheet" href="/assets/dashboard.css?v=77">
-<link rel="stylesheet" href="/assets/auth.css?v=77">
+<link rel="stylesheet" href="/assets/style.css?v=257">
+<link rel="stylesheet" href="/assets/dashboard.css?v=257">
+<link rel="stylesheet" href="/assets/auth.css?v=257">
 </head>
 <body>
 
@@ -104,7 +104,7 @@
 
 </div>
 
-<script src="/components/components.js?v=77"></script>
+<script src="/components/components.js?v=257"></script>
 <script>
 function divoCheckAuthAndInit() {
   var user = divoGetUser();
