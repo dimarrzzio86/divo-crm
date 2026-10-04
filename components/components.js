@@ -2,7 +2,7 @@
    DIVO CRM v2 — ЛОГИКА КОМПОНЕНТОВ
    ========================================== */
 
-var DIVO_VERSION = 'v263';
+var DIVO_VERSION = 'v264';
 
 // Прокси к Supabase:
 // - Cloudflare Pages (divo-crm.pages.dev): через _worker.js (/api/rest/v1/...)
@@ -43,26 +43,19 @@ if (DIVO_IS_YANDEX) {
   function _divoRewriteUrl(originalUrl) {
     if (typeof originalUrl !== 'string') return originalUrl;
     if (originalUrl.indexOf('/api/') !== 0 && originalUrl.indexOf('api/') !== 0) {
-      // Не /api/ путь — оставляем как есть
       return originalUrl;
     }
     try {
-      // Парсим URL относительно текущей страницы
       var parsed = new URL(originalUrl, location.origin);
-      // Извлекаем путь: /api/rest/v1/contractors → /rest/v1/contractors
-      var apiPath = parsed.pathname;
-      if (apiPath.indexOf('/api/') === 0) apiPath = apiPath.replace(/^\/api/, '');
-      // Query string: select=*&limit=3
-      var query = parsed.search.replace(/^\?/, '');
-      // Собираем новый URL для Cloud Function:
-      // YANDEX_FUNC_URL?path=/rest/v1/contractors&select=*&limit=3
-      var newUrl = YANDEX_FUNC_URL + '?path=' + encodeURIComponent(apiPath) + (query ? '&' + query : '');
+      // Просто prepend YANDEX_FUNC_URL (Cloudflare Worker URL)
+      // /api/rest/v1/contractors?select=* → https://divo-crm.pages.dev/api/rest/v1/contractors?select=*
+      var newUrl = YANDEX_FUNC_URL + parsed.pathname + parsed.search;
       return newUrl;
     } catch (e) {
-      // Если URL не парсится — возвращаем как есть
       return originalUrl;
     }
   }
+
 
   // Удаляем apikey и Authorization из заголовков — Cloud Function подставит свой
   // (Yandex Cloud gateway блокирует запросы с Authorization: Bearer <supabase JWT>,
