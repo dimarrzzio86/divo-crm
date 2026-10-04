@@ -2,7 +2,7 @@
    DIVO CRM v2 — ЛОГИКА КОМПОНЕНТОВ
    ========================================== */
 
-var DIVO_VERSION = 'v259';
+var DIVO_VERSION = 'v260';
 
 // Прокси к Supabase:
 // - Cloudflare Pages (divo-crm.pages.dev): через _worker.js (/api/rest/v1/...)
@@ -60,28 +60,78 @@ if (DIVO_IS_YANDEX) {
     }
   }
 
+  // Удаляем apikey и Authorization из заголовков — Cloud Function подставит свой
+  // (Yandex Cloud gateway блокирует запросы с Authorization: Bearer <supabase JWT>,
+  //  думая что это IAM-токен Yandex, и возвращает 403 без CORS-заголовков)
+  function _divoStripAuthHeaders(headers) {
+    if (!headers) return headers;
+    var cleaned = {};
+    for (var k in headers) {
+      var lk = k.toLowerCase();
+      if (lk !== 'apikey' && lk !== 'authorization') {
+        cleaned[k] = headers[k];
+      }
+    }
+    return cleaned;
+  }
+
   // Перехватываем window.fetch
   var _originalFetch = window.fetch;
   window.fetch = function(input, init) {
     if (typeof input === 'string') {
       input = _divoRewriteUrl(input);
+      if (init && init.headers) {
+        // Если headers — объект
+        if (!init.headers.forEach) {
+          init.headers = _divoStripAuthHeaders(init.headers);
+        } else {
+          // Headers объект — создаём новый без apikey/Authorization
+          var newHeaders = new Headers();
+          init.headers.forEach(function(v, k) {
+            var lk = k.toLowerCase();
+            if (lk !== 'apikey' && lk !== 'authorization') {
+              newHeaders.set(k, v);
+            }
+          });
+          init.headers = newHeaders;
+        }
+      }
     } else if (input && input.url) {
       // Request объект
       var newUrl = _divoRewriteUrl(input.url);
       if (newUrl !== input.url) {
-        input = new Request(newUrl, input);
+        var newOpts = { method: input.method, headers: new Headers(input.headers) };
+        newOpts.headers.delete('apikey');
+        newOpts.headers.delete('authorization');
+        if (input.body) newOpts.body = input.body;
+        if (init) Object.assign(newOpts, init);
+        input = new Request(newUrl, newOpts);
       }
     }
     return _originalFetch.call(window, input, init);
   };
 
-  // Перехватываем XMLHttpRequest.open
+  // Перехватываем XMLHttpRequest.open + setRequestHeader
   var _originalXhrOpen = XMLHttpRequest.prototype.open;
+  var _divoXhrStack = new WeakMap();
   XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
     if (typeof url === 'string') {
-      url = _divoRewriteUrl(url);
+      var newUrl = _divoRewriteUrl(url);
+      _divoXhrStack.set(this, newUrl !== url); // запоминаем что URL был переписан
+      url = newUrl;
     }
     return _originalXhrOpen.call(this, method, url, async, user, password);
+  };
+  var _originalXhrSetHeader = XMLHttpRequest.prototype.setRequestHeader;
+  XMLHttpRequest.prototype.setRequestHeader = function(name, value) {
+    // Если URL был переписан на Cloud Function — пропускаем apikey/Authorization
+    if (_divoXhrStack.get(this)) {
+      var lname = (name || '').toLowerCase();
+      if (lname === 'apikey' || lname === 'authorization') {
+        return; // не устанавливаем — Cloud Function подставит свой
+      }
+    }
+    return _originalXhrSetHeader.call(this, name, value);
   };
 }
 
